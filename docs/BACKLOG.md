@@ -79,3 +79,46 @@ any shell aliases, IDE projects, and `.idea/` state pointing at the old path).
 as a goreleaser binary rather than `go get`. If the module ever needs to be importable
 by others, it must become `github.com/<user>/knowledge-forge`, which rewrites every
 import line. Cheapest to decide before `pkg/` has many files; effectively free today.
+
+---
+
+## B-005 — Three docs disagree on how many note types there are
+
+**Owner: Phase 1 (decided there, recorded here). Status: resolved by decision, 2026-08-09.**
+
+Not one of the thirteen contradictions `AUDIT.md` §8.1 caught — grep confirms §8.1/§8.4
+never mention templates or `incident`. Three arities:
+
+| Source | Says |
+|---|---|
+| DESIGN §6.1 `type` enum | **7** — `concept howto pattern pitfall decision api incident` |
+| DESIGN §6.2 template list | **7** — same set |
+| `CLAUDE-CODE-PROMPT.md` item 2 | **6** — omits `incident` |
+| DESIGN §7 `notes/` tree | **5** — `concept howto pattern pitfall decision` |
+
+**Decision: the enum is authoritative.** Phase 1 builds seven templates and seven
+`notes/<type>/` subdirs. The alternative leaves `incident` schema-valid with no template
+and no home — a note that validates but cannot be written. DESIGN §7's tree ends in `…`
+and reads as illustrative; the prompt's list is a plausible transcription slip. Recorded
+in `references/taxonomy.md` §4. No doc was edited, per the standing precedence rule.
+
+---
+
+## B-006 — The topology migration breaks path-qualified wikilinks; the spec has no step for it
+
+**Owner: Phase 1. Status: in scope, added to `migrate_vault.py`.**
+
+`CLAUDE-CODE-PROMPT.md` item 6 lists seven non-negotiables for the migration and a
+link-rewrite pass is not among them. But `AUDIT.md` records that inbound links to
+`issues/testcontainers-docker-socket` are **path-qualified** (`[[issues/…]]`), and the
+migration deletes `issues/` as a directory. Every such link dangles the moment the note
+moves.
+
+"Never deletes or reorders body content; only adds frontmatter" constrains what happens
+*inside* a note, not whether the note moves — so move + backfill is the correct reading,
+and a rewrite pass is required to keep it non-destructive in effect as well as in letter.
+
+Shape: build the complete `old path → new path` map before writing anything, then rewrite
+only `[[dir/name]]` forms to the new directory. Bare `[[name]]` links need no rewrite —
+Obsidian resolves them by name, and `pkg/vault`'s resolver must too (`AUDIT.md` §11).
+The dry-run summary must count rewritten links separately from moved files.
