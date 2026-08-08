@@ -127,28 +127,28 @@ func checkField(n *Note, s *Schema, key string) []Issue {
 	if strings.HasPrefix(f.Type, "list<") {
 		return checkList(n, s, key, f)
 	}
-	return checkScalar(n, key, f, n.FM.Str(key))
+	return checkScalar(n, s, key, f, n.FM.Str(key))
 }
 
-func checkScalar(n *Note, key string, f *Field, v string) []Issue {
+func checkScalar(n *Note, s *Schema, key string, f *Field, v string) []Issue {
 	var out []Issue
 	if v == "" {
-		return []Issue{{n.Rel, key, "empty", "key present but has no value", isBackfillable(key)}}
+		return []Issue{{n.Rel, key, "empty", "key present but has no value", backfillable(n, s, key)}}
 	}
 	if len(f.allowed) > 0 && !f.allowed[v] {
 		out = append(out, Issue{n.Rel, key, "not-in-enum",
 			fmt.Sprintf("%q is not one of %s", v, strings.Join(f.Values, "|")), false})
 	}
-	out = append(out, checkPattern(n, key, f, v)...)
+	out = append(out, checkPattern(n, s, key, f, v)...)
 	out = append(out, checkNumeric(n, key, f, v)...)
 	out = append(out, checkLength(n, key, f, v)...)
 	return out
 }
 
-func checkPattern(n *Note, key string, f *Field, v string) []Issue {
+func checkPattern(n *Note, s *Schema, key string, f *Field, v string) []Issue {
 	if f.Type == "date" && !isISODate(v) {
 		return []Issue{{n.Rel, key, "bad-date",
-			fmt.Sprintf("%q is not YYYY-MM-DD", v), isBackfillable(key)}}
+			fmt.Sprintf("%q is not YYYY-MM-DD", v), backfillable(n, s, key)}}
 	}
 	if f.rePattern != nil && !f.rePattern.MatchString(v) {
 		return []Issue{{n.Rel, key, "bad-format",
@@ -193,7 +193,7 @@ func deref(p *int) int {
 
 func checkList(n *Note, s *Schema, key string, f *Field) []Issue {
 	if f.Type == "list<object>" {
-		return checkObjectList(n, key, f)
+		return checkObjectList(n, s, key, f)
 	}
 	items := n.FM.List(key)
 	out := checkArity(n, key, f, len(items))
@@ -234,19 +234,19 @@ func checkItem(n *Note, s *Schema, key string, f *Field, it string) []Issue {
 	return nil
 }
 
-func checkObjectList(n *Note, key string, f *Field) []Issue {
+func checkObjectList(n *Note, s *Schema, key string, f *Field) []Issue {
 	node, ok := n.FM.Vals[key]
 	if !ok || node.Kind != yaml.SequenceNode {
 		return checkArity(n, key, f, 0)
 	}
 	out := checkArity(n, key, f, len(node.Content))
 	for i, item := range node.Content {
-		out = append(out, checkObjectItem(n, key, f, i, item)...)
+		out = append(out, checkObjectItem(n, s, key, f, i, item)...)
 	}
 	return out
 }
 
-func checkObjectItem(n *Note, key string, f *Field, i int, item *yaml.Node) []Issue {
+func checkObjectItem(n *Note, s *Schema, key string, f *Field, i int, item *yaml.Node) []Issue {
 	if item.Kind != yaml.MappingNode {
 		return []Issue{{n.Rel, key, "bad-item",
 			fmt.Sprintf("[%d] is not a mapping", i), false}}
@@ -261,7 +261,7 @@ func checkObjectItem(n *Note, key string, f *Field, i int, item *yaml.Node) []Is
 			}
 			continue
 		}
-		out = append(out, retarget(checkScalar(n, name, sf, sub.Str(name)), key, i)...)
+		out = append(out, retarget(checkScalar(n, s, name, sf, sub.Str(name)), key, i)...)
 	}
 	return out
 }

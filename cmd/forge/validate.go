@@ -43,6 +43,13 @@ func runValidate(paths []string, all bool, vaultDir string, fix, quiet bool) int
 	return printResult(validateAll(targets, root, s, fix), len(targets), quiet)
 }
 
+func plural(paths []string) string {
+	if len(paths) == 1 {
+		return ""
+	}
+	return "s"
+}
+
 func resolveTargets(paths []string, all bool, vaultDir string) ([]string, string, error) {
 	root, err := filepath.Abs(vaultDir)
 	if err != nil {
@@ -54,13 +61,20 @@ func resolveTargets(paths []string, all bool, vaultDir string) ([]string, string
 		}
 		return paths, "", nil
 	}
+	// --all walks --vault, so a positional path is not merely redundant: someone who
+	// wrote `forge validate --all --fix /some/vault` meant that directory and would get
+	// the working directory rewritten instead. Refuse rather than guess.
+	if len(paths) > 0 {
+		return nil, "", fmt.Errorf("--all walks --vault; remove the path argument%s"+
+			" or pass it as --vault %s", plural(paths), paths[0])
+	}
 	rels, err := vault.Walk(root)
 	if err != nil {
 		return nil, "", err
 	}
 	var out []string
 	for _, rel := range rels {
-		if vault.IsContentNote(rel) {
+		if vault.IsContractNote(rel) {
 			out = append(out, filepath.Join(root, rel))
 		}
 	}

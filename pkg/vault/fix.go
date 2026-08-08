@@ -35,6 +35,7 @@ func applyAll(n *Note, s *Schema, fm *Frontmatter) []string {
 	var changes []string
 	changes = append(changes, normalizeLists(s, fm)...)
 	changes = append(changes, backfillDates(n, fm)...)
+	changes = append(changes, carryLegacySource(fm)...)
 	changes = append(changes, backfillDefaults(n, s, fm)...)
 	if wasOutOfOrder(fm, s) {
 		changes = append(changes, "key order normalized")
@@ -89,6 +90,39 @@ func backfillDates(n *Note, fm *Frontmatter) []string {
 		changes = append(changes, fmt.Sprintf("%s: <- %s", key, stamp))
 	}
 	return changes
+}
+
+// carryLegacySource converts the v1 `source:` key into one `sources` entry before render
+// drops it. 63 of the real vault's 93 notes carry it, and it is the only provenance those
+// notes have: dropping it would silently destroy their citation and fail every one of
+// them on the DESIGN §12 gate. The value is copied verbatim — schema.yaml's `url` accepts
+// both an http(s) URL and a vault-relative path precisely because this key holds both.
+func carryLegacySource(fm *Frontmatter) []string {
+	src := strings.Trim(fm.Str("source"), `"' `)
+	if src == "" || len(fm.List("sources")) > 0 {
+		return nil
+	}
+	accessed := fm.Str("created")
+	if !isISODate(accessed) {
+		return nil // backfillDates always sets created; a non-date here means bad input
+	}
+	if !fm.Has("sources") {
+		fm.Keys = append(fm.Keys, "sources")
+	}
+	fm.Vals["sources"] = sourceSeq(src, accessed)
+	return []string{fmt.Sprintf("sources: <- source: %q (kind: session)", src)}
+}
+
+// sourceSeq builds the single-entry `sources` list. kind is always `session`: the v1
+// til-writer wrote `source:` to point at the Claude Code transcript a note came from.
+func sourceSeq(url, accessed string) *yaml.Node {
+	item := &yaml.Node{Kind: yaml.MappingNode, Tag: "!!map"}
+	for _, kv := range [][2]string{{"url", url}, {"accessed", accessed}, {"kind", "session"}} {
+		item.Content = append(item.Content,
+			&yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: kv[0]},
+			&yaml.Node{Kind: yaml.ScalarNode, Value: kv[1]})
+	}
+	return &yaml.Node{Kind: yaml.SequenceNode, Tag: "!!seq", Content: []*yaml.Node{item}}
 }
 
 // backfillDefaults adds the keys whose correct value is a schema constant.

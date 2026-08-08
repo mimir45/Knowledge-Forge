@@ -101,7 +101,14 @@ var excludedNames = map[string]bool{
 	"CLAUDE.md": true, "README.md": true, "lint-report.md": true,
 }
 
-// IsContentNote reports whether a vault-relative path is subject to the note contract.
+// hubNames are hand-maintained root-level hubs. They are walked into the link graph —
+// graph.isRootLocation already classifies them as roots, and their outbound links are what
+// keep the notes they point at off the orphan list — but they carry no frontmatter and are
+// not expected to. migrate_vault.py's NON_NOTE_FILES leaves them exactly where they are,
+// so the two definitions of "note" have to differ here rather than be forced together.
+var hubNames = map[string]bool{"index.md": true, "log.md": true}
+
+// IsContentNote reports whether a vault-relative path is a node in the link graph.
 func IsContentNote(rel string) bool {
 	if excludedNames[rel] || strings.HasPrefix(filepath.Base(rel), "_index") {
 		return false
@@ -112,4 +119,10 @@ func IsContentNote(rel string) bool {
 		}
 	}
 	return true
+}
+
+// IsContractNote reports whether a path is subject to the note contract. Every contract
+// note is a content note; the hubs are the gap between the two.
+func IsContractNote(rel string) bool {
+	return IsContentNote(rel) && !hubNames[rel]
 }

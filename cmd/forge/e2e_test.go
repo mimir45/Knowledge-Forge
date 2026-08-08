@@ -199,6 +199,26 @@ func TestE2EExcludesNonNotes(t *testing.T) {
 	}
 }
 
+// TestHubsAreGraphNodesButNotContractNotes: index.md and log.md carry no frontmatter and
+// migrate_vault.py leaves them in place, so holding them to the contract would report two
+// permanent failures. Dropping them from the walk instead would lose their outbound links,
+// and graph.isRootLocation relies on those to keep the notes they point at off the orphan
+// list. The two predicates therefore have to disagree on exactly this pair.
+func TestHubsAreGraphNodesButNotContractNotes(t *testing.T) {
+	for _, rel := range []string{"index.md", "log.md"} {
+		if !vault.IsContentNote(rel) {
+			t.Errorf("%s: dropped from the link graph; its outbound links would be lost", rel)
+		}
+		if vault.IsContractNote(rel) {
+			t.Errorf("%s: held to the note contract it has no frontmatter for", rel)
+		}
+	}
+	// A note under notes/ is subject to both, and CLAUDE.md to neither.
+	if !vault.IsContractNote("notes/concept/a.md") || vault.IsContentNote("CLAUDE.md") {
+		t.Error("the split changed the verdict for an ordinary note or an excluded file")
+	}
+}
+
 // TestFixtureIsNeverMutated guards the rule directly: the fixture on disk must still be
 // dirty and must still have no .git after the whole suite has run against copies of it.
 func TestFixtureIsNeverMutated(t *testing.T) {
@@ -210,5 +230,18 @@ func TestFixtureIsNeverMutated(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(fixtureSrc, ".forge")); !os.IsNotExist(err) {
 		t.Error("a derived .forge cache landed in testdata/vault")
+	}
+}
+
+// TestE2EAllRejectsAPositionalPath: `forge validate --all --fix <vault>` silently ignored
+// the path and rewrote the working directory instead. On a --fix run that is a
+// destructive misfire, so the combination is now an error rather than a guess.
+func TestE2EAllRejectsAPositionalPath(t *testing.T) {
+	root := fixtureCopy(t)
+	if code := runValidate([]string{root}, true, ".", false, true); code != 2 {
+		t.Errorf("exit = %d, want 2: --all with a positional path must be refused", code)
+	}
+	if code := runValidate(nil, true, root, false, true); code != 1 {
+		t.Errorf("exit = %d, want 1: --vault form must still work", code)
 	}
 }

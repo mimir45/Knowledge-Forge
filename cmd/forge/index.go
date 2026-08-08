@@ -128,6 +128,11 @@ func entries(notes []*vault.Note, g *graph.Graph) []report.Entry {
 	s, _ := vault.LoadSchema()
 	out := make([]report.Entry, 0, len(notes))
 	for _, n := range notes {
+		// Hubs stay in the graph but out of the listing: they have no frontmatter to
+		// render and counting them as "failing" would misreport the contract number.
+		if !vault.IsContractNote(n.Rel) {
+			continue
+		}
 		out = append(out, entryOf(n, g, s))
 	}
 	return out

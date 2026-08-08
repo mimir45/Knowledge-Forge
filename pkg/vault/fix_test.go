@@ -69,6 +69,43 @@ func TestFixDropsRetiredKeys(t *testing.T) {
 	}
 }
 
+// TestFixCarriesLegacySourceIntoSources: `source:` is retired, but on 63 of the real
+// vault's 93 notes it is the only provenance there is. Dropping it unconverted would
+// destroy the citation and fail the note on the §12 gate, so the value must survive the
+// retirement rather than be deleted with the key.
+func TestFixCarriesLegacySourceIntoSources(t *testing.T) {
+	out, changes := fixed(t, legacyNote)
+	for _, want := range []string{
+		"url: daily/2026-04-13.md",
+		"accessed: 2026-04-13", // the note's own date, not today
+		"kind: session",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("missing %q in converted sources:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "sources: []") {
+		t.Errorf("sources was emitted empty despite a source: value:\n%s", out)
+	}
+	if !strings.Contains(strings.Join(changes, "\n"), "sources: <- source:") {
+		t.Errorf("conversion not reported in changes: %v", changes)
+	}
+}
+
+// TestFixDoesNotOverwriteRealSources: a note that already cites something keeps it; the
+// legacy key is only a fallback, never an override.
+func TestFixDoesNotOverwriteRealSources(t *testing.T) {
+	src := "---\ntitle: T\ncreated: 2026-01-01\nsource: legacy.md\n" +
+		"sources:\n  - url: https://example.test/a\n    accessed: 2026-01-01\n    kind: official\n---\n\nbody\n"
+	out, _ := fixed(t, src)
+	if strings.Contains(out, "legacy.md") {
+		t.Errorf("legacy source overwrote a real citation:\n%s", out)
+	}
+	if !strings.Contains(out, "https://example.test/a") {
+		t.Errorf("existing citation lost:\n%s", out)
+	}
+}
+
 // TestFixBackfillsDatesFromLegacyDate: the v1 `date:` key is the honest origin date, so
 // it seeds created/updated/verified rather than the file's mtime.
 func TestFixBackfillsDatesFromLegacyDate(t *testing.T) {
