@@ -43,8 +43,36 @@ OUTAGE = re.compile(r"\b(outage|incident|down|postmortem|post-mortem)\b", re.I)
 IMPERATIVE = re.compile(r"^(?:\d+\.\s|```|\$ |- \[ \])", re.M)
 
 
+# TRANSLIT mirrors pkg/vault.translit exactly. Without it `[^a-z0-9]` deletes every
+# accented letter, so `BÖLÜM I: TEORİ TEMELLERİ` slugifies to `b-l-m-i-teori-temelleri`
+# and the migration writes that unreadable name to disk. The rename is irreversible and
+# `forge slug` would disagree with it forever, so the two tables have to stay in step.
+TRANSLIT = {
+    "ç": "c", "ğ": "g", "ı": "i", "ö": "o", "ş": "s", "ü": "u",
+    "á": "a", "à": "a", "â": "a", "ä": "a", "å": "a", "ã": "a",
+    "é": "e", "è": "e", "ê": "e", "ë": "e",
+    "í": "i", "ì": "i", "î": "i", "ï": "i",
+    "ó": "o", "ò": "o", "ô": "o", "õ": "o",
+    "ú": "u", "ù": "u", "û": "u",
+    "ñ": "n", "ß": "ss", "æ": "ae", "ø": "o",
+    "+": "plus", "&": "and", "#": "sharp",
+}
+MAX_SLUG_LEN = 80
+
+
 def slugify(text):
-    return re.sub(r"-+", "-", re.sub(r"[^a-z0-9]+", "-", text.lower())).strip("-")
+    folded = "".join(TRANSLIT.get(c, c) for c in text.lower())
+    s = re.sub(r"-+", "-", re.sub(r"[^a-z0-9]+", "-", folded)).strip("-")
+    return s if len(s) <= MAX_SLUG_LEN else truncate_at_boundary(s)
+
+
+def truncate_at_boundary(s):
+    """Mirrors pkg/vault.truncateAtBoundary: cut to MAX_SLUG_LEN without leaving a
+    trailing partial word. The slug is also the destination filename, so a slug the
+    schema rejects would be baked into a path this migration cannot take back."""
+    s = s[:MAX_SLUG_LEN]
+    cut = s.rfind("-")
+    return (s[:cut] if cut > 0 else s).strip("-")
 
 
 def split_frontmatter(text):
