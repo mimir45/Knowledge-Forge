@@ -8,7 +8,12 @@ that should own it.
 
 ## B-001 — The design docs have never been audited for internal coherence
 
-**Owner: Phase 0 (Audit).** Status: open.
+**Owner: Phase 0 (Audit).** Status: **done, 2026-08-09.** The pass ran and found thirteen
+contradictions the docs do not self-flag; they are `AUDIT.md` §8.1. Seven resolved without
+escalation. The six that could not be — C-5, C-7, C-8, C-9, C-10, C-13 — were
+escalated and decided by the user the same day; the decisions are **`AUDIT.md` §8.4
+(D-1 … D-8)**, which is binding for later phases. No design doc was edited. The original
+brief follows.
 
 The five docs in `docs/` were written incrementally and only ever checked against each
 other where they *self-flag* a conflict. Exactly three such flags exist and all three
@@ -39,7 +44,7 @@ listing every contradiction found and which doc wins under the precedence rule i
 distinction is a trap).
 
 `testdata/vault/` is a 13-note fixture reproducing the real vault's **pre-migration**
-topology plus ten deliberate defects (catalogue in `testdata/README.md`). Its purpose is
+topology plus twelve deliberate defects (catalogue in `testdata/README.md`). Its purpose is
 to let Phase 1's topology migration — the one irreversible step in the plan — be
 rehearsed without touching `/Users/mimir45/Documents/Base`. It carries **no `.git`** by
 design — the harness copies it into a temp dir and `git init`s the copy, which is what
