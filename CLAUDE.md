@@ -17,6 +17,10 @@ per pipeline stage.
 
 ## Read the docs in this order
 
+0. **`docs/AUDIT.md` §8.4** — the binding decision record (D-1 … D-8). Read it *first*,
+   because the design docs below were deliberately **not** edited: where §8.4 marks a line
+   stale, the doc still says the old thing and §8.4 is what you follow. Details under
+   "Phase workflow".
 1. **`docs/ROADMAP.md`** — condensed index over everything else. Always start here.
 2. **`docs/KNOWLEDGE-FORGE-STACK.md`** (ADR-001) — **wins on every stack question.** It
    supersedes ADDENDUM §B (which specified Python — the doc itself says "that was
@@ -37,17 +41,20 @@ fine-tuning tooling. Neither ships in the binary.
 
 ## Things that live outside this repo
 
-- **Vault:** `/Users/mimir45/Documents/Base` — 108 markdown notes. **Not a git repo.**
+- **Vault:** `/Users/mimir45/Documents/Base` — 109 markdown notes. **Is a git repo** as of
+  2026-08-09: 1 commit, clean tree.
 - Its current topology is `concepts/ decisions/ entities/ issues/ raw/ sources/
   syntheses/ archive/ TIL/`, which does **not** match DESIGN §7's prescribed
   `notes/{concept,howto,…}/ moc/ _inbox/ _archive/ profiles/`. Phase 1's migration is
   therefore a *topology change*, not just a frontmatter backfill — plan it that way.
 - **v1 skill:** `/Users/mimir45/.claude/skills/til-writer/` — this is the system Phase 0
   audits and this project replaces. The user's global `~/.claude/CLAUDE.md` already
-  routes "explain X" prompts into the same vault through it.
-- Phase 0/1 preconditions are currently **unmet**: `git init` + commit the vault (the
-  migration refuses a dirty tree, and D3 human-edit capture needs a post-commit hook on
-  the vault repo).
+  routes "explain X" prompts into the same vault through it. It contains **only
+  `SKILL.md`** — no scripts, no agent definitions, no hooks, no plugin manifest. Phase 0's
+  file-map step should expect ABSENT for most rows.
+- Phase 0/1 preconditions are **met**: the vault repo exists and its tree is clean, so
+  the migration's dirty-tree refusal and D3's post-commit hook both have something to
+  attach to. The D3 hook itself is not installed yet (Phase 1 installs it).
 
 ## Fixture vault (`testdata/vault/`)
 
@@ -73,12 +80,47 @@ One phase per session. Do not start phase N+1 with phase N unmerged. Never cut 2
 time runs out the cut order is `6b → 5b → advisor tier`. If work comes up outside the
 current phase's scope, write it to `docs/BACKLOG.md` rather than building it.
 
-**Read `docs/BACKLOG.md` at the start of a phase** — it holds open items B-001…B-004.
-The one that changes how Phase 0 is run: the design docs have only ever been checked
-against each other where they *self-flag* a conflict (the three precedence rules above).
-No pass has been made for contradictions the docs don't announce. Phase 0's `AUDIT.md`
-should carry a doc-vs-doc coherence section; resolve conflicts by precedence there
-rather than editing the docs mid-flight.
+**Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004 are open; B-001 (the
+doc-vs-doc coherence pass) closed on 2026-08-09.
+
+**Then read `docs/AUDIT.md` §8.** It is the output of that pass: thirteen contradictions
+the docs do *not* self-flag, eight resolved by the precedence rule above. **§8.4 is a
+binding decision record** (D-1 … D-8) covering the six precedence could not settle. The
+design docs were deliberately **not** edited, so where §8.4 marks a line stale the doc
+still says the old thing — §8.4 is what you follow. It changes Phase 3, 3b, 6 and 6b:
+
+- **3** — config is a four-layer chain (`FORGE_CONFIG` > `.forge.config.md` > `~/.forge/forge.config.md` > packaged `config/forge.config.example.md`); the schema is the *union* of ADDENDUM §E and the DESIGN §10 keys §E never restates; `forge init` is the **only** writer of `~/.forge/forge.config.md` and `<vault>/profiles/me.md` (rendered from `profiles/me.template.md`) — never `config/forge.config.md`, which stays a packaged template; `skills/forge-init/` asks the questions and shells out.
+- **3b** — `on_exhausted` defaults to `queue`; `cost.md` is built here, not in 2b; budget counters live in SQLite and must survive `forge reindex`.
+- **2b** — ships **nine** reports, not ten.
+- **6** — build `pkg/scrub` / `forge scrub` and use it to generate `examples/vault/`; it needs a fixture test before the phase passes. Ship exactly two ADR files: `0001-lexical-recall-vs-embeddings` (from DESIGN §8) and `0002-go-for-static-core` (from STACK §1).
+- **6b** — `--anonymize` calls `pkg/scrub` and **fails closed**; it never exports raw on scrubber error.
+
+## Agent crew (`.claude/agents/`)
+
+The top-level session manages; three project-scoped Sonnet subagents do the work. Route
+by verb: **find → `finder`** (read-only search, reports `file:line` hits, also searches
+the vault at `/Users/mimir45/Documents/Base`), **do → `executor`** (Read/Write/Edit/Bash;
+stays in scope, verifies with real command output), **explain → `explainer`**
+(read-only; writes nothing, so TIL notes stay with the `til-writer` skill).
+
+Two more for audit work: **`vault-analyst`** (read-only vault metrics — counts,
+frontmatter key frequency, inbound links, orphans, near-dupes) and **`doc-auditor`**
+(finds contradictions between the design docs that they don't self-flag — Backlog B-001).
+
+And one competing run: **`cross-checker`** — independently re-derives another agent's
+numbers or findings and returns strict JSON, one verdict per claim, each `links`-ed to the
+primary's finding ID. Spawn it **in parallel with** the primary, not after: a checker that
+has already seen the answer anchors to it. `vault-analyst` and `doc-auditor` therefore end
+their reports with a JSON block whose IDs match their prose, so the two runs join
+mechanically. Use it when a number is going into a document later phases re-measure
+against — the Phase 0 baseline table is the case that motivated it.
+
+Prefer delegating over doing it inline. Independent tasks go out in parallel.
+
+These are **workflow** agents for building the project. They are not the four **product**
+agents (`forge-researcher`, `forge-codebase-scout`, `forge-verifier`, `forge-librarian`)
+that DESIGN §11 specifies and Phase 4 builds into `agents/`. Deferred to Phase 1, when
+there is code to point them at: a `go-reviewer` and a `test-writer`.
 
 ## Invariants
 
