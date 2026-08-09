@@ -122,3 +122,25 @@ Shape: build the complete `old path → new path` map before writing anything, t
 only `[[dir/name]]` forms to the new directory. Bare `[[name]]` links need no rewrite —
 Obsidian resolves them by name, and `pkg/vault`'s resolver must too (`AUDIT.md` §11).
 The dry-run summary must count rewritten links separately from moved files.
+
+---
+
+## B-007 — Phase 4's librarian must stamp `Forge-Write: true` or it poisons the D3 dataset
+
+**Owner: Phase 4 (Subagents). Status: open — the guard exists, the producer does not.**
+
+`pkg/dataset` (Phase 1) refuses to harvest a commit whose message carries the trailer
+`Forge-Write:` — `dataset.ForgeTrailer`, pinned by `TestSkipsForgeAuthoredCommits`. Today
+that check is **inert**: every commit in the vault is a human's, so nothing is ever
+skipped by it.
+
+It stops being inert the moment `forge-librarian` starts committing notes it wrote. Such a
+commit modifies a note whose `origin` is `ask`/`session-capture`/`garden`, within the
+window, in a commit that is not the one that created it — every D3 gate passes, and the
+pair enters `d3.jsonl` with model output on **both** sides, labelled as a human preference.
+Nothing surfaces it: the file is append-only, local, and not read again until Phase 6b's
+export. D.1 calls D3 the most valuable dataset; this is the one way to silently ruin it.
+
+**Requirement for Phase 4:** every commit `forge-librarian` authors must end with
+`Forge-Write: true`. Verify with a fixture test that a librarian-authored commit yields
+zero pairs — the guard is already written, only the producer side is missing.

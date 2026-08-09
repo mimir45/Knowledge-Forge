@@ -137,6 +137,39 @@ func TestSkipsEditsOutsideTheWindow(t *testing.T) {
 	}
 }
 
+// TestSkipsEditsThatPredateGeneration: clock skew on a synced vault, or grafted history,
+// can date the edit commit before the add commit. That pair would put the older text on
+// the preferred side — inverted signal, worse than no pair at all.
+func TestSkipsEditsThatPredateGeneration(t *testing.T) {
+	r := newRepo(t)
+	r.write("notes/concept/t.md", note("ask", "T", "generated text"))
+	r.commit(day9, "seed with a future clock")
+	r.write("notes/concept/t.md", note("ask", "T", "corrected text"))
+	r.commit(day1, "edit, dated earlier than the note was born")
+
+	if pairs := capture(t, r); len(pairs) != 0 {
+		t.Errorf("got %d pairs from a backwards clock, want 0: %+v", len(pairs), pairs)
+	}
+}
+
+// TestFollowsRenameAndEditInOneCommit: the realistic human move is a single commit that
+// retitles the note, renames the file to match, and rewrites the body. Whether git reports
+// that as M or as R decides whether the pair survives.
+func TestFollowsRenameAndEditInOneCommit(t *testing.T) {
+	r := seed(t)
+	r.git("mv", "notes/concept/goroutines.md", "notes/concept/goroutine-basics.md")
+	r.write("notes/concept/goroutine-basics.md", note("ask", "Goroutines", "corrected text"))
+	r.commit(day1, "retitle and correct")
+
+	pairs := capture(t, r)
+	if len(pairs) != 1 {
+		t.Fatalf("got %d pairs from a rename+edit commit, want 1: %+v", len(pairs), pairs)
+	}
+	if !strings.Contains(pairs[0].Generated, "generated text") {
+		t.Errorf("generated side lost: %q", pairs[0].Generated)
+	}
+}
+
 // TestSkipsTheCommitThatCreatedTheNote: generation and edit cannot be the same commit,
 // or every new note would pair with itself.
 func TestSkipsTheCommitThatCreatedTheNote(t *testing.T) {

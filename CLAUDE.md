@@ -80,8 +80,10 @@ One phase per session. Do not start phase N+1 with phase N unmerged. Never cut 2
 time runs out the cut order is `6b → 5b → advisor tier`. If work comes up outside the
 current phase's scope, write it to `docs/BACKLOG.md` rather than building it.
 
-**Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004 are open; B-001 (the
-doc-vs-doc coherence pass) closed on 2026-08-09.
+**Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004 and **B-007** are open;
+B-001 (doc coherence), B-005 (seven note types) and B-006 (link rewrite) closed on
+2026-08-09. B-007 is Phase 4's: `forge-librarian` must stamp `Forge-Write: true` on every
+commit it authors, or `pkg/dataset` records its output as human corrections.
 
 **Then read `docs/AUDIT.md` §8.** It is the output of that pass: thirteen contradictions
 the docs do *not* self-flag, eight resolved by the precedence rule above. **§8.4 is a

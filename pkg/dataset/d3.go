@@ -71,7 +71,7 @@ func Capture(g Git, opt Options) ([]Pair, error) {
 	if err != nil || own {
 		return nil, err
 	}
-	paths, err := g.ModifiedFiles(sha, "M")
+	paths, err := g.ModifiedFiles(sha, "MR")
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,10 @@ func pairFor(g Git, sha string, edited time.Time, rel string, w time.Duration) (
 	if err != nil || org.SHA == "" || org.SHA == sha {
 		return Pair{}, false // unknown history, or born in this very commit
 	}
-	if edited.Sub(org.When) > w {
+	// A negative delta means the edit commit dates before the add commit — clock skew on a
+	// synced vault, grafted history, a hand-set GIT_COMMITTER_DATE. Storing that pair puts
+	// the older text on the "human-preferred" side, which is inverted training signal.
+	if d := edited.Sub(org.When); d < 0 || d > w {
 		return Pair{}, false // outside the window: a later revisit, not a correction
 	}
 	gen, err := g.Show(org.SHA, org.Path)

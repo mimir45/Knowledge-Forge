@@ -46,13 +46,16 @@ func (g Git) Trailers(rev string) (string, error) {
 	return g.run("show", "-s", "--format=%(trailers)", rev)
 }
 
-// ModifiedFiles lists paths a commit changed in the given ways ("M", "AM", …). A root
-// commit has no parent to diff against, so it reports nothing rather than erroring.
+// ModifiedFiles lists paths a commit changed in the given ways ("M", "MR", …), reporting
+// the post-rename spelling. -M matters because the realistic human correction retitles the
+// note and renames the file in the same commit; without it git splits that into an add and
+// a delete and neither looks like an edit. A root commit has no parent to diff against, so
+// it reports nothing rather than erroring.
 func (g Git) ModifiedFiles(sha, filter string) ([]string, error) {
 	if _, err := g.run("rev-parse", "--verify", "--quiet", sha+"^"); err != nil {
 		return nil, nil
 	}
-	out, err := g.run("diff-tree", "--no-commit-id", "--name-only", "-r",
+	out, err := g.run("diff-tree", "--no-commit-id", "--name-only", "-r", "-M",
 		"--diff-filter="+filter, sha)
 	if err != nil || out == "" {
 		return nil, err
