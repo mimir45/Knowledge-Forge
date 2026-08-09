@@ -1,0 +1,44 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache: true
+
+      - name: lint
+        run: make lint
+
+      # Both lanes, because they are different programs. cgo on is what runs the
+      # tree-sitter parser tests; cgo off is the invariant that every package except
+      # pkg/codeindex builds without a C toolchain, and it is the lane that ships.
+      - name: test (cgo)
+        run: CGO_ENABLED=1 go test ./...
+
+      - name: build (portable)
+        run: CGO_ENABLED=0 go build ./...
+
+      # A cross-compile failure that only appears at release time is a bad time to find
+      # out, so the matrix is built on every push and thrown away.
+      - name: cross-compile matrix
+        run: make dist
+
+  shim:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache: true
+      - name: the shim must refuse a binary it cannot verify
+        run: ./scripts/test-shim.sh

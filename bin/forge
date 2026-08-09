@@ -1,0 +1,50 @@
+#!/bin/sh
+# forge — verify-then-exec shim.
+#
+# The vault's post-commit hook runs a *copy* of the binary out of ~/.forge/bin, not this
+# repo's build output, and by design that hook can never fail a commit and never prints.
+# A silently stale or swapped binary is therefore the one failure mode nothing surfaces.
+# This shim closes that: it hashes what it is about to execute and refuses to run anything
+# that does not match its pin.
+#
+#   FORGE_BIN         which binary to run (default ~/.forge/bin/forge)
+#   FORGE_BIN_SHA256  the expected hash, for an airgapped or self-built install
+#
+# There is deliberately no flag to skip verification. An install that needs its own binary
+# pins its own hash; it does not turn the check off.
+set -eu
+
+die() { printf 'forge: %s\n' "$1" >&2; exit 127; }
+
+sha256_of() {
+	if command -v shasum >/dev/null 2>&1; then shasum -a 256 "$1" | awk '{print $1}'
+	elif command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | awk '{print $1}'
+	else die "no shasum or sha256sum on PATH; cannot verify $1"
+	fi
+}
+
+# expected_sha prefers the explicit override, then a pin sitting beside the binary, then one
+# beside this shim. No pin is committed to the repo: a hash checked into git would be stale
+# the moment anyone rebuilds, and a stale pin that people learn to ignore is worse than none.
+# `make install-hook` writes the sidecar; a manual install writes it or sets the variable.
+expected_sha() {
+	if [ -n "${FORGE_BIN_SHA256:-}" ]; then printf '%s' "$FORGE_BIN_SHA256"; return; fi
+	for pin in "$1.sha256" "$(dirname "$0")/forge.sha256"; do
+		[ -r "$pin" ] && { awk '{print $1; exit}' "$pin"; return; }
+	done
+	die "no pin for $1: write its hash to $1.sha256 or set FORGE_BIN_SHA256"
+}
+
+bin="${FORGE_BIN:-$HOME/.forge/bin/forge}"
+[ -f "$bin" ] || die "no binary at $bin (set FORGE_BIN, or run: make install-hook)"
+[ -x "$bin" ] || die "$bin is not executable"
+
+want=$(expected_sha "$bin")
+got=$(sha256_of "$bin")
+[ "$want" = "$got" ] || die "$bin failed verification
+  expected $want
+  actual   $got
+The binary changed since it was pinned. Rebuild and re-pin with 'make install-hook',
+or set FORGE_BIN_SHA256 if you know this build is the one you want."
+
+exec "$bin" "$@"

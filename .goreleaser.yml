@@ -1,0 +1,71 @@
+version: 2
+
+project_name: forge
+
+# Only the portable lane is released. CGO_ENABLED=0 cross-compiles to all six targets from
+# one runner and gives a binary with no libc requirement; go-tree-sitter would need a C
+# toolchain per target and would tie every release to six runners for one optional feature.
+#
+# What a released binary therefore cannot do: build the code index. `forge check` renders
+# nine of its ten files and reports moc/codebase.md as skipped with codeindex.ErrUnavailable
+# rather than writing a map that claims an unparsed codebase is fully documented, and drift
+# SKIPs every symbol-only citation instead of calling it resolved. Users who want the code
+# index build it themselves with `make full`. That trade is stated here rather than
+# discovered from an empty report.
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: portable
+    main: ./cmd/forge
+    binary: forge
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.version={{.Version}} -X main.commit={{.ShortCommit}}
+    goos: [darwin, linux, windows]
+    goarch: [amd64, arm64]
+
+archives:
+  - id: default
+    ids: [portable]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - README.md
+      - LICENSE*
+      - templates/**/*
+      - references/**/*
+      - config/**/*
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+
+# The shim in bin/forge refuses to execute a binary whose hash it cannot match, so the
+# checksum file is part of the product, not release paperwork.
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+release:
+  draft: true
+  footer: |
+    Verify before running:
+
+        shasum -a 256 -c checksums.txt
+
+    These are portable builds — no code index. See `make full` for a binary with
+    go-tree-sitter compiled in.
