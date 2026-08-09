@@ -149,7 +149,8 @@ zero pairs — the guard is already written, only the producer side is missing.
 
 ## B-008 — `tags` and `stack` recall channels have no IDF weighting
 
-**Owner: Phase 2b (drift + the nine reports). Status: open — measured in Phase 2, not fixed.**
+**Owner: Phase 3. Status: open — the prescribed weighting shipped in 2b and neither case
+moved past its threshold; the cause stated below is wrong, see the measurement at the end.**
 
 `forge recall`'s tag and stack channels score a term carried by every note exactly like a
 term carried by three. In a vault that is mostly Spring notes, `spring` and `boot` are
@@ -174,6 +175,58 @@ computed during the frontmatter scan that already walks every note, so it costs 
 pass. Cap the weight so a hapax tag cannot dominate. It changes every recall number, which
 is why it belongs in 2b — that phase re-measures the reports against recall anyway, and
 `pkg/recall`'s test suite pins the current values so the delta will be explicit.
+
+### The weighting shipped in 2b. It did not fix either case, and the cause above is wrong.
+
+`pkg/recall/score.go` now weights both channels by smoothed IDF — `log(1 + N/df)`, capped
+at 3.5, document frequency counted in the pass that already walks every note. It is the
+prescribed shape, it is tested, and `--explain` prints the per-term weights so the number
+stays auditable. Re-measured against the real vault:
+
+| case | before | after | verdict |
+|---|---|---|---|
+| "Redis caching in Spring Boot" → `spring-cli-and-maven-commands-for-spring-boot` | 0.740 | **0.740** | unchanged — still UPDATE(extend) into the wrong note |
+| "Kafka consumers with Testcontainers" → `testcontainers-docker-based-integration-testing` | 0.469 | **0.501** | moved, still under 0.55 — still CREATE |
+
+Document frequency over the 91 notes that carry frontmatter explains why:
+
+| term | tag df | stack df |
+|---|---|---|
+| spring | 1 | 30 |
+| boot | 0 | 30 |
+| **redis** | **0** | **0** |
+| **caching** | **0** | **0** |
+| **kafka** | **0** | **0** |
+| testcontainers | 0 | 7 |
+
+Two mechanisms, neither of them flat weighting:
+
+1. **The denominator is restricted to the vault's vocabulary.** `redis` and `caching` are
+   carried by no note at all, so they are filtered out before any weight is computed. The
+   only surviving tag term is `spring` and the only stack terms are `spring`/`boot` — all
+   of which the wrong note carries. Both channels still read 1.000. IDF cannot discriminate
+   on a term it never sees.
+2. **`spring` is a hapax *tag*** — tag df 1 of 91. A weighted ratio over a single surviving
+   term is 1.0 on any hit, whatever that term weighs. Capping helps a crowded denominator;
+   it does nothing to a denominator of one.
+
+**Candidate fix, deliberately not taken in 2b.** Admit question terms the vault carries
+nowhere into the channel denominator: they are evidence the vault has no such note, and
+`spring-cli-and-maven-commands-for-spring-boot` would fall to ≈0.373 for missing
+`redis`/`caching`. An explicit `--stack` hint the vault has never seen must stay out — it
+is a user filter, not evidence — so `newScope` would have to stop merging the two sources
+into `stackTerms`, and `TestStackChannelIgnoresTermsNoNoteCarries` would need revisiting.
+
+Rejected for now on blast radius, not difficulty. It re-creates the effect spec §2.5
+rejected **from measurement** — an active-zero tags channel dragging down every tagged note
+whose tags miss the question — and 31 of 91 notes are under-tagged after the Phase 1
+migration. Verifying it honestly means re-deriving the whole §3.1 calibration table, not
+re-running two queries. The tags-only variant lands case 1 at 0.515, which is 0.035 under
+the threshold: too thin a margin on the single case that motivated the change to be
+distinguishable from tuning, which this entry forbids by name.
+
+**Still open. The thresholds still do not move.** The next attempt owns the §3.1
+recalibration as part of its scope.
 
 ---
 

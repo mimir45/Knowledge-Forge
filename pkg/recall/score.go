@@ -1,6 +1,9 @@
 package recall
 
-import "strings"
+import (
+	"math"
+	"strings"
+)
 
 // Channel weights, DESIGN §8's blend verbatim. Their ratio is what the design fixes;
 // the denominator they are divided by is what §2.5 of the spec decides.
@@ -18,28 +21,80 @@ type scope struct {
 	terms      []string
 	tagTerms   []string // query terms that are a tag somewhere in the vault
 	stackTerms []string // --stack values plus query terms in the stack vocabulary
+	tagIDF     map[string]float64
+	stackIDF   map[string]float64
 }
 
 func newScope(q Query, docs []Doc) scope {
 	terms := Terms(q.Question)
-	tagVocab, stackVocab := vocab(docs)
-	s := scope{terms: terms, tagTerms: intersect(terms, tagVocab)}
+	tagDF, stackDF := docFreq(docs)
+	s := scope{terms: terms, tagTerms: inVocab(terms, tagDF)}
 	s.stackTerms = dedupe(append(Terms(strings.Join(q.Stack, " ")),
-		intersect(terms, stackVocab)...))
+		inVocab(terms, stackDF)...))
+	s.tagIDF = idfOver(s.tagTerms, tagDF, len(docs))
+	s.stackIDF = idfOver(s.stackTerms, stackDF, len(docs))
 	return s
 }
 
-func vocab(docs []Doc) (tags, stack map[string]bool) {
-	tags, stack = map[string]bool{}, map[string]bool{}
+// docFreq counts how many notes carry each tag and stack token. setOf deduplicates
+// within a note, so this is document frequency, not term frequency. It replaced a
+// presence-only vocabulary and costs nothing extra: the pass already walked every note
+// once, which is why B-008 could be a channel change rather than a new scan.
+func docFreq(docs []Doc) (tags, stack map[string]int) {
+	tags, stack = map[string]int{}, map[string]int{}
 	for _, d := range docs {
 		for t := range setOf(d.Tags) {
-			tags[t] = true
+			tags[t]++
 		}
 		for t := range setOf(d.Stack) {
-			stack[t] = true
+			stack[t]++
 		}
 	}
 	return tags, stack
+}
+
+// inVocab keeps the terms some note actually carries, in the order given.
+func inVocab(terms []string, df map[string]int) []string {
+	var out []string
+	for _, t := range terms {
+		if df[t] > 0 {
+			out = append(out, t)
+		}
+	}
+	return out
+}
+
+// idfOver weighs only the query's own terms. The vault-wide vocabulary is never
+// materialised as weights, because nothing reads a weight for a term nobody asked about.
+func idfOver(terms []string, df map[string]int, n int) map[string]float64 {
+	w := make(map[string]float64, len(terms))
+	for _, t := range terms {
+		w[t] = idf(df[t], n)
+	}
+	return w
+}
+
+// idfCap bounds one term's weight. Because a universal term always weighs log(2), the
+// cap fixes the widest spread between the rarest and the commonest term at about 5:1
+// whatever the vault's size — a guard against a hapax tag deciding a verdict on its own,
+// not the fix itself. The fix is that terms are weighted at all.
+const idfCap = 3.5
+
+// idf is a term's inverse document frequency over n notes. Unweighted, the tags and
+// stack channels scored "Redis caching in Spring Boot" at 0.740 against a Spring CLI
+// note: "spring" and "boot", carried by much of the vault, counted for exactly as much
+// as "redis" (B-008).
+//
+// log(1 + n/df) rather than log(n/df) for a mechanical reason: the unsmoothed form is
+// exactly zero when a term is on every note, so a query whose terms are all universal
+// would divide by a zero weight sum on an active channel. This form bottoms out at
+// log(2) and cannot vanish. A term no note carries weighs 0 — inside this vault it
+// separates nothing, so it neither helps nor penalises.
+func idf(df, n int) float64 {
+	if df <= 0 || n <= 0 {
+		return 0
+	}
+	return math.Min(math.Log(1+float64(n)/float64(df)), idfCap)
 }
 
 func dedupe(in []string) []string {
@@ -88,7 +143,7 @@ func f2(hits, queryTerms, titleTokens int) float64 {
 }
 
 // tagsChannel divides by the query terms that could have matched *some* note's tags,
-// not by the note's tag count. Dividing by the note's count would score a note tagged
+// not by the note's tag count — each side weighted by IDF, see weighted below. Dividing by the note's count would score a note tagged
 // [goroutines] at 1.0 and one tagged [goroutines, concurrency, runtime] at 0.33 on the
 // same match — ranking the better-curated note lower. See spec §2.3.
 // A note with no tags at all leaves the channel inactive rather than scoring zero. Tag
@@ -99,10 +154,10 @@ func f2(hits, queryTerms, titleTokens int) float64 {
 func (s scope) tagsChannel(d Doc) Channel {
 	tags := setOf(d.Tags)
 	hits := intersect(s.tagTerms, tags)
-	c := Channel{Name: "tags", Weight: wTags, Hits: hits,
-		Active: len(s.tagTerms) > 0 && len(tags) > 0}
-	if c.Active {
-		c.Value = float64(len(hits)) / float64(len(s.tagTerms))
+	c := Channel{Name: "tags", Weight: wTags, Hits: hits, Terms: s.tagIDF}
+	value, ok := weighted(s.tagTerms, hits, s.tagIDF)
+	if c.Active = ok && len(tags) > 0; c.Active {
+		c.Value = value
 	}
 	return c
 }
@@ -112,12 +167,38 @@ func (s scope) tagsChannel(d Doc) Channel {
 func (s scope) stackChannel(d Doc) Channel {
 	stack := setOf(d.Stack)
 	hits := intersect(s.stackTerms, stack)
-	c := Channel{Name: "stack", Weight: wStack, Hits: hits,
-		Active: len(s.stackTerms) > 0 && len(stack) > 0}
-	if c.Active {
-		c.Value = float64(len(hits)) / float64(len(s.stackTerms))
+	c := Channel{Name: "stack", Weight: wStack, Hits: hits, Terms: s.stackIDF}
+	value, ok := weighted(s.stackTerms, hits, s.stackIDF)
+	if c.Active = ok && len(stack) > 0; c.Active {
+		c.Value = value
 	}
 	return c
+}
+
+// weighted is the shared body of both: summed IDF of the terms that hit over summed IDF
+// of the terms that could have. It replaces a plain hit ratio, in which every term
+// counted the same and a note tagged [spring, boot] matched a Redis question perfectly.
+//
+// An empty denominator reports the channel as having nothing to say, and the caller
+// deactivates it. That is not a corner case: --stack accepts hints the vault has never
+// seen, and those terms weigh zero. Scoring them 0.0 on an *active* channel would drag
+// every note down uniformly — the same mistake spec §2.5 rejects for untagged notes.
+//
+// Both slices are iterated in order rather than ranged over a map, so the sums are
+// bit-identical between runs and --explain's hit list stays byte-stable.
+func weighted(terms, hits []string, w map[string]float64) (value float64, ok bool) {
+	den := 0.0
+	for _, t := range terms {
+		den += w[t]
+	}
+	if den == 0 {
+		return 0, false
+	}
+	num := 0.0
+	for _, t := range hits {
+		num += w[t]
+	}
+	return num / den, true
 }
 
 // bodyChannel counts query terms in the body, saturating each at three occurrences so

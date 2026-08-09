@@ -150,3 +150,59 @@ func TestSetOfSplitsHyphenatedValues(t *testing.T) {
 		t.Errorf("setOf = %v, want spring and boot", s)
 	}
 }
+
+// B-008. Unweighted, "Redis caching in Spring Boot" scored 0.740 against a Spring CLI
+// note: every query term counted the same, so two tags half the vault carries stood in
+// for the one that carried the meaning. The shape is reproduced here in miniature.
+func TestTagsChannelWeightsRareTermsHigher(t *testing.T) {
+	var docs []Doc
+	for i := 0; i < 9; i++ {
+		docs = append(docs, Doc{Slug: "common", Tags: []string{"spring"}})
+	}
+	docs = append(docs, Doc{Slug: "rare", Tags: []string{"spring", "redis"}})
+	s := newScope(Query{Question: "redis caching in spring"}, docs)
+
+	// df(spring) = 10 of 10 -> log(2) = 0.693; df(redis) = 1 -> log(11) = 2.398.
+	common := s.tagsChannel(Doc{Tags: []string{"spring"}})
+	rare := s.tagsChannel(Doc{Tags: []string{"redis"}})
+	near(t, "vault-wide tag only", common.Value, 0.224) // both were 0.500 before
+	near(t, "discriminating tag only", rare.Value, 0.776)
+}
+
+// --stack accepts anything; the vault may never have seen it. Such a term separates no
+// two notes, so it stays out of the denominator — and a hint made only of unknown terms
+// leaves the channel inactive rather than scoring every note 0.0 on an active one.
+func TestStackChannelIgnoresTermsNoNoteCarries(t *testing.T) {
+	docs := []Doc{{Slug: "a", Stack: []string{"java"}}}
+	q := Query{Question: "how does retry work", Stack: []string{"java", "kotlin"}}
+	if c := newScope(q, docs).stackChannel(docs[0]); !c.Active || c.Value != 1 {
+		t.Errorf("unknown hint diluted a full match: active=%v value=%v", c.Active, c.Value)
+	}
+	unknown := Query{Question: "how does retry work", Stack: []string{"kotlin"}}
+	if c := newScope(unknown, docs).stackChannel(docs[0]); c.Active {
+		t.Error("stack hint outside the vault: channel active, want inactive")
+	}
+}
+
+// Every note carries the tag, so log(N/df) would be exactly zero and the denominator
+// would vanish on an active channel. The smoothed form bottoms out at log(2).
+func TestTagsChannelUniversalTermStillScores(t *testing.T) {
+	docs := []Doc{{Tags: []string{"java"}}, {Tags: []string{"java"}}}
+	c := newScope(Query{Question: "how does java work"}, docs).tagsChannel(docs[0])
+	if !c.Active || c.Value != 1 {
+		t.Errorf("universal tag: active=%v value=%v, want true/1", c.Active, c.Value)
+	}
+}
+
+// The cap is a guard, not the fix: it holds the spread between the rarest and the
+// commonest term at about 5:1 however large the vault grows.
+func TestIDFCapAndDegenerateCases(t *testing.T) {
+	near(t, "hapax in a large vault", idf(1, 10000), idfCap)
+	near(t, "universal term", idf(500, 500), math.Log(2))
+	if idf(0, 91) != 0 {
+		t.Error("a term no note carries must weigh nothing")
+	}
+	if r := idf(1, 10000) / idf(10000, 10000); r > 5.1 {
+		t.Errorf("weight spread %.2f, want <= 5.1", r)
+	}
+}

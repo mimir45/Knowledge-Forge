@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 
 	"knowledge-forge/pkg/recall"
@@ -42,6 +43,11 @@ func explainOne(w io.Writer, c recall.Candidate) {
 		den += ch.Weight
 		fmt.Fprintf(w, "  %-6s %.3f x %.1f = %.3f%s\n",
 			ch.Name, ch.Value, ch.Weight, ch.Weight*ch.Value, hitList(ch.Hits))
+		// Since B-008 the terms in a hit list no longer count equally, so the list alone
+		// no longer explains the value. Print the weights that produced it.
+		if len(ch.Terms) > 0 {
+			fmt.Fprintf(w, "         idf %s\n", weightList(ch.Terms))
+		}
 	}
 	fmt.Fprintf(w, "  sum   %.3f / %.3f = %.3f\n", num, den, c.Score)
 }
@@ -51,6 +57,20 @@ func staleMark(stale bool) string {
 		return "  [stale]"
 	}
 	return ""
+}
+
+// weightList renders a channel's per-term IDF, sorted so the line is byte-stable.
+func weightList(terms map[string]float64) string {
+	keys := make([]string, 0, len(terms))
+	for t := range terms {
+		keys = append(keys, t)
+	}
+	sort.Strings(keys)
+	parts := make([]string, len(keys))
+	for i, t := range keys {
+		parts[i] = fmt.Sprintf("%s %.2f", t, terms[t])
+	}
+	return strings.Join(parts, ", ")
 }
 
 func hitList(hits []string) string {

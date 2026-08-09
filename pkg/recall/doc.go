@@ -59,12 +59,17 @@ func (t Thresholds) Decide(top *Candidate) Decision {
 // supplied any input for it — an inactive channel is undefined, not zero, and drops out
 // of the denominator. See recall-spec.md §2.5 for why that distinction decides the
 // verdict rather than merely the scale.
+// Terms carries the per-term IDF weights behind Value on the channels that use them.
+// Without it the number is unauditable: after B-008 "tags 0.136, hits: [spring]" cannot
+// be re-derived from the hit list, because the terms no longer count equally. The map is
+// query-scope and shared by every candidate, so it is read-only and costs no allocation.
 type Channel struct {
-	Name   string   `json:"name"`
-	Weight float64  `json:"weight"`
-	Value  float64  `json:"value"`
-	Active bool     `json:"active"`
-	Hits   []string `json:"hits,omitempty"`
+	Name   string             `json:"name"`
+	Weight float64            `json:"weight"`
+	Value  float64            `json:"value"`
+	Active bool               `json:"active"`
+	Hits   []string           `json:"hits,omitempty"`
+	Terms  map[string]float64 `json:"-"`
 }
 
 // Candidate is one scored note. The JSON tags are the output contract in
