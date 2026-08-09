@@ -86,6 +86,14 @@ func bandKey(sig Signature, band int) uint64 {
 	return h.Sum64()
 }
 
+// Candidates reports how many distinct pairs banding nominated for exact comparison.
+//
+// It is the denominator duplicates.md has to quote. "No duplicates found" is only a claim
+// worth reading next to the number of pairs that were actually looked at: the same
+// sentence means one thing after 1142 comparisons and nothing at all after zero, and two
+// earlier band tunings failed in exactly that silent way.
+func (ix *Index) Candidates() int { return len(ix.candidateList()) }
+
 // Pairs returns every document pair estimated at or above threshold, most similar first.
 // Ties break on ID so the report is stable across runs.
 func (ix *Index) Pairs(threshold float64) []Pair {

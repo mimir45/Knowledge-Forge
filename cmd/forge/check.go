@@ -1,0 +1,141 @@
+package main
+
+import (
+	"flag"
+	"fmt"
+	"os"
+	"path/filepath"
+)
+
+// checkCfg is the weekly pass's inputs. The destination is fixed rather than a flag:
+// the renderers cross-reference each other by relative path ("see ../moc/codebase.md"),
+// so a report written outside reports/ would carry links that resolve to nothing.
+type checkCfg struct {
+	vault   string
+	repos   repoList
+	months  int
+	days    int
+	offline bool
+}
+
+func cmdCheck(args []string) int {
+	var cfg checkCfg
+	fs := flag.NewFlagSet("forge check", flag.ContinueOnError)
+	fs.StringVar(&cfg.vault, "vault", ".", "vault root")
+	fs.Var(&cfg.repos, "repo", "code repository as name=path (repeatable)")
+	fs.IntVar(&cfg.months, "months", 0, "vault history window for churn.md; 0 reads all of it")
+	fs.IntVar(&cfg.days, "days", 90, "code churn window for moc/codebase.md, in days")
+	fs.BoolVar(&cfg.offline, "offline", false,
+		"skip the network; deadlinks.md then reports cached verdicts only")
+	fs.Usage = func() { fmt.Fprint(os.Stderr, checkUsage); fs.PrintDefaults() }
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	return runWeekly(cfg)
+}
+
+const checkUsage = `usage: forge check [--vault DIR] [--repo NAME=PATH] [--months N] [--days N]
+                   [--offline]
+
+The weekly pass. Collects the vault once and renders the nine ADDENDUM section B.4
+reports into <vault>/reports/, plus section B.5's map into <vault>/moc/codebase.md.
+Zero model calls, like everything else in this binary.
+
+Every report is rendered independently: a renderer that fails costs its own file and
+nothing else, and the run says which files it wrote and which it skipped. Headers carry
+a date rather than a timestamp, so a second run on the same day rewrites nothing and
+the vault's git diff stays readable.
+
+Without --repo, drift.md and moc/codebase.md have nothing to check against and are
+skipped rather than written empty. --offline is for a run on a bad network: an
+unreachable URL is not a dead one, and deadlinks.md counts the two apart.
+
+`
+
+func runWeekly(cfg checkCfg) int {
+	root, err := filepath.Abs(cfg.vault)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "forge check: %v\n", err)
+		return 2
+	}
+	data, err := collectVault(cfg, root)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "forge check: %v\n", err)
+		return 1
+	}
+	return writeAll(root, jobs(cfg, data))
+}
+
+// job is one report: where it goes and how to build it. The closure defers the render
+// until writeAll runs it under a recover, which is what keeps one bad renderer from
+// costing the other eight.
+type job struct {
+	rel    string // vault-relative destination
+	render func() ([]byte, error)
+}
+
+func writeAll(root string, js []job) int {
+	written, skipped := 0, 0
+	for _, j := range js {
+		md, err := safeRender(j.render)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "  skipped %s: %v\n", j.rel, err)
+			skipped++
+			continue
+		}
+		if err := writeReport(filepath.Join(root, j.rel), md); err != nil {
+			fmt.Fprintf(os.Stderr, "  skipped %s: %v\n", j.rel, err)
+			skipped++
+			continue
+		}
+		fmt.Printf("  %-24s %d bytes\n", j.rel, len(md))
+		written++
+	}
+	fmt.Printf("\n%d written, %d skipped\n", written, skipped)
+	return 0
+}
+
+// safeRender turns a panicking renderer into one failed file. The reports are pure
+// functions over collected data, so the failure mode that matters is a nil map or a
+// short slice in one collector — which must not take the eight healthy reports with it.
+func safeRender(f func() ([]byte, error)) (md []byte, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("renderer panicked: %v", r)
+		}
+	}()
+	return f()
+}
+
+// writeReport creates the parent directory and skips the write when the bytes already
+// match, for the same reason forge index does: an identical rewrite still bumps mtime.
+func writeReport(path string, md []byte) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	if old, err := os.ReadFile(path); err == nil && string(old) == string(md) {
+		return nil
+	}
+	return os.WriteFile(path, md, 0o644)
+}
+
+// jobs lists the nine reports of ADDENDUM section B.4 plus section B.5's codebase map.
+// cost.md is deliberately absent: AUDIT section 8.4 D-1 moves it to Phase 3b, where the
+// budget counters it reports on are actually built, and a stub here would be a file that
+// says nothing while looking like a measurement.
+func jobs(cfg checkCfg, d *checkData) []job {
+	js := []job{
+		{"reports/coverage.md", d.coverage},
+		{"reports/staleness.md", d.staleness},
+		{"reports/duplicates.md", d.duplicates},
+		{"reports/orphans.md", d.orphans},
+		{"reports/gaps.md", d.gaps},
+		{"reports/graph-health.md", d.graphHealth},
+		{"reports/churn.md", d.churn},
+		{"reports/deadlinks.md", d.deadlinks},
+	}
+	if len(cfg.repos) == 0 {
+		return js
+	}
+	return append(js, job{"reports/drift.md", d.drift}, job{"moc/codebase.md", d.codebase})
+}

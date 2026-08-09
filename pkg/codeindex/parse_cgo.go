@@ -1,0 +1,132 @@
+//go:build cgo
+
+package codeindex
+
+import (
+	"context"
+
+	sitter "github.com/smacker/go-tree-sitter"
+	"github.com/smacker/go-tree-sitter/java"
+	"github.com/smacker/go-tree-sitter/typescript/tsx"
+)
+
+// Available reports whether this build can parse source. True here, false in the
+// no-cgo build, so callers can degrade with a clear message instead of a nil result.
+func Available() bool { return true }
+
+func grammar(lang string) *sitter.Language {
+	switch lang {
+	case "java":
+		return java.GetLanguage()
+	case "typescript":
+		// The tsx grammar is a superset of typescript's and parses plain .ts as well,
+		// so one grammar covers .ts/.tsx/.js/.jsx and one fewer C library ships.
+		return tsx.GetLanguage()
+	}
+	return nil
+}
+
+// declKinds maps a tree-sitter node type to the Symbol.Kind we record. Anything not
+// listed is walked through but not recorded: drift compares declarations, and a note
+// does not cite an if-statement.
+var declKinds = map[string]string{
+	"class_declaration":          "class",
+	"interface_declaration":      "interface",
+	"enum_declaration":           "enum",
+	"record_declaration":         "record",
+	"method_declaration":         "method",
+	"constructor_declaration":    "constructor",
+	"method_definition":          "method",
+	"function_declaration":       "function",
+	"type_alias_declaration":     "type",
+	"abstract_class_declaration": "class",
+}
+
+// arrowValues are the right-hand sides that make a `const` a declaration worth
+// recording. `const Login = () => {}` is how nearly every component and hook in the
+// TypeScript corpus is written, and a note citing `Login` is citing this.
+var arrowValues = map[string]bool{
+	"arrow_function": true, "function_expression": true, "function": true,
+}
+
+// kindOf classifies a node, or reports that it is not a declaration. It is the one
+// place the extractor's rules live, which is what Extractor versions.
+func kindOf(n *sitter.Node) (string, bool) {
+	if k, ok := declKinds[n.Type()]; ok {
+		return k, true
+	}
+	if n.Type() != "variable_declarator" {
+		return "", false
+	}
+	v := n.ChildByFieldName("value")
+	if v == nil || !arrowValues[v.Type()] {
+		return "", false
+	}
+	return "function", true
+}
+
+// Parse extracts the declarations from one source file.
+func Parse(path string, src []byte) (File, error) {
+	lang := Lang(path)
+	g := grammar(lang)
+	if g == nil {
+		return File{}, nil
+	}
+	p := sitter.NewParser()
+	p.SetLanguage(g)
+	tree, err := p.ParseCtx(context.Background(), nil, src)
+	if err != nil {
+		return File{}, err
+	}
+	defer tree.Close()
+	f := File{Path: path, Lang: lang}
+	walk(tree.RootNode(), src, "", &f)
+	return f, nil
+}
+
+// walk descends the tree, recording every declaration and passing the enclosing type
+// name down so members come out qualified.
+func walk(n *sitter.Node, src []byte, prefix string, f *File) {
+	scope := prefix
+	if kind, ok := kindOf(n); ok {
+		if name := nameOf(n, src); name != "" {
+			scope = qualify(prefix, name)
+			f.Symbols = append(f.Symbols, symbolOf(n, src, scope, kind))
+		}
+	}
+	for i := 0; i < int(n.NamedChildCount()); i++ {
+		walk(n.NamedChild(i), src, scope, f)
+	}
+}
+
+func symbolOf(n *sitter.Node, src []byte, name, kind string) Symbol {
+	body := n
+	if b := n.ChildByFieldName("body"); b != nil {
+		body = b
+	}
+	return Symbol{
+		Name:     name,
+		Kind:     kind,
+		Start:    int(n.StartPoint().Row) + 1,
+		End:      int(n.EndPoint().Row) + 1,
+		BodyHash: hashBody(src[body.StartByte():body.EndByte()]),
+	}
+}
+
+// nameOf reads the declaration's name. TypeScript's method_definition and Java's
+// declarations all expose it as the "name" field; a computed or destructured name has
+// none, and an unnamed declaration is not something a note can cite.
+func nameOf(n *sitter.Node, src []byte) string {
+	f := n.ChildByFieldName("name")
+	if f == nil {
+		return ""
+	}
+	return string(src[f.StartByte():f.EndByte()])
+}
+
+func qualify(prefix, name string) string {
+	if prefix == "" {
+		return name
+	}
+	return prefix + "." + name
+}

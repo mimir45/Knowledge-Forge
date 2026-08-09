@@ -107,11 +107,18 @@ func buildGraph(root string, notes []*vault.Note) (*graph.Graph, *vault.Index) {
 		rels = append(rels, n.Rel)
 	}
 	ix := vault.NewIndex(rels)
+	return graph.Build(nodesOf(ix, notes)), ix
+}
+
+// nodesOf is split out because forge check needs the node slice itself: graph.Components
+// and Graph.Orphans both take it, and rebuilding it from the Graph is not possible — a
+// Graph keeps counts, not edges.
+func nodesOf(ix *vault.Index, notes []*vault.Note) []graph.Node {
 	nodes := make([]graph.Node, 0, len(notes))
 	for _, n := range notes {
 		nodes = append(nodes, graph.Node{Rel: n.Rel, Outbound: resolveAll(ix, n)})
 	}
-	return graph.Build(nodes), ix
+	return nodes
 }
 
 func resolveAll(ix *vault.Index, n *vault.Note) []string {

@@ -12,6 +12,8 @@
 package gitsig
 
 import (
+	"errors"
+	"fmt"
 	"os/exec"
 	"strings"
 	"time"
@@ -38,9 +40,20 @@ func Log(root string, since time.Time) ([]Commit, error) {
 	}
 	out, err := exec.Command("git", args...).Output()
 	if err != nil {
-		return nil, err
+		// git's own message is the only thing that distinguishes "not a repository" from a
+		// bad revision or a missing directory, and "exit status 128" distinguishes nothing.
+		return nil, fmt.Errorf("git log in %s: %w", root, withStderr(err))
 	}
 	return parseLog(string(out)), nil
+}
+
+// withStderr promotes git's diagnostic out of the ExitError, where nothing prints it.
+func withStderr(err error) error {
+	var ee *exec.ExitError
+	if errors.As(err, &ee) && len(ee.Stderr) > 0 {
+		return errors.New(strings.TrimSpace(string(ee.Stderr)))
+	}
+	return err
 }
 
 func parseLog(out string) []Commit {

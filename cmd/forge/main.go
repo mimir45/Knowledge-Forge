@@ -14,6 +14,8 @@ var commands = map[string]func([]string) int{
 	"index":    cmdIndex,
 	"reindex":  cmdReindex,
 	"capture":  cmdCapture,
+	"drift":    cmdDrift,
+	"check":    cmdCheck,
 }
 
 const usage = `forge — Knowledge Forge static core (no model calls)
@@ -27,6 +29,8 @@ commands:
   index      rebuild <vault>/_index.md from the markdown
   reindex    discard the derived SQLite cache and rebuild it from markdown
   capture    harvest human-correction training pairs from a vault commit
+  drift      check note code citations against a code repo's git history
+  check      the weekly pass: render every report into <vault>/reports/
 
 run "forge <command> --help" for that command's flags.
 `
