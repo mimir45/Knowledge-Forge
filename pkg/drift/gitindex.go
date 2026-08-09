@@ -127,12 +127,26 @@ func (g *GitSource) revFor(repo, asOf string) string {
 func (m *nameMap) sort() {
 	for _, hits := range []map[string][]loc{m.full, m.short} {
 		for _, ls := range hits {
-			sort.Slice(ls, func(i, j int) bool {
-				if ls[i].repo != ls[j].repo {
-					return ls[i].repo < ls[j].repo
-				}
-				return ls[i].path < ls[j].path
-			})
+			sort.Slice(ls, func(i, j int) bool { return lessLoc(ls[i], ls[j]) })
 		}
 	}
+}
+
+// lessLoc has to order two declarations that share a file, not just two that share a name.
+// One Java file routinely declares `Order.Builder` and `OrderItem.Builder`, and under the
+// short name those tie on (repo, path); sort.Slice is not stable, so the tie was settled
+// by whatever order the Files map happened to yield. That made drift.md oscillate between
+// runs on an unchanged tree — a note came and went from the suspect list because `Builder`
+// resolved to a different declaration each time. Declaration order inside the file is the
+// tiebreak, with the name behind it, because the pair is unique in the tree.
+func lessLoc(a, b loc) bool {
+	switch {
+	case a.repo != b.repo:
+		return a.repo < b.repo
+	case a.path != b.path:
+		return a.path < b.path
+	case a.sym.Start != b.sym.Start:
+		return a.sym.Start < b.sym.Start
+	}
+	return a.sym.Name < b.sym.Name
 }
