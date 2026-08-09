@@ -1,0 +1,36 @@
+#!/bin/sh
+# Knowledge Forge — D3 human-correction capture (ADDENDUM §D.1).
+#
+# Installed into a VAULT repository's .git/hooks/post-commit. After every commit it asks
+# `forge capture` whether that commit edited a note forge itself generated within the last
+# seven days; if so the (generated, human-preferred) pair is appended to
+# .forge/datasets/d3.jsonl. The data only accumulates forward, which is why this is
+# installed in Phase 1 rather than in Phase 6b where the dataset is exported.
+#
+# Three rules this script exists to enforce:
+#   1. It never fails a commit. Every path exits 0, and forge's own exit code is discarded.
+#   2. It never prints to the terminal. Output goes to .forge/capture.log, so a broken
+#      binary is diagnosable instead of invisible.
+#   3. It finds forge without a login shell. Git hooks run with a minimal environment, so
+#      $PATH is not to be trusted; .forge/forge-bin holds an absolute path.
+
+set -u
+
+vault=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+[ -n "$vault" ] || exit 0
+
+forge=${FORGE_BIN:-}
+if [ -z "$forge" ] && [ -r "$vault/.forge/forge-bin" ]; then
+    forge=$(cat "$vault/.forge/forge-bin")
+fi
+[ -n "$forge" ] || forge=$(command -v forge 2>/dev/null) || exit 0
+[ -x "$forge" ] || exit 0
+
+mkdir -p "$vault/.forge" 2>/dev/null || exit 0
+log="$vault/.forge/capture.log"
+
+# --quiet keeps the log to the commits that actually produced a pair. Redirecting both
+# streams is what keeps rule 2; `|| true` plus the bare exit is what keeps rule 1.
+"$forge" capture --vault "$vault" --commit HEAD --quiet >>"$log" 2>&1 || true
+
+exit 0

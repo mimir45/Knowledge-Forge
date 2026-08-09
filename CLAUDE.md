@@ -172,7 +172,7 @@ do not assume `go build ./...` works. The intended surface, by the phase that cr
 
 | Command | Phase |
 |---|---|
-| `forge slug`, `forge validate`, `forge index` | 1 |
+| `forge slug`, `forge validate`, `forge index`, `forge capture` | 1 |
 | `forge recall` (deterministic scoring, JSON, `--explain`) | 2 |
 | `forge drift`, `forge check`, `forge reindex`, cross-compile + goreleaser | 2b / 6 |
 | `forge-init` wizard | 3 |
