@@ -174,3 +174,215 @@ computed during the frontmatter scan that already walks every note, so it costs 
 pass. Cap the weight so a hapax tag cannot dominate. It changes every recall number, which
 is why it belongs in 2b — that phase re-measures the reports against recall anyway, and
 `pkg/recall`'s test suite pins the current values so the delta will be explicit.
+
+---
+
+## B-009 — `pkg/gitsig` shells out to `git`; STACK specifies go-git
+
+**Owner: Phase 6 (packaging). Status: deviation taken knowingly in 2b.**
+
+STACK names `go-git` for history analysis. `pkg/gitsig` runs the `git` CLI instead: go-git's
+log walk over these repos was slower than the subprocess and its rename detection is weaker,
+and the CLI gives `--follow` and `--numstat` for free. The cost is a runtime dependency on
+`git` being on `PATH`, which matters at packaging time — a goreleaser binary that assumes it
+will fail on a machine that has none. `gitsig.withStderr` already turns `exit status 128`
+into a message naming the repo, so the failure is legible; Phase 6 should decide whether it
+is *acceptable* and say so in the README's requirements.
+
+---
+
+## B-010 — `AUDIT.md` §7 says `food-ordering-system` has no git history; it does
+
+**Owner: whoever next re-measures the baseline. Status: correction recorded, doc unedited.**
+
+§7 recorded the repo as having no `.git`. Measured 2026-08-09: it is a git repo at
+`19290d78`, 7 commits, 270 files. Everything §7 derived from "no history" for that repo —
+churn, ownership, co-change — was therefore reported as unavailable when it was merely
+unmeasured. Per the standing rule the doc was not edited. The three repo pins as measured in
+2b: `meter` `7c1c8bfb` (41 files), `leprecoin` `72990ab2` (183), `food` `19290d78` (270).
+Trap worth keeping: `/Users/mimir45/Code/BE/UtilMeter` is a *different* repo (`967b7d08`) and
+is not `meter`.
+
+---
+
+## B-011 — `reports/` and `moc/` are graph nodes but not contract notes
+
+**Owner: Phase 3 (config) if the split ever needs to be tunable. Status: implemented in 2b.**
+
+`forge check` writes ten files into the vault, and they are notes: they carry wikilinks, they
+de-orphan what they link, and the graph must count them or `graph-health.md` describes a
+vault that does not exist. They are *not* contract notes — no frontmatter, no schema, and
+`coverage.md`/`staleness.md` dividing by them would understate every percentage.
+
+Two populations, both correct, and the difference is exactly the non-contract files: the real
+vault measures **94 graph notes vs 91 contract entries** (`index`, `log`, `codebase`).
+`vault.IsContractNote` draws the line and `TestNotesAndEntriesDifferByExactlyTheNonContractNotes`
+pins it. Recorded because the numbers look like a bug when read side by side.
+
+Second, subtler half: a report is a graph node, so writing reports changes the graph the next
+run measures. `orphans.md` and `graph-health.md` both moved for two runs before settling
+(1628 → 1509 → 1437 B and 670 → 374 B). The fixed point is reached in **two to three runs**,
+after which every output is byte-identical. `forge check` is convergent, not idempotent from
+the first run, and `TestCheckIsIdempotentOnDisk` does not catch this because it runs without
+`--repo` and so never writes the two files that move.
+
+---
+
+## B-012 — `code_refs` is in the schema and nothing writes it yet
+
+**Owner: Phase 4 (subagents write notes). Status: field added in 2b, no producer.**
+
+AUDIT NF-4 found the vault cites code as prose shorthand: 14 of 19 path-shaped refs resolved
+to no file, and none carried a symbol. `references/schema.yaml` now defines an optional
+`code_refs: list<string>` in the canonical `repo:path[:line][#symbol]` form — the only form
+that names its repository instead of leaving `pkg/coderef` to guess.
+
+`pkg/coderef` still recovers refs from inline code spans, so the 91 existing notes keep
+working. But **every note in the vault today reaches drift through the recovery path**, which
+is why the ambiguity in B-018 exists at all. Phase 4's `forge-librarian` should write
+`code_refs` on every note it authors; until something does, the field is documentation.
+
+---
+
+## B-013 — the code-index cache has no format version
+
+**Owner: Phase 6 (release). Status: open, currently harmless.**
+
+`codeindex.Save`/`Load` persist `<vault>/.forge/code-index-<repo>.json` and `pkg/drift`
+patches it forward from the cached commit. Nothing in the file records the extractor's
+version. A future change to what counts as a symbol — the arrow-const fix in 2b was exactly
+such a change — leaves every existing cache silently mixed: old entries under the old rules,
+patched entries under the new. The symptom is a drift verdict that disagrees with a clean
+rebuild, which is the hardest kind of bug to see.
+
+Shape: stamp a `SchemaVersion` constant into the saved struct and treat a mismatch as a cache
+miss. Cheap now, and it must land before the first released binary, because that is the point
+at which caches start outliving the code that wrote them.
+
+---
+
+## B-014 — the code index parses TypeScript, not Kotlin
+
+**Owner: recorded, not scheduled. Status: deliberate swap.**
+
+`CLAUDE.md` says "start with Java + Kotlin only". 2b ships **Java + TypeScript/TSX**, because
+the vault's actual code citations are Java (`food`, `meter`) and React/TypeScript
+(`leprecoin`) — there is no Kotlin in any of the three repos, and a Kotlin grammar would have
+been dead weight while `SignUpPage` went unparsed. Consequence to know: `coverage.md` lists
+`kotlin` as one of its two uncovered stacks, and that gap is now partly a property of the
+index rather than of the vault.
+
+---
+
+## B-015 — `CodeGroup.DependsOn` is declared and never populated
+
+**Owner: whichever phase makes `moc/codebase.md` a dependency map. Status: open.**
+
+ADDENDUM §B.5 asks the codebase map to show what depends on what. The struct field exists;
+nothing fills it, because `codeindex.File` captures declarations only and no import edges. So
+the MOC currently groups by directory and ranks by churn but draws no arrows.
+
+Adding imports to the extractor is the real work; the grouping is the smaller problem. Note
+also that "module = directory" is an honest limitation, not a placeholder: nothing in the
+index knows about Maven modules or Go packages, and inventing a grouping the code does not
+declare would file code under modules its authors never wrote.
+
+---
+
+## B-016 — the vault carries both `sources:` and `source:`
+
+**Owner: a future vault migration. Status: read-both workaround shipped in 2b.**
+
+The schema key is plural. Pre-migration notes wrote singular, and Phase 1's migration did not
+rename it in notes it could not otherwise fix. `sourcesOf` reads both, which is why
+`deadlinks.md` stopped reporting "0 of 0 URLs" over a fully cited vault. The workaround is
+correct and should stay for old notes, but the split itself is unresolved: two keys meaning
+one thing will eventually be written inconsistently by something that only knows one of them.
+
+Measured while fixing it: **63 citations in the vault are first-party** — a vault-relative
+path, which an HTTP checker cannot and should not judge. `DeadlinksInput.FirstParty` reports
+them separately so the summary does not read as an uncited vault.
+
+---
+
+## B-017 — §B.5's 90-day window shows nothing on these repos
+
+**Owner: Phase 3 (config chain owns the default). Status: measured, not decided.**
+
+`moc/codebase.md`'s "undocumented and moving" section is empty at the default 90 days for all
+three repos, because their recent churn is genuinely low — leprecoin's per-file ceiling over
+the last 90 days is 3, and `minSymbolCommits` is 2. At `--days 365` the same section reports
+**7 / 51 / 0** (meter / leprecoin / food). The report is working; the default window is simply
+longer than these repos' activity.
+
+This is a defaults question, not a code question, which is why it belongs to the phase that
+owns the config chain. Worth stating plainly in the report itself either way: a section that
+says "0" for a 90-day window reads as "nothing to do" when it means "nothing moved recently".
+
+---
+
+## B-018 — a bare symbol citation is credited to one arbitrary declaration
+
+**Owner: Phase 4 (`code_refs` producers) — or a decision to refuse. Status: known asymmetry.**
+
+`locate` resolves a symbol-only citation through drift's symbol table so `coverage` and
+`drift` name the same file. Where a name is declared once that is exactly right. Where it is
+declared many times, `Find` returns `hits[0]` with `ok=true` and the file is credited as
+documented — while an ambiguous *path* citation resolves to `Ambiguous` with no `RepoPath`
+and is dropped. Two shapes of the same uncertainty, answered two different ways.
+
+Measured on the real vault: **4 of 51 resolved symbol citations are ambiguous** —
+`BeanConfiguration` (4 declarations), `Builder` (**44**), `OrderItem` (2), `Product` (3). All
+four land in `food`, whose undocumented-and-moving count is 0 at both 90 and 365 days, so none
+of the false positives the fix removed from `meter` and `leprecoin` rest on an arbitrary pick.
+The exposure is bounded and currently invisible in the output.
+
+Kept rather than reverted, because agreeing with drift's arbitration is worth more than a
+second, differently-guessed answer — but it is a decision, not a side effect. Two ways out,
+both better than tuning: `Find` could expose the hit count so an ambiguous credit can be
+reported as such, or B-012's `code_refs` could make the citation unambiguous at the source.
+Bluntly: one note citing bare `` `Builder` `` is not a claim anything can adjudicate, and the
+ordering fix made that answer *stable*, not *right*.
+
+---
+
+## B-019 — duplicate detection ships three deviations from DESIGN §8
+
+**Owner: Phase 6 if the numbers ever go in a README. Status: deliberate, measured.**
+
+`duplicates.md` reports at **0.40**, not §5.3's 0.85; shingles at **one word**, not three;
+and compares **same-type, body-only**. Each was forced by measurement, not preference: over
+the whole real vault the same-type similarity ceiling is **0.504** and the cross-type ceiling
+**0.609**, so a 0.85 report is empty on this corpus and says nothing. Three-word shingles put
+the fixture's planted near-duplicate pair (F7, `soft-delete` ↔ `soft-deletion`) below every
+threshold worth reporting; at one word it scores **0.575** against a next-best of 0.196.
+
+The real vault's top pairs are 0.48 `rag-provider` ↔ `rag-server-port`, 0.48
+`continue-config-json` ↔ `dev-tools-continue-dev`, 0.42 `config-precedence` ↔
+`continue-config-json` — 3 pairs over 1547 candidates. **No pair reaches 0.85.** The report
+header states the deviation rather than hiding it, and `TestDuplicatesHeaderAdmitsTheSpecThresholdIsUnmet`
+pins that. The trap to avoid later is quoting "3 near-duplicate pairs" as if it were a §5.3
+number.
+
+---
+
+## B-020 — `sort.Slice` comparators need a tiebreak unique in their collection
+
+**Owner: any phase adding a ranked report. Status: four instances found and fixed in 2b.**
+
+`sort.Slice` is not stable, so a comparator that reports two distinct items equal hands the
+order to Go's map iteration. That is not a cosmetic flaw here: it breaks the invariant that a
+drift verdict is a pure function of (note refs, tree state).
+
+Found by md5-ing consecutive runs on an unchanged tree. `drift.md`'s headline flipped between
+**9 and 10 notes** because `nameMap.sort` ordered symbol hits by `(repo, path)` only, and one
+Java file declares both `Order.Builder` and `OrderItem.Builder` — tied under the short name
+`Builder`. Auditing every `sort.Slice` in the tree found three more: `staleEntries` (on
+`verified`, a *date*, so ties are the common case — and the list truncates to 15, so the tie
+decided *membership*), `sortUncovered` (no path behind the symbol name), and `groupByNote`
+(no reason behind the ref). The other sixteen end on a key unique in their collection.
+
+The rule for later phases: **the last term of a comparator must be unique in the collection
+being sorted.** A file path, a slug, a URL, a note pair. A symbol name is not. Verify the way
+this was verified — hash the whole output set across consecutive runs, not one file, since
+stability on today's data is not a total order.
