@@ -4,13 +4,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Status
 
-**Phases 0 and 1 are done** (2026-08-09, merged to `main` as `1c9df95`). The repo is a git
-repo with a Go source tree: `cmd/forge` (`slug validate index reindex capture`) over
-`pkg/vault`, `pkg/graph`, `pkg/report`, `pkg/store`, `pkg/dataset`, plus seven note
-templates in `templates/` and a `hooks/` + `scripts/` pair that installs the vault's D3
-capture hook. Build and test with `CGO_ENABLED=0 go build ./...` / `go test ./...` —
-both green. Everything else below is still design spec; **Phase 2 (deterministic recall)
-is next.** `testdata/vault/` is a markdown fixture, described below.
+**Phases 0, 1 and 2 are done** (2026-08-09; Phase 1 merged as `1c9df95`, Phase 2 as
+`3619b72`). The repo is a git repo with a Go source tree: `cmd/forge`
+(`slug validate index reindex capture recall`) over `pkg/vault`, `pkg/graph`,
+`pkg/report`, `pkg/store`, `pkg/dataset`, `pkg/recall`, plus seven note templates in
+`templates/`, `skills/forge/SKILL.md`, `references/recall-spec.md`, and a `hooks/` +
+`scripts/` pair that installs the vault's D3 capture hook. Build and test with
+`CGO_ENABLED=0 go build ./...` / `go test ./...` — both green. Everything else below is
+still design spec; **Phase 2b (drift + the nine reports) is next.**
+`testdata/vault/` is a markdown fixture, described below.
+
+Two Phase 2 decisions that later phases must not undo without reading
+`references/recall-spec.md` first: the score is a weighted **mean over active
+channels**, not DESIGN §8's literal weighted sum (§2.5), and the title measure is **F₂,
+not Dice** (§2.2). Both are argued from measured vault behaviour. The verdict ships
+inside `forge recall`'s JSON envelope so nothing downstream restates the threshold tree
+— AUDIT §8.4 D-7 moves those thresholds into Phase 3's config chain. Thresholds stay at
+DESIGN §5.3's 0.85 / 0.55; the calibration sweep is spec §3.1 and its one open defect is
+BACKLOG **B-008**.
 
 The project ("Knowledge Forge") is a Claude Code plugin that turns "explain X" moments
 into permanent, linked, verified markdown notes in an Obsidian vault. Its defensible
@@ -91,7 +102,8 @@ One phase per session. Do not start phase N+1 with phase N unmerged. Never cut 2
 time runs out the cut order is `6b → 5b → advisor tier`. If work comes up outside the
 current phase's scope, write it to `docs/BACKLOG.md` rather than building it.
 
-**Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004 and **B-007** are open;
+**Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004, **B-007** and
+**B-008** (Phase 2b's: recall's `tags`/`stack` channels have no IDF weighting) are open;
 B-001 (doc coherence), B-005 (seven note types) and B-006 (link rewrite) closed on
 2026-08-09. B-007 is Phase 4's: `forge-librarian` must stamp `Forge-Write: true` on every
 commit it authors, or `pkg/dataset` records its output as human corrections.
@@ -164,6 +176,7 @@ Each is stated in a different doc and each is easy to violate by accident:
 ```
 cmd/forge/        CLI
 pkg/vault/        frontmatter + markdown AST (goldmark), mtime-cached
+pkg/recall/       deterministic question -> note scoring; zero model calls (built)
 pkg/similarity/   MinHash + LSH banding
 pkg/graph/        note link graph: components, hubs, orphans, centrality
 pkg/codeindex/    go-tree-sitter (start with Java + Kotlin only) — the only cgo package
@@ -181,13 +194,13 @@ binding constraint — it runs on the git-hook path), `forge index` <200ms, `for
 ## Commands
 
 `CGO_ENABLED=0 go build ./...` and `go test ./...` both work; there is still no Makefile
-and no lint target. Phase 1's commands ship; the rest is the intended surface, by the
-phase that creates it:
+and no lint target. Phases 1 and 2's commands ship; the rest is the intended surface, by
+the phase that creates it:
 
 | Command | Phase |
 |---|---|
 | `forge slug`, `forge validate`, `forge index`, `forge reindex`, `forge capture` | 1 — **built** |
-| `forge recall` (deterministic scoring, JSON, `--explain`) | 2 |
+| `forge recall` (deterministic scoring, JSON, `--explain`) | 2 — **built** |
 | `forge drift`, `forge check`, `forge reindex`, cross-compile + goreleaser | 2b / 6 |
 | `forge-init` wizard | 3 |
 | `/forge-check`, `/forge-stats` | 5 |
