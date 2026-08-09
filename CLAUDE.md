@@ -4,10 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Status
 
-This is a **design-spec repository with no code**. `go.mod` (`module knowledge-forge`,
-`go 1.26`) is the only non-doc artifact; there is no source tree, no `.git`, no README,
-no Makefile. Phase 0 has not run. The one exception to "no code" is
-`testdata/vault/` — a fixture vault of markdown, described below.
+**Phases 0 and 1 are done** (2026-08-09, merged to `main` as `1c9df95`). The repo is a git
+repo with a Go source tree: `cmd/forge` (`slug validate index reindex capture`) over
+`pkg/vault`, `pkg/graph`, `pkg/report`, `pkg/store`, `pkg/dataset`, plus seven note
+templates in `templates/` and a `hooks/` + `scripts/` pair that installs the vault's D3
+capture hook. Build and test with `CGO_ENABLED=0 go build ./...` / `go test ./...` —
+both green. Everything else below is still design spec; **Phase 2 (deterministic recall)
+is next.** `testdata/vault/` is a markdown fixture, described below.
 
 The project ("Knowledge Forge") is a Claude Code plugin that turns "explain X" moments
 into permanent, linked, verified markdown notes in an Obsidian vault. Its defensible
@@ -41,20 +44,28 @@ fine-tuning tooling. Neither ships in the binary.
 
 ## Things that live outside this repo
 
-- **Vault:** `/Users/mimir45/Documents/Base` — 109 markdown notes. **Is a git repo** as of
-  2026-08-09: 1 commit, clean tree.
-- Its current topology is `concepts/ decisions/ entities/ issues/ raw/ sources/
-  syntheses/ archive/ TIL/`, which does **not** match DESIGN §7's prescribed
-  `notes/{concept,howto,…}/ moc/ _inbox/ _archive/ profiles/`. Phase 1's migration is
-  therefore a *topology change*, not just a frontmatter backfill — plan it that way.
+- **Vault:** `/Users/mimir45/Documents/Base`, a git repo. **Migrated by Phase 1** on
+  2026-08-09: 91 notes moved to DESIGN §7's `notes/<type>/ moc/ _inbox/ _archive/
+  profiles/` topology, 345 wikilinks rewritten, 0 broken, 60/91 schema-valid (the 31
+  failures are 47 issues needing human judgment — see `lint-report.md` in the vault).
+  All seven `notes/<type>/` subdirs exist per B-005. Rollback: backup at
+  `/Users/mimir45/Documents/Base-backup-2026-08-09`, or vault commit `b3168f0`.
+  `raw/` (5) and `sources/` (9) stay live and outside the note contract; the other old
+  topology dirs survive as empty `.gitkeep` shells.
 - **v1 skill:** `/Users/mimir45/.claude/skills/til-writer/` — this is the system Phase 0
   audits and this project replaces. The user's global `~/.claude/CLAUDE.md` already
   routes "explain X" prompts into the same vault through it. It contains **only
   `SKILL.md`** — no scripts, no agent definitions, no hooks, no plugin manifest. Phase 0's
   file-map step should expect ABSENT for most rows.
-- Phase 0/1 preconditions are **met**: the vault repo exists and its tree is clean, so
-  the migration's dirty-tree refusal and D3's post-commit hook both have something to
-  attach to. The D3 hook itself is not installed yet (Phase 1 installs it).
+- **The D3 hook is installed and live** in the vault: `.git/hooks/post-commit` runs
+  `forge capture` from **`~/.forge/bin/forge`** (the absolute path is pinned in
+  `<vault>/.forge/forge-bin`; `$FORGE_BIN` overrides it). That binary is a **copy**, not
+  the repo's build output — **rebuild it after any change to `pkg/dataset` or
+  `cmd/forge/capture.go`**: `CGO_ENABLED=0 go build -o ~/.forge/bin/forge ./cmd/forge`.
+  By design the hook can never fail a commit and never prints, so a stale or broken
+  binary is silent: if pairs stop appearing, read `<vault>/.forge/capture.log`. It
+  captures nothing today — every migrated note is `origin: import` — and starts paying
+  off in Phase 4. Uninstall is `rm .git/hooks/post-commit`.
 
 ## Fixture vault (`testdata/vault/`)
 
@@ -169,12 +180,13 @@ binding constraint — it runs on the git-hook path), `forge index` <200ms, `for
 
 ## Commands
 
-**There are none yet.** No `.go` files, no Makefile, no tests, no build or lint target —
-do not assume `go build ./...` works. The intended surface, by the phase that creates it:
+`CGO_ENABLED=0 go build ./...` and `go test ./...` both work; there is still no Makefile
+and no lint target. Phase 1's commands ship; the rest is the intended surface, by the
+phase that creates it:
 
 | Command | Phase |
 |---|---|
-| `forge slug`, `forge validate`, `forge index`, `forge capture` | 1 |
+| `forge slug`, `forge validate`, `forge index`, `forge reindex`, `forge capture` | 1 — **built** |
 | `forge recall` (deterministic scoring, JSON, `--explain`) | 2 |
 | `forge drift`, `forge check`, `forge reindex`, cross-compile + goreleaser | 2b / 6 |
 | `forge-init` wizard | 3 |
@@ -190,4 +202,6 @@ do not assume `go build ./...` works. The intended surface, by the phase that cr
   (B-003). Don't rename the directory unasked.
 - `docs/CLAUDE-CODE-PROMPT.md` says to put the docs in the repo root; they live in
   `docs/`. Don't shuffle files to match the prompt text.
-- This repo has no `.git`, but Phase 0 is gated on `git init`.
+- BACKLOG **B-005** decided seven note types against DESIGN §7's five-directory tree; all
+  seven `notes/<type>/` subdirs now exist in the vault, three of them empty `.gitkeep`
+  shells. Don't prune them to match §7.
