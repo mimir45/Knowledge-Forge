@@ -1,0 +1,110 @@
+package recall
+
+import (
+	"math"
+	"sort"
+	"time"
+)
+
+// BodyPassSize is DESIGN §8 step 3's "top 20 files". The three frontmatter channels
+// rank first and only the leaders are opened, which is what keeps the body pass cheap
+// on a vault that no longer fits in a few hundred kilobytes.
+const BodyPassSize = 20
+
+// TopN is the size of the emitted array (recall-spec.md §4).
+const TopN = 10
+
+// Rank scores every doc and returns the top candidates, highest first. `now` is an
+// argument rather than time.Now() so staleness is testable and so a run is a pure
+// function of its inputs.
+func Rank(q Query, docs []Doc, now time.Time) []Candidate {
+	s := newScope(q, docs)
+	cands := make([]Candidate, 0, len(docs))
+	for _, d := range docs {
+		cands = append(cands, s.frontmatterScore(d, now))
+	}
+	sortByScore(cands)
+	s.bodyPass(cands, docs)
+	sortByScore(cands)
+	cands = nonZero(cands)
+	if len(cands) > TopN {
+		cands = cands[:TopN]
+	}
+	return round(cands)
+}
+
+// nonZero drops candidates no channel matched at all. A vault rarely has ten notes with
+// any overlap with a genuinely new question, and padding the array to TopN with 0.000
+// rows put `index.md` and `log.md` at the top of a CREATE verdict — noise a caller has
+// to know to ignore. An empty array is the honest answer to "what covers this".
+func nonZero(cands []Candidate) []Candidate {
+	for i, c := range cands {
+		if c.Score == 0 {
+			return cands[:i]
+		}
+	}
+	return cands
+}
+
+// round trims scores to three decimals. Float noise from the renormalizing division
+// ("0.6954545454545457") is not signal, and a threshold comparison should not turn on
+// the seventeenth digit of a division the spec writes as 0.695.
+func round(cands []Candidate) []Candidate {
+	for i := range cands {
+		cands[i].Score = math.Round(cands[i].Score*1000) / 1000
+	}
+	return cands
+}
+
+// frontmatterScore is the ranking pass over the 0.4/0.3/0.2 channels. The body channel
+// is appended later, for the leaders only.
+func (s scope) frontmatterScore(d Doc, now time.Time) Candidate {
+	chs := []Channel{s.titleChannel(d), s.tagsChannel(d), s.stackChannel(d)}
+	score, matched := blend(chs)
+	return Candidate{
+		Slug: d.Slug, Path: d.Rel, Title: d.Title, Score: score,
+		Updated: d.Updated, Verified: d.Verified,
+		Stale: IsStale(d, now), MatchedOn: matched, Channels: chs,
+	}
+}
+
+// bodyPass opens the leading candidates and rescores them with the 0.1 channel. Notes
+// outside the window keep their frontmatter-only score, which is correct: the body
+// channel can move a score by at most 0.1 and never lifts a non-match into the band.
+func (s scope) bodyPass(cands []Candidate, docs []Doc) {
+	byRel := map[string]Doc{}
+	for _, d := range docs {
+		byRel[d.Rel] = d
+	}
+	for i := range cands[:min(len(cands), BodyPassSize)] {
+		d, ok := byRel[cands[i].Path]
+		if !ok || d.LoadBody == nil {
+			continue
+		}
+		cands[i].Channels = append(cands[i].Channels, s.bodyChannel(d.LoadBody()))
+		cands[i].Score, cands[i].MatchedOn = blend(cands[i].Channels)
+	}
+}
+
+// sortByScore orders by score descending, breaking ties on path so two runs over the
+// same tree return byte-identical JSON. Phase 2b re-measures against these numbers.
+func sortByScore(c []Candidate) {
+	sort.SliceStable(c, func(i, j int) bool {
+		if c[i].Score != c[j].Score {
+			return c[i].Score > c[j].Score
+		}
+		return c[i].Path < c[j].Path
+	})
+}
+
+// Neighbours are the candidates a new note links to on a CREATE verdict (DESIGN §5.3:
+// "then link to the 0.3–0.55 neighbours").
+func (t Thresholds) Neighbours(cands []Candidate) []Candidate {
+	var out []Candidate
+	for _, c := range cands {
+		if c.Score >= t.Neighbour && c.Score < t.Update {
+			out = append(out, c)
+		}
+	}
+	return out
+}
