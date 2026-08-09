@@ -37,8 +37,10 @@ Backlog B-001, no pass has ever been made for these. Look specifically for:
 ## Precedence
 
 When two docs conflict, resolve by the rule in `CLAUDE.md`: **STACK/ADR wins on stack
-questions**, then DESIGN (the master spec), then ADDENDUM, then B2B (out of scope until
-Phase 7). State the winner and the rule you applied. If precedence does not settle it,
+questions**, then DESIGN (the master spec), then ADDENDUM. B2B (`KNOWLEDGE-FORGE-B2B.md`)
+describes a fully separate project (BACKLOG B-021) — it does not enter this precedence
+order at all; treat any conflict it has with the other four as out of scope, not
+UNRESOLVED. State the winner and the rule you applied. If precedence does not settle it,
 say so and mark it **UNRESOLVED — needs a human decision** rather than inventing an answer.
 
 ## Rules
@@ -76,7 +78,7 @@ joined to yours by ID:
       "side_a": [{"file": "docs/X.md", "line": 12}],
       "side_b": [{"file": "docs/Y.md", "line": 34}],
       "phase": "3",
-      "resolution": "STACK | DESIGN | ADDENDUM | B2B | UNRESOLVED",
+      "resolution": "STACK | DESIGN | ADDENDUM | OUT_OF_SCOPE_B2B | UNRESOLVED",
       "rule": "which precedence rule applied, or why none does"
     }
   ]

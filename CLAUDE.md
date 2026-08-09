@@ -60,8 +60,8 @@ per pipeline stage.
    full config YAML + presets (§E).
 5. **`docs/CLAUDE-CODE-PROMPT.md`** — the actual execution mechanism: a ready-to-paste
    prompt per phase.
-6. `docs/KNOWLEDGE-FORGE-B2B.md` — out of scope until Phase 7's gate ("OSS v2.0 shipped,
-   30 days of real usage, ≥3 outside users reporting value").
+6. `docs/KNOWLEDGE-FORGE-B2B.md` — describes a **separate project**, not a phase of this
+   one (BACKLOG B-021). Kept in this repo only for reference/history.
 
 Only surviving Python: the one-time `migrate_vault.py` and the offline dataset /
 fine-tuning tooling. Neither ships in the binary.
@@ -109,9 +109,10 @@ status carried as body prose. Catalogue: `testdata/README.md`.
 
 ## Phase workflow
 
-`0 → 1 → 2 → 2b → 3 → 3b → 4 → 5 → 5b → 6 → 6b → 7`
+`0 → 1 → 2 → 2b → 3 → 3b → 4 → 5 → 5b → 6 → 6b`
 
-One phase per session. Do not start phase N+1 with phase N unmerged. Never cut 2b; if
+This repo's roadmap ends at 6b — B2B (`docs/KNOWLEDGE-FORGE-B2B.md`) is a fully separate
+project, not a phase gated inside this one; see BACKLOG B-021. One phase per session. Do not start phase N+1 with phase N unmerged. Never cut 2b; if
 time runs out the cut order is `6b → 5b → advisor tier`. If work comes up outside the
 current phase's scope, write it to `docs/BACKLOG.md` rather than building it.
 

@@ -439,3 +439,48 @@ The rule for later phases: **the last term of a comparator must be unique in the
 being sorted.** A file path, a slug, a URL, a note pair. A symbol name is not. Verify the way
 this was verified — hash the whole output set across consecutive runs, not one file, since
 stability on today's data is not a total order.
+
+---
+
+## B-021 — B2B is now a fully separate project, not a phase of this repo
+
+**Owner: none — this is a scope decision, not implementation work. Status: decided,
+2026-08-09.**
+
+Every earlier doc — `docs/ROADMAP.md`'s old Sequencing notes, `docs/KNOWLEDGE-FORGE-B2B.md`
+itself, and the "What it is" paragraph at the top of ROADMAP — treated B2B
+(Slack/GitHub ingestion → org wiki → MCP server) as this repo's own Phase 7 gate: "OSS
+v2.0 shipped, 30 days of real usage, ≥3 outside users reporting value." The user decided
+otherwise: B2B becomes a **completely separate project**, not phase-gated inside this
+one. Two sub-decisions, both taken via `AskUserQuestion` and both the recommended option:
+
+1. **Timing:** update roadmap documentation now; do not create a second repo/project
+   skeleton yet. That still waits for the same readiness condition above — informally,
+   for the separate project, not as a gate this repo enforces.
+2. **Where this repo's roadmap ends:** at **Phase 6b**. There is no Phase 7 row in
+   `docs/ROADMAP.md`'s phase table anymore. Phase 7's actual content — `docs/RESULTS.md`,
+   hit-rate/dedup/drift tracking, a launch post, a LoRA experiment gate — was **not**
+   B2B content; it was OSS-lifecycle polish. It survives as ROADMAP's new, unnumbered
+   "After 6b — run it and measure" section rather than being deleted.
+
+**What was and was not edited.** `docs/ROADMAP.md` and `CLAUDE.md` (the two docs this
+project already updates routinely as phases complete) were edited directly. The five
+protected design docs were **not** touched, per the project's own "record, don't fix"
+rule — they still say the old thing:
+
+- `docs/KNOWLEDGE-FORGE-DESIGN.md:726` — `### Phase 7 — Polish on real usage (ongoing, 1
+  month)`. Stale: read as OSS-lifecycle content now living in ROADMAP's "After 6b"
+  section, not a numbered phase and not B2B.
+- `docs/CLAUDE-CODE-PROMPT.md:563` — `## Phase 7 — After a month of real use`. Same.
+- `docs/KNOWLEDGE-FORGE-B2B.md` — the whole file. Stale in framing only: it still reads
+  as if it were a phase of this project. Read it as the separate project's spec, kept
+  here for reference/history.
+
+`.claude/agents/doc-auditor.md` was also updated (it is a workflow agent, not one of the
+five protected docs): B2B no longer participates in the STACK → DESIGN → ADDENDUM
+precedence order at all — a conflict against it is `OUT_OF_SCOPE_B2B`, not
+`UNRESOLVED`.
+
+Nothing about the *content* of `KNOWLEDGE-FORGE-B2B.md` changed — ADR-002 (Spring Boot
+vs. an open decision) and everything else in it stands, unexamined, for whenever that
+separate project actually starts.
