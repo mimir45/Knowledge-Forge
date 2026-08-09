@@ -94,7 +94,15 @@ func Walk(root string) ([]string, error) {
 
 // excludedPrefixes are regions of the vault the note contract deliberately does not
 // cover: symlinked ingest input and its compiled digests. See references/taxonomy.md §5.
-var excludedPrefixes = []string{"raw/", "sources/", "_archive/", "archive/"}
+//
+// reports/ is excluded for a different reason than the rest: it is this tool's own output,
+// and a report that counted itself would be wrong on every run after the first. Nine
+// generated files would move the note denominator, nominate each other as duplicates (they
+// share heavy boilerplate, and at ShingleWords=1 that scores high), and — worst — the
+// wikilinks inside duplicates.md and orphans.md would give their subjects inbound links,
+// so orphans.md would erase the orphans it exists to list. A report must never change the
+// number it reports.
+var excludedPrefixes = []string{"raw/", "sources/", "_archive/", "archive/", "reports/"}
 
 // excludedNames are root-level files that live in the vault but are not notes.
 var excludedNames = map[string]bool{
@@ -123,6 +131,14 @@ func IsContentNote(rel string) bool {
 
 // IsContractNote reports whether a path is subject to the note contract. Every contract
 // note is a content note; the hubs are the gap between the two.
+//
+// moc/ is on the hub side of that gap, and the schema is what decides it: `type` admits
+// exactly the seven values of schema.yaml, and none of them is "moc". A map of content is
+// not a note about a thing, it is a way in — so it belongs in the link graph, where
+// graph.isRootLocation already treats it as a root and its outbound links keep the notes
+// it points at off the orphan list, and nowhere near the contract. Phase 2b writes
+// moc/codebase.md; without this it would be one more invalid note, authored by the tool
+// whose job is to count them.
 func IsContractNote(rel string) bool {
-	return IsContentNote(rel) && !hubNames[rel]
+	return IsContentNote(rel) && !hubNames[rel] && !strings.HasPrefix(rel, "moc/")
 }
