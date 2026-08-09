@@ -350,6 +350,48 @@ func TestCodebaseRanksUndocumentedChurnFirst(t *testing.T) {
 	}
 }
 
+// TestUncoveredTiesBreakOnPath: a symbol name is not unique in a tree — the vault's own
+// `Builder` citation matches 44 declarations — so two entries can agree on churn, size and
+// name and still be different files. sort.Slice is not stable, so an unbroken tie would put
+// map iteration order into the rendered report.
+func TestUncoveredTiesBreakOnPath(t *testing.T) {
+	in := CodebaseInput{Repo: "food", Days: 90, Now: at, Uncovered: []Uncovered{
+		{Symbol: "Builder", Path: "z/Order.java", LOC: 40, Commits: 3},
+		{Symbol: "Builder", Path: "a/Customer.java", LOC: 40, Commits: 3},
+		{Symbol: "Builder", Path: "m/Product.java", LOC: 40, Commits: 3},
+	}}
+	first := string(RenderCodebase(in))
+	for i := 0; i < 30; i++ {
+		in.Uncovered[0], in.Uncovered[2] = in.Uncovered[2], in.Uncovered[0]
+		if got := string(RenderCodebase(in)); got != first {
+			t.Fatalf("run %d reordered same-name symbols:\n%s", i, got)
+		}
+	}
+	if strings.Index(first, "a/Customer.java") > strings.Index(first, "z/Order.java") {
+		t.Errorf("tied symbols not ordered by path:\n%s", first)
+	}
+}
+
+// TestDriftFindingTiesBreakOnReason: one note can cite one ref twice and collect two
+// reasons, and the ref alone does not separate them.
+func TestDriftFindingTiesBreakOnReason(t *testing.T) {
+	in := DriftInput{Now: at, Slugs: map[string]string{"notes/concept/a.md": "a"},
+		Findings: []drift.Finding{
+			{Note: "notes/concept/a.md", Ref: "`X`", Verdict: drift.Broken, Reason: "zeta"},
+			{Note: "notes/concept/a.md", Ref: "`X`", Verdict: drift.Broken, Reason: "alpha"},
+		}}
+	first := string(RenderDrift(in))
+	for i := 0; i < 30; i++ {
+		in.Findings[0], in.Findings[1] = in.Findings[1], in.Findings[0]
+		if got := string(RenderDrift(in)); got != first {
+			t.Fatalf("run %d reordered same-ref findings:\n%s", i, got)
+		}
+	}
+	if strings.Index(first, "alpha") > strings.Index(first, "zeta") {
+		t.Errorf("tied findings not ordered by reason:\n%s", first)
+	}
+}
+
 func firstLines(s string, n int) string {
 	parts := strings.SplitN(s, "\n", n+1)
 	return strings.Join(head(parts, n), "\n")

@@ -77,6 +77,28 @@ func TestRenderIndexDeterministicTies(t *testing.T) {
 	}
 }
 
+// TestStaleTiesBreakOnSlug: `verified` is a date, so same-day ties are the common case,
+// not a corner. The stale list is truncated to 15, so an unbroken tie does not merely
+// reorder the section — it decides which notes appear in it. sort.Slice is not stable, and
+// the same defect in pkg/drift's name table made drift.md oscillate on an unchanged tree.
+func TestStaleTiesBreakOnSlug(t *testing.T) {
+	in := IndexInput{Now: now}
+	for _, s := range []string{"zebra", "alpha", "middle"} {
+		in.Entries = append(in.Entries, Entry{Slug: s, Verified: day("2020-01-01"),
+			FreshnessDays: 30, Valid: true})
+	}
+	first := string(RenderIndex(in))
+	for i := 0; i < 30; i++ {
+		in.Entries[0], in.Entries[2] = in.Entries[2], in.Entries[0]
+		if got := string(RenderIndex(in)); got != first {
+			t.Fatalf("run %d reordered same-day stale notes:\n%s", i, got)
+		}
+	}
+	if strings.Index(first, "[[alpha]]") > strings.Index(first, "[[zebra]]") {
+		t.Errorf("tied stale notes not sorted by slug:\n%s", first)
+	}
+}
+
 func TestRenderIndexBudget(t *testing.T) {
 	in := IndexInput{Now: now, MaxSize: 800}
 	for i := 0; i < 200; i++ {

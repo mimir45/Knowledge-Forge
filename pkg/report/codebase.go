@@ -134,6 +134,12 @@ func sortUncovered(u []Uncovered) {
 		if u[i].LOC != u[j].LOC {
 			return u[i].LOC > u[j].LOC
 		}
-		return u[i].Symbol < u[j].Symbol
+		if u[i].Symbol != u[j].Symbol {
+			return u[i].Symbol < u[j].Symbol
+		}
+		// The path has to come last, not be left out: a symbol name is not unique in a
+		// tree. Two files declaring `Builder` at the same size and churn tie on everything
+		// above, and sort.Slice is not stable, so the order would come from the map.
+		return u[i].Path < u[j].Path
 	})
 }

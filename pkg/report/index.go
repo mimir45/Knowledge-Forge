@@ -139,8 +139,22 @@ func staleEntries(in IndexInput) []Entry {
 			out = append(out, e)
 		}
 	}
-	sort.Slice(out, func(i, j int) bool { return out[i].Verified.Before(out[j].Verified) })
+	sortByVerified(out)
 	return out
+}
+
+// sortByVerified needs the slug behind the date. `verified` is a date, not a timestamp, so
+// notes verified on the same day are the common case rather than a rare tie — and this list
+// is truncated to 15, so an unbroken tie does not merely reorder the report, it changes
+// which notes appear in it at all. The same defect in pkg/drift's name table made drift.md
+// oscillate between runs on an unchanged tree.
+func sortByVerified(out []Entry) {
+	sort.Slice(out, func(i, j int) bool {
+		if !out[i].Verified.Equal(out[j].Verified) {
+			return out[i].Verified.Before(out[j].Verified)
+		}
+		return out[i].Slug < out[j].Slug
+	})
 }
 
 func writeGaps(b *strings.Builder, in IndexInput) {

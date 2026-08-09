@@ -105,7 +105,15 @@ func groupByNote(fs []drift.Finding, v drift.Verdict) map[string][]drift.Finding
 		}
 	}
 	for rel := range out {
-		sort.Slice(out[rel], func(i, j int) bool { return out[rel][i].Ref < out[rel][j].Ref })
+		sort.Slice(out[rel], func(i, j int) bool {
+			if out[rel][i].Ref != out[rel][j].Ref {
+				return out[rel][i].Ref < out[rel][j].Ref
+			}
+			// One note can cite one ref twice and get two reasons; the ref alone does not
+			// separate them, and an unbroken tie is settled by map order rather than by
+			// anything about the vault.
+			return out[rel][i].Reason < out[rel][j].Reason
+		})
 	}
 	return out
 }
