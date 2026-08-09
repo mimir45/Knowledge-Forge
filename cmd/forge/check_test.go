@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"knowledge-forge/pkg/codeindex"
+	"knowledge-forge/pkg/coderef"
 	"knowledge-forge/pkg/gitsig"
 	"knowledge-forge/pkg/linkcheck"
 	"knowledge-forge/pkg/vault"
@@ -238,5 +239,38 @@ func TestUncoveredOfThresholds(t *testing.T) {
 	}
 	if got[0].Path != "a.java" || got[0].Symbol != "Big" || got[0].Commits != 5 {
 		t.Errorf("uncovered[0] = %+v", got[0])
+	}
+}
+
+// symbolSource is drift's symbol table reduced to the one question citedPaths asks it:
+// which file declares this name.
+type symbolSource map[string]string
+
+func (s symbolSource) Find(name, asOf string) (string, string, codeindex.Symbol, bool) {
+	p, ok := s[name]
+	return "repo", p, codeindex.Symbol{Name: name}, ok
+}
+
+// TestSymbolCitationCoversItsFile is the defect the first real run produced: leprecoin's
+// map listed SignUpPage as "0 notes" in the same run where drift.md named two notes citing
+// it. Most of the vault cites a class and no path, and coderef gives those no RepoPath, so
+// coverage has to reach the symbol table the way drift does.
+func TestSymbolCitationCoversItsFile(t *testing.T) {
+	rg := coderef.NewRegistry(nil)
+	src := symbolSource{"SignUpPage": "src/app/SignUpPage.tsx"}
+	refs := coderef.FromBody("notes/decision/a.md", []byte("the `SignUpPage` wrapper\n"))
+	if len(refs) != 1 || refs[0].Kind != coderef.KindSymbol {
+		t.Fatalf("FromBody gave %+v, want one symbol ref", refs)
+	}
+	repo, p, found := locate(refs[0], rg, src)
+	if !found || repo != "repo" || p != "src/app/SignUpPage.tsx" {
+		t.Fatalf("locate = %q %q %v, want the file the symbol table names", repo, p, found)
+	}
+	cited := map[string][]string{p: {"a-note"}}
+	ix := codeindex.Index{Files: map[string]codeindex.File{p: {Path: p,
+		Symbols: []codeindex.Symbol{{Name: "SignUpPage", Start: 1, End: 40}}}}}
+	st := &gitsig.Stats{Churn: map[string]int{p: 13}}
+	if got := uncoveredOf(ix, st, cited); len(got) != 0 {
+		t.Errorf("uncovered = %+v, want none: the file is cited by name", got)
 	}
 }

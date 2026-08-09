@@ -33,18 +33,18 @@ func (d *checkData) driftAndCode() {
 	}
 	src := drift.NewGitSource(d.cfg.repos, filepath.Join(d.root, ".forge"))
 	d.findings = drift.Check(driftNotes(d.notes), rg, src, nil, drift.Opts{Deep: true})
-	d.code, d.codeErr = d.codebases(rg)
+	d.code, d.codeErr = d.codebases(rg, src)
 }
 
 // codebases builds one section per repository. It is the only collector that needs
 // pkg/codeindex, and therefore cgo: a binary built with CGO_ENABLED=0 renders every other
 // report and reports this one as skipped, rather than writing a map that claims the
 // codebase is fully documented because nothing could parse it.
-func (d *checkData) codebases(rg *coderef.Registry) ([]report.CodebaseInput, error) {
+func (d *checkData) codebases(rg *coderef.Registry, src symbolFinder) ([]report.CodebaseInput, error) {
 	if !codeindex.Available() {
 		return nil, codeindex.ErrUnavailable
 	}
-	cited := d.citedPaths(rg)
+	cited := d.citedPaths(rg, src)
 	out := make([]report.CodebaseInput, 0, len(d.cfg.repos))
 	for _, r := range d.cfg.repos {
 		in, err := d.oneCodebase(r.Name, r.Root, cited[r.Name])
@@ -74,26 +74,49 @@ func (d *checkData) oneCodebase(name, root string, cited map[string][]string) (r
 		Groups: groupsOf(scanned.Files, st, cited), Uncovered: uncoveredOf(ix, st, cited)}, nil
 }
 
+// symbolFinder is the single question coverage asks of drift's symbol table. Naming it
+// here rather than taking drift.Source whole says what this collector depends on, and
+// keeps the fake in the test to one method.
+type symbolFinder interface {
+	Find(name, asOf string) (repo, path string, sym codeindex.Symbol, ok bool)
+}
+
 // citedPaths resolves every note's code citations to repo-relative paths, keyed by what
 // the repository calls a file rather than by the shorthand the note wrote. Resolution is
 // the whole point: AUDIT NF-4 found 14 of 19 path-shaped refs matching no file, and an
 // unresolved ref would make a documented module look undocumented.
-func (d *checkData) citedPaths(rg *coderef.Registry) map[string]map[string][]string {
+func (d *checkData) citedPaths(rg *coderef.Registry, src symbolFinder) map[string]map[string][]string {
 	out := map[string]map[string][]string{}
 	for _, n := range driftNotes(d.notes) {
 		for _, ref := range n.Refs {
-			res := rg.Resolve(ref)
-			if res.RepoPath == "" {
-				continue
+			if repo, p, ok := locate(ref, rg, src); ok {
+				if out[repo] == nil {
+					out[repo] = map[string][]string{}
+				}
+				out[repo][p] = append(out[repo][p], d.slugs[n.Rel])
 			}
-			repo := res.Ref.Repo
-			if out[repo] == nil {
-				out[repo] = map[string][]string{}
-			}
-			out[repo][res.RepoPath] = append(out[repo][res.RepoPath], d.slugs[n.Rel])
 		}
 	}
 	return out
+}
+
+// locate answers which file a citation is about, and it has to answer for symbol-only
+// citations too — most of the vault's references name a class and no path. coderef leaves
+// those without a RepoPath by design, so pkg/drift looks them up in the symbol table; a
+// coverage pass that skipped them instead reported `SignUpPage` as "0 notes" in the same
+// run where drift.md named two notes citing it.
+//
+// The lookup is drift's own, at HEAD, so both reports attribute a citation to the same
+// file. Where two repositories declare one name that means crediting only the first in
+// (repo, path) order — the arbitration drift already makes, and agreeing with it is worth
+// more here than a second, differently-guessed answer.
+func locate(ref coderef.Ref, rg *coderef.Registry, src symbolFinder) (repo, p string, ok bool) {
+	if ref.Kind == coderef.KindSymbol {
+		repo, p, _, ok := src.Find(ref.Symbol, "")
+		return repo, p, ok
+	}
+	res := rg.Resolve(ref)
+	return res.Ref.Repo, res.RepoPath, res.RepoPath != ""
 }
 
 // groupsOf takes the directory as the module. It is a poor abstraction for a Java build
