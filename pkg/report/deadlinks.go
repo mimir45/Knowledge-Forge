@@ -17,10 +17,16 @@ type Citation struct {
 }
 
 // DeadlinksInput is what deadlinks.md renders from.
+//
+// FirstParty counts the citations this report cannot check: the schema admits a
+// vault-relative path for a first-party source, and an HTTP checker has nothing to do with
+// one. It is carried so the summary can say "0 of 0 URLs, and 63 first-party citations"
+// instead of "0 of 0", which reads as an uncited vault.
 type DeadlinksInput struct {
-	Citations []Citation
-	Slugs     map[string]string
-	Now       time.Time
+	Citations  []Citation
+	FirstParty int
+	Slugs      map[string]string
+	Now        time.Time
 }
 
 // RenderDeadlinks produces deadlinks.md — citations that have rotted.
@@ -56,11 +62,20 @@ func withVerdict(cs []Citation, v linkcheck.Verdict) []Citation {
 
 func deadlinksSummary(in DeadlinksInput, dead, unreachable []Citation) string {
 	alive := len(in.Citations) - len(dead) - len(unreachable)
-	return fmt.Sprintf("**%d dead, %d unreachable, %d alive** of %d cited %s.\n\n"+
+	return fmt.Sprintf("**%d dead, %d unreachable, %d alive** of %d cited %s.%s\n\n"+
 		"Unreachable is counted apart from dead on purpose: no answer is not the same as "+
 		"an answer of no, and one offline run must not read as a rotted vault.\n",
 		len(dead), len(unreachable), alive, len(in.Citations),
-		plural(len(in.Citations), "URL", "URLs"))
+		plural(len(in.Citations), "URL", "URLs"), firstPartyNote(in.FirstParty))
+}
+
+func firstPartyNote(n int) string {
+	if n == 0 {
+		return ""
+	}
+	return fmt.Sprintf(" A further %d %s first-party — a vault-relative path, which this "+
+		"report cannot and should not check over HTTP.",
+		n, plural(n, "citation is", "citations are"))
 }
 
 func writeCitations(b *strings.Builder, in DeadlinksInput, cs []Citation, title, lede string) {

@@ -43,9 +43,10 @@ type checkData struct {
 	churnStats *gitsig.Stats
 	churnErr   error
 
-	citations []report.Citation
-	findings  []drift.Finding
-	code      []report.CodebaseInput
+	citations  []report.Citation
+	firstParty int
+	findings   []drift.Finding
+	code       []report.CodebaseInput
 
 	// repoErr fails drift.md and the codebase map together — both read the same registry.
 	// codeErr fails only the map, which is the cgo-only one.

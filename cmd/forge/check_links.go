@@ -23,9 +23,11 @@ func (d *checkData) links() {
 		if n.FM == nil {
 			continue
 		}
-		for _, u := range sourceURLs(n.FM) {
+		http, firstParty := sourcesOf(n.FM)
+		for _, u := range http {
 			byURL[u] = append(byURL[u], n.Rel)
 		}
+		d.firstParty += firstParty
 	}
 	d.citations = d.statuses(byURL)
 }
@@ -64,23 +66,48 @@ func cachedOnly(dir string, urls []string) []linkcheck.Status {
 	return out
 }
 
-// sourceURLs reads the url out of every `source:` entry, in both shapes the vault holds:
-// the schema's list of mappings, and the bare scalar the pre-migration notes used. Only
-// http(s) is returned — the schema also admits a vault-relative path for a first-party
+// sourceURLs reads the url out of every citation, under both key names the vault holds.
+// The schema's key is `sources`; the pre-migration notes wrote a singular `source`, and
+// the migration did not rename it in the notes it could not otherwise fix. Reading only
+// one of the two is how the first run of this report checked 0 URLs across 91 notes.
+//
+// Both value shapes are handled too — the schema's list of mappings and the bare scalar.
+// Only http(s) is returned: the schema also admits a vault-relative path for a first-party
 // source, and there is nothing for an HTTP checker to do with one.
 func sourceURLs(fm *vault.Frontmatter) []string {
-	n, ok := fm.Vals["source"]
-	if !ok {
-		return nil
+	http, _ := sourcesOf(fm)
+	return http
+}
+
+// sourcesOf splits a note's citations into the ones an HTTP checker can judge and the
+// first-party ones it cannot. Both counts are reported: dropping the second would let
+// deadlinks.md print "0 of 0 URLs" over a vault whose every note is cited.
+func sourcesOf(fm *vault.Frontmatter) (http []string, firstParty int) {
+	for _, key := range []string{"sources", "source"} {
+		n, ok := fm.Vals[key]
+		if !ok {
+			continue
+		}
+		for _, raw := range rawURLs(n) {
+			if u := strings.Trim(raw, `"' `); isHTTP(u) {
+				http = append(http, u)
+			} else if u != "" {
+				firstParty++
+			}
+		}
 	}
+	return http, firstParty
+}
+
+func rawURLs(n *yaml.Node) []string {
 	if n.Kind == yaml.ScalarNode {
-		return httpOnly([]string{strings.Trim(n.Value, `"' `)})
+		return []string{n.Value}
 	}
-	raw := make([]string, 0, len(n.Content))
+	out := make([]string, 0, len(n.Content))
 	for _, item := range n.Content {
-		raw = append(raw, mapValue(item, "url"))
+		out = append(out, mapValue(item, "url"))
 	}
-	return httpOnly(raw)
+	return out
 }
 
 func mapValue(n *yaml.Node, key string) string {
@@ -95,13 +122,6 @@ func mapValue(n *yaml.Node, key string) string {
 	return ""
 }
 
-func httpOnly(in []string) []string {
-	var out []string
-	for _, u := range in {
-		if u = strings.Trim(u, `"' `); strings.HasPrefix(u, "http://") ||
-			strings.HasPrefix(u, "https://") {
-			out = append(out, u)
-		}
-	}
-	return out
+func isHTTP(u string) bool {
+	return strings.HasPrefix(u, "http://") || strings.HasPrefix(u, "https://")
 }

@@ -83,12 +83,13 @@ func writeAll(root string, js []job) int {
 			skipped++
 			continue
 		}
-		if err := writeReport(filepath.Join(root, j.rel), md); err != nil {
+		changed, err := writeReport(filepath.Join(root, j.rel), md)
+		if err != nil {
 			fmt.Fprintf(os.Stderr, "  skipped %s: %v\n", j.rel, err)
 			skipped++
 			continue
 		}
-		fmt.Printf("  %-24s %d bytes\n", j.rel, len(md))
+		fmt.Printf("  %-24s %d bytes%s\n", j.rel, len(md), unchangedNote(changed))
 		written++
 	}
 	fmt.Printf("\n%d written, %d skipped\n", written, skipped)
@@ -109,14 +110,24 @@ func safeRender(f func() ([]byte, error)) (md []byte, err error) {
 
 // writeReport creates the parent directory and skips the write when the bytes already
 // match, for the same reason forge index does: an identical rewrite still bumps mtime.
-func writeReport(path string, md []byte) error {
+// It reports whether it actually touched the file, because "unchanged" is the answer the
+// date-not-timestamp headers are designed to produce and a run that never says so gives
+// the reader no way to tell idempotence from a lucky diff.
+func writeReport(path string, md []byte) (changed bool, err error) {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
+		return false, err
 	}
 	if old, err := os.ReadFile(path); err == nil && string(old) == string(md) {
-		return nil
+		return false, nil
 	}
-	return os.WriteFile(path, md, 0o644)
+	return true, os.WriteFile(path, md, 0o644)
+}
+
+func unchangedNote(changed bool) string {
+	if changed {
+		return ""
+	}
+	return " (unchanged)"
 }
 
 // jobs lists the nine reports of ADDENDUM section B.4 plus section B.5's codebase map.

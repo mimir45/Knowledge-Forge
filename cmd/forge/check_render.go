@@ -86,7 +86,7 @@ func (d *checkData) churn() ([]byte, error) {
 
 func (d *checkData) deadlinks() ([]byte, error) {
 	return report.RenderDeadlinks(report.DeadlinksInput{
-		Citations: d.citations, Slugs: d.slugs, Now: d.now,
+		Citations: d.citations, FirstParty: d.firstParty, Slugs: d.slugs, Now: d.now,
 	}), nil
 }
 

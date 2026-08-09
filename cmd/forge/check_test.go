@@ -169,10 +169,18 @@ func TestSourceURLs(t *testing.T) {
 		name, fm string
 		want     []string
 	}{
-		{"list of mappings", "source:\n  - url: https://a.example/x\n    title: A\n",
+		// The schema's key is plural. Reading only the singular is how the first real run
+		// reported 0 cited URLs across 91 notes that all carry sources.
+		{"schema shape: sources, list of mappings",
+			"sources:\n  - url: https://a.example/x\n    kind: official\n",
+			[]string{"https://a.example/x"}},
+		{"pre-migration singular, list of mappings",
+			"source:\n  - url: https://a.example/x\n    title: A\n",
 			[]string{"https://a.example/x"}},
 		{"bare scalar", "source: https://b.example/y\n", []string{"https://b.example/y"}},
-		{"vault-relative path is not an HTTP source", "source: notes/concept/x.md\n", nil},
+		{"vault-relative path is not an HTTP source",
+			"sources:\n  - url: sources/daily/2026-04-13.md\n    kind: session\n", nil},
+		{"empty list", "sources: []\n", nil},
 		{"absent", "type: concept\n", nil},
 	}
 	for _, c := range cases {
