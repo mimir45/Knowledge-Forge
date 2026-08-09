@@ -2,7 +2,6 @@ package main
 
 import (
 	"knowledge-forge/pkg/report"
-	"knowledge-forge/pkg/similarity"
 )
 
 func (d *checkData) coverage() ([]byte, error) {
@@ -37,7 +36,7 @@ func (d *checkData) staleness() ([]byte, error) {
 
 func (d *checkData) duplicates() ([]byte, error) {
 	return report.RenderDuplicates(report.DuplicatesInput{
-		Pairs: d.pairs, Threshold: similarity.DuplicateThreshold, Compared: d.candidates,
+		Pairs: d.pairs, Threshold: d.cfg.duplicateThreshold(), Compared: d.candidates,
 		Slugs: d.slugs, Types: d.types, Now: d.now,
 	}), nil
 }

@@ -127,7 +127,17 @@ func (d *checkData) similar() {
 		ix.Add(n.Rel, typeOf(n.Rel), string(n.Body))
 	}
 	d.candidates = ix.Candidates()
-	d.pairs = ix.Pairs(similarity.DuplicateThreshold)
+	d.pairs = ix.Pairs(d.cfg.duplicateThreshold())
+}
+
+// duplicateThreshold resolves the config value against the package constant. The
+// fallback is not decoration: collectVault is called from tests with a bare checkCfg,
+// and a zero threshold would report every pair in the vault as a duplicate.
+func (c checkCfg) duplicateThreshold() float64 {
+	if c.dupThreshold > 0 {
+		return c.dupThreshold
+	}
+	return similarity.DuplicateThreshold
 }
 
 // vaultHistory reads the *vault's* commits, not a code repository's. ADDENDUM section

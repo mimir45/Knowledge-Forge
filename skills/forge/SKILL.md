@@ -17,6 +17,39 @@ This file orchestrates. It holds no content. Read on demand:
 | Frontmatter fields, allowed values | `references/schema.yaml` |
 | Tag and stack vocabulary | `references/taxonomy.md` |
 | Note body structure | `templates/<type>.md` |
+| Who you are writing for | `<vault>/profiles/me.md` |
+
+---
+
+## Stage 0 — Read the profile
+
+**Read `<vault>/profiles/me.md` before writing anything.** It is written by `forge init`
+and edited by hand afterwards. If it is missing, say so once and write at `mid` / depth 3
+— do not invent a profile, and do not silently write generic prose as if none were asked
+for.
+
+A profile the model reads but does not act on is worse than no profile: it looks like
+personalization while producing the same output for everyone. So each field below has a
+concrete, checkable effect. If two notes written at different `seniority` values would
+read the same, the profile is not being applied.
+
+| Field | What it changes in the note you write |
+|---|---|
+| `primary_language` | every code example is in this language, unless the topic is itself about another one |
+| `frameworks` | assumed available and assumed known; use them without introducing them |
+| `infra` | worked examples target this infrastructure, not a generic stand-in |
+| `seniority` | `junior` → define each term on first use, one worked example per claim, no unexplained jargon. `mid` → skip definitions, keep the tradeoffs. `senior` → skip tradeoff basics entirely, spend the space on edge cases, failure modes, and what the docs get wrong |
+| `default_depth` | 1–5. Sets **section count** and how far down a mechanism you follow: 2 → what it does and one example; 3 → adds tradeoffs; 4 → adds failure modes and internals; 5 → adds source-level mechanism and version differences |
+| `note_language` | the prose language of the body. Code, identifiers, and frontmatter values stay English regardless |
+| `explain_style` | section order. `mechanism-first` → how it works, then when to use it. `example-first` → runnable example, then why it works. `analogy-first` → one analogy, then the mechanism, then drop the analogy |
+| `assume_known` | referenced freely, **never re-explained**. Every entry here should delete a paragraph you would otherwise have written |
+| `never_assume` | gets a one-line inline primer **every time** it appears, even mid-sentence |
+| `code_style` | passed verbatim into how you write code blocks; treat it as a hard constraint, not a preference |
+| `avoid` | negative constraints applied on a final pass over the finished draft |
+
+`seniority` and `default_depth` move together but are not the same axis: seniority
+decides *what you explain*, depth decides *how much*. A senior at depth 2 gets a short
+note with no basics; a junior at depth 5 gets a long note that still defines its terms.
 
 ---
 
@@ -107,7 +140,10 @@ Same target, different job: the claims are old, not missing.
    with a clause saying how it relates. An unexplained link is not a connection.
    If `neighbours` is empty, write no Related section — inventing links for a topic the
    vault does not cover is worse than leaving none.
-6. Run `forge validate <path>`. It must exit 0.
+6. Apply the profile (stage 0) to the draft: section count from `default_depth`, section
+   order from `explain_style`, code from `primary_language` + `code_style`, and a final
+   pass removing everything in `avoid`.
+7. Run `forge validate <path>`. It must exit 0.
 
 ---
 
@@ -143,6 +179,8 @@ Never publish a note that did not pass, and never quietly fix the gate to make i
 ## Invariants
 
 - Recall runs first. Always. No exceptions for "obvious" questions.
+- The profile is read before any note is written, and its effects are visible in the
+  output. Two notes on the same question at different `seniority` must not read alike.
 - `ANSWER_FROM_VAULT` creates zero files.
 - `extend` never rewrites existing body text.
 - `refresh` shows a diff before writing.

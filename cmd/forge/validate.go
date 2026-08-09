@@ -13,7 +13,7 @@ import (
 func cmdValidate(args []string) int {
 	fs := flag.NewFlagSet("forge validate", flag.ContinueOnError)
 	all := fs.Bool("all", false, "validate every note under --vault")
-	vaultDir := fs.String("vault", ".", "vault root")
+	vaultDir := fs.String("vault", "", "vault root; defaults to config vault_path, then .")
 	fix := fs.Bool("fix", false, "repair mechanically fixable problems in place")
 	quiet := fs.Bool("quiet", false, "print only the summary line")
 	fs.Usage = func() {
@@ -26,7 +26,11 @@ func cmdValidate(args []string) int {
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
-	return runValidate(fs.Args(), *all, *vaultDir, *fix, *quiet)
+	root, code := vaultOrExit("validate", *vaultDir)
+	if code != 0 {
+		return code
+	}
+	return runValidate(fs.Args(), *all, root, *fix, *quiet)
 }
 
 func runValidate(paths []string, all bool, vaultDir string, fix, quiet bool) int {

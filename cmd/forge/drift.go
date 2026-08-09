@@ -42,7 +42,7 @@ type driftCfg struct {
 func cmdDrift(args []string) int {
 	var cfg driftCfg
 	fs := flag.NewFlagSet("forge drift", flag.ContinueOnError)
-	fs.StringVar(&cfg.vault, "vault", ".", "vault root")
+	fs.StringVar(&cfg.vault, "vault", "", "vault root; defaults to config vault_path, then .")
 	fs.Var(&cfg.repos, "repo", "code repository as name=path (repeatable)")
 	fs.StringVar(&cfg.since, "since-commit", "",
 		"evaluate only files changed since this sha; empty checks every citation")
@@ -59,6 +59,14 @@ func cmdDrift(args []string) int {
 		fmt.Fprint(os.Stderr, "forge drift: at least one --repo is required\n")
 		return 2
 	}
+	// resolveVault short-circuits on a non-empty flag, so the git hooks — which always
+	// pass --vault — never touch the chain. That keeps the 100ms hook-path budget a
+	// question about drift itself rather than about config I/O.
+	root, code := vaultOrExit("drift", cfg.vault)
+	if code != 0 {
+		return code
+	}
+	cfg.vault = root
 	return runDrift(cfg)
 }
 

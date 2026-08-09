@@ -12,7 +12,7 @@ import (
 
 func cmdCapture(args []string) int {
 	fs := flag.NewFlagSet("forge capture", flag.ContinueOnError)
-	vaultDir := fs.String("vault", ".", "vault git repository")
+	vaultDir := fs.String("vault", "", "vault git repository; defaults to config vault_path, then .")
 	commit := fs.String("commit", "HEAD", "commit to harvest")
 	days := fs.Int("window-days", 7, "max days between generation and edit")
 	out := fs.String("out", dataset.D3Path, "dataset file, relative to the vault root")
@@ -22,7 +22,11 @@ func cmdCapture(args []string) int {
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
-	return runCapture(*vaultDir, *commit, *out, *days, *dry, *quiet)
+	root, code := vaultOrExit("capture", *vaultDir)
+	if code != 0 {
+		return code
+	}
+	return runCapture(root, *commit, *out, *days, *dry, *quiet)
 }
 
 const captureUsage = `usage: forge capture [--vault DIR] [--commit REV] [--window-days N]

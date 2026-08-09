@@ -4,17 +4,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Status
 
-**Phases 0, 1, 2 and 2b are done** (2026-08-09; Phase 1 merged as `1c9df95`, Phase 2 as
-`3619b72`, Phase 2b committed straight to `main`, `cb12a08`…`15a795f`). The repo is a git
-repo with a Go source tree: `cmd/forge`
-(`slug validate index reindex capture recall drift check`) over `pkg/vault`, `pkg/graph`,
-`pkg/report`, `pkg/store`, `pkg/dataset`, `pkg/recall`, `pkg/similarity`, `pkg/codeindex`,
-`pkg/coderef`, `pkg/gitsig`, `pkg/drift`, `pkg/linkcheck`, plus seven note templates in
-`templates/`, `skills/forge/SKILL.md`, `references/recall-spec.md`, a Makefile with a
-six-target cross-compile matrix, a hash-verifying `bin/forge` shim, and a `hooks/` +
-`scripts/` pair that installs the vault's D3 capture hook. Build and test with
-`CGO_ENABLED=0 go build ./...` / `go test ./...` — 13 packages, all green. Everything else
-below is still design spec; **Phase 3 (the config chain + `forge init`) is next.**
+**Phases 0, 1, 2, 2b and 3 are done** (2026-08-09; Phase 1 merged as `1c9df95`, Phase 2 as
+`3619b72`, Phase 2b committed straight to `main`, `cb12a08`…`15a795f`; Phase 3 committed
+straight to `main` in one commit). The repo is a git repo with a Go source tree: `cmd/forge`
+(`slug validate index reindex capture recall drift check config init`) over `pkg/vault`,
+`pkg/graph`, `pkg/report`, `pkg/store`, `pkg/dataset`, `pkg/recall`, `pkg/similarity`,
+`pkg/codeindex`, `pkg/coderef`, `pkg/gitsig`, `pkg/drift`, `pkg/linkcheck`, `pkg/config`
+(the four-layer config chain), plus seven note templates in `templates/`,
+`skills/forge/SKILL.md`, `skills/forge-init/SKILL.md`, `references/recall-spec.md`, eight
+packaged presets in `config/presets/`, a Makefile with a six-target cross-compile matrix, a
+hash-verifying `bin/forge` shim, and a `hooks/` + `scripts/` pair that installs the vault's
+D3 capture hook. Build and test with `CGO_ENABLED=0 go build ./...` / `go test ./...` — 14
+packages report `ok` (`config`, `profiles`, `references` are data-only, no test files), all
+green. Everything else below is still design spec; **Phase 3b (engine
+abstraction) is next.** One item Phase 3 explicitly did not touch: **B-008's §3.1
+recalibration** — see BACKLOG, it needs its own session because honest verification means
+re-deriving the whole calibration table, not re-running two queries.
 `testdata/vault/` is a markdown fixture, described below.
 
 Phase 2b's measured actuals, so no later phase re-derives them: `forge index` 0.02s,
@@ -224,7 +229,7 @@ and 2b's commands ship; the rest is the intended surface, by the phase that crea
 | `forge slug`, `forge validate`, `forge index`, `forge reindex`, `forge capture` | 1 — **built** |
 | `forge recall` (deterministic scoring, JSON, `--explain`) | 2 — **built** |
 | `forge drift`, `forge check`, cross-compile + goreleaser | 2b — **built** |
-| `forge-init` wizard | 3 |
+| `forge config` (`--layers`, `--json`), `forge init`, `skills/forge-init/` wizard | 3 — **built** |
 | `/forge-check`, `/forge-stats` | 5 |
 | `/forge-export-dataset`, `/forge-dataset-stats` | 6b |
 

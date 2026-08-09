@@ -11,27 +11,59 @@ import (
 // the renderers cross-reference each other by relative path ("see ../moc/codebase.md"),
 // so a report written outside reports/ would carry links that resolve to nothing.
 type checkCfg struct {
-	vault   string
-	repos   repoList
-	months  int
-	days    int
-	offline bool
+	vault        string
+	repos        repoList
+	months       int
+	days         int
+	offline      bool
+	dupThreshold float64
 }
 
 func cmdCheck(args []string) int {
 	var cfg checkCfg
 	fs := flag.NewFlagSet("forge check", flag.ContinueOnError)
-	fs.StringVar(&cfg.vault, "vault", ".", "vault root")
+	fs.StringVar(&cfg.vault, "vault", "", "vault root; defaults to config vault_path, then .")
 	fs.Var(&cfg.repos, "repo", "code repository as name=path (repeatable)")
 	fs.IntVar(&cfg.months, "months", 0, "vault history window for churn.md; 0 reads all of it")
-	fs.IntVar(&cfg.days, "days", 90, "code churn window for moc/codebase.md, in days")
+	fs.IntVar(&cfg.days, "days", 0, "code churn window in days; 0 uses config check.churn_days")
 	fs.BoolVar(&cfg.offline, "offline", false,
 		"skip the network; deadlinks.md then reports cached verdicts only")
 	fs.Usage = func() { fmt.Fprint(os.Stderr, checkUsage); fs.PrintDefaults() }
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
+	if code := cfg.applyConfig(); code != 0 {
+		return code
+	}
 	return runWeekly(cfg)
+}
+
+// applyConfig fills what the flags left at zero. check is the one command that reads
+// more than the vault path out of the chain, so the resolution lives here rather than
+// in config_resolve.go: --days and the duplicate threshold are report tuning, and only
+// this command renders reports.
+func (c *checkCfg) applyConfig() int {
+	root, code := vaultOrExit("check", c.vault)
+	if code != 0 {
+		return code
+	}
+	c.vault = root
+	cfg, code := configOrExit("check")
+	if code != 0 {
+		return code
+	}
+	if c.days == 0 {
+		c.days = orDefaultInt(cfg.Check.ChurnDays, 90)
+	}
+	c.dupThreshold = cfg.Check.DuplicateThreshold
+	return 0
+}
+
+func orDefaultInt(v, def int) int {
+	if v > 0 {
+		return v
+	}
+	return def
 }
 
 const checkUsage = `usage: forge check [--vault DIR] [--repo NAME=PATH] [--months N] [--days N]

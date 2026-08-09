@@ -8,6 +8,8 @@ import (
 )
 
 var commands = map[string]func([]string) int{
+	"init":     cmdInit,
+	"config":   cmdConfig,
 	"slug":     cmdSlug,
 	"validate": cmdValidate,
 	"recall":   cmdRecall,
@@ -23,6 +25,8 @@ const usage = `forge — Knowledge Forge static core (no model calls)
 usage: forge <command> [flags]
 
 commands:
+  init       write ~/.forge/forge.config.md and <vault>/profiles/me.md
+  config     print the resolved configuration chain
   slug       generate the canonical kebab-case slug for a title
   validate   check notes against references/schema.yaml
   recall     score the vault against a question before any research runs

@@ -16,8 +16,8 @@ import (
 
 func cmdIndex(args []string) int {
 	fs := flag.NewFlagSet("forge index", flag.ContinueOnError)
-	vaultDir := fs.String("vault", ".", "vault root")
-	out := fs.String("out", "_index.md", "output file, relative to the vault root")
+	vaultDir := fs.String("vault", "", "vault root; defaults to config vault_path, then .")
+	out := fs.String("out", "", "output file, relative to the vault root; defaults to config paths.index")
 	budget := fs.Int("max-bytes", 4096, "byte budget for the generated index")
 	fs.Usage = func() {
 		fmt.Fprint(os.Stderr, "usage: forge index [--vault DIR] [--out FILE] [--max-bytes N]\n\n"+
@@ -28,12 +28,37 @@ func cmdIndex(args []string) int {
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
-	return runIndex(*vaultDir, *out, *budget, false)
+	root, name, code := indexTarget("index", *vaultDir, *out)
+	if code != 0 {
+		return code
+	}
+	return runIndex(root, name, *budget, false)
+}
+
+// indexTarget resolves the two settings both index and reindex need. The index filename
+// is a vault-topology decision, not a per-run one — a vault whose config renames it must
+// not get a second _index.md the next time reindex runs without --out.
+func indexTarget(cmd, flagVault, flagOut string) (root, name string, code int) {
+	root, code = vaultOrExit(cmd, flagVault)
+	if code != 0 {
+		return "", "", code
+	}
+	if flagOut != "" {
+		return root, flagOut, 0
+	}
+	cfg, code := configOrExit(cmd)
+	if code != 0 {
+		return "", "", code
+	}
+	if cfg.Paths.Index == "" {
+		return root, "_index.md", 0
+	}
+	return root, cfg.Paths.Index, 0
 }
 
 func cmdReindex(args []string) int {
 	fs := flag.NewFlagSet("forge reindex", flag.ContinueOnError)
-	vaultDir := fs.String("vault", ".", "vault root")
+	vaultDir := fs.String("vault", "", "vault root; defaults to config vault_path, then .")
 	fs.Usage = func() {
 		fmt.Fprint(os.Stderr, "usage: forge reindex [--vault DIR]\n\n"+
 			"Discards the derived SQLite cache and rebuilds it entirely from markdown.\n"+
@@ -43,7 +68,11 @@ func cmdReindex(args []string) int {
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
-	return runIndex(*vaultDir, "_index.md", 4096, true)
+	root, name, code := indexTarget("reindex", *vaultDir, "")
+	if code != 0 {
+		return code
+	}
+	return runIndex(root, name, 4096, true)
 }
 
 func runIndex(vaultDir, outName string, budget int, reset bool) int {
