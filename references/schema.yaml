@@ -213,6 +213,19 @@ fields:
     item_pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
     notes: Slugs merged into this note. Enables redirecting links from absorbed notes.
 
+  code_refs:
+    type: list<string>
+    required: false
+    min_items: 0
+    item_pattern: '^[A-Za-z0-9._-]+:[^:#]+(:\d+)?(#[A-Za-z_][A-Za-z0-9_.]*)?$'
+    notes: >
+      Canonical code citations, `repo:path[:line][#symbol]`. This is the format AUDIT
+      NF-4 found missing: the existing vault cites code as prose shorthand, of which 14
+      of 19 path-shaped refs resolved to nothing and none carried a symbol. pkg/coderef
+      still recovers refs from inline code spans, so old notes keep working, but only
+      this form names its repository and needs no guessing. Optional because a note that
+      cites no code has nothing to put here.
+
   forge_version:
     type: string
     required: true
@@ -278,6 +291,7 @@ key_order:
   - sources
   - related
   - supersedes
+  - code_refs
   - forge_version
   - origin
   - engine_trail
