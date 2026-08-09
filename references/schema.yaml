@@ -1,0 +1,284 @@
+# Knowledge Forge — note frontmatter schema
+#
+# Source of truth for `forge validate`. Derived from KNOWLEDGE-FORGE-DESIGN.md §6.1
+# plus the rev-2 fields (engine_trail, drift_checked_at).
+#
+# The `stack` and `tags` vocabularies below are NOT invented: they are the measured
+# vocabulary of /Users/mimir45/Documents/Base as of 2026-08-09 (128 distinct tags over
+# 434 assignments), normalized. See references/taxonomy.md for the derivation and for
+# every alias mapping.
+#
+# Vocabulary policy:
+#   stack  — CLOSED. An unknown value is an error. Growing it is a deliberate edit here.
+#   tags   — OPEN but normalized. Unknown values pass; alias values are an error that
+#            `forge validate --fix` rewrites to the canonical form.
+
+version: 1
+forge_schema_for: 2.0.0
+
+fields:
+
+  title:
+    type: string
+    required: true
+    min_length: 3
+    max_length: 120
+    notes: Human-readable. Not derived from slug; slug is derived from it.
+
+  slug:
+    type: string
+    required: true
+    pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+    max_length: 80
+    immutable: true
+    notes: >
+      The identity. Filenames may change; this must not. Unique across the vault.
+      Collisions get a numeric suffix (-2, -3) assigned by `forge slug`.
+
+  type:
+    type: enum
+    required: true
+    values: [concept, howto, pattern, pitfall, decision, api, incident]
+    notes: >
+      Seven values, per DESIGN §6.1. Each has a template in templates/ and a home in
+      notes/<type>/. DESIGN §7 illustrates only five subdirs and CLAUDE-CODE-PROMPT
+      lists only six templates; both are non-exhaustive — the enum is authoritative.
+
+  stack:
+    type: list<string>
+    required: true
+    min_items: 1
+    max_items: 6
+    vocabulary: closed
+    values:
+      # --- JVM / backend -------------------------------------------------------
+      - java
+      - kotlin
+      - spring-boot
+      - spring-security
+      - hibernate
+      - jpa
+      - maven
+      - liquibase
+      - mapstruct
+      - junit
+      - testng
+      - openapi
+      # --- Frontend ------------------------------------------------------------
+      - react
+      - nextjs
+      - typescript
+      - storybook
+      - mui
+      - styled-components
+      - redux
+      - jest
+      - jsdom
+      # --- Infra / containers --------------------------------------------------
+      - docker
+      - testcontainers
+      - postgresql
+      - sql
+      # --- Auth ----------------------------------------------------------------
+      - keycloak
+      - oauth2
+      # --- Local AI stack ------------------------------------------------------
+      - continue-dev
+      - llama-cpp
+      - litellm
+      - qwen3
+      - bge
+      # --- Languages / tooling -------------------------------------------------
+      - go
+      - python
+      - shell
+      - git
+      - intellij
+      - obsidian
+      - claude-code
+      - postman
+      - stripe
+
+  tags:
+    type: list<string>
+    required: true
+    min_items: 1
+    max_items: 8
+    vocabulary: open
+    item_pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+    notes: >
+      Free vocabulary for the concept axis (what the note is *about*), as opposed to
+      `stack` (what it is *written in*). Kebab-case enforced. Aliases in
+      references/taxonomy.md §3 are rejected and rewritten by --fix.
+
+  depth:
+    type: int
+    required: true
+    min: 1
+    max: 5
+    default: 3
+    notes: 1 = skim, 5 = deep-dive.
+
+  confidence:
+    type: enum
+    required: true
+    values: [high, medium, low]
+    default: medium
+    notes: >
+      A note that fails any DESIGN §12 quality gate is written to _inbox/ with
+      confidence: low. Never silently published at a higher confidence.
+
+  created:
+    type: date
+    required: true
+    format: 'YYYY-MM-DD'
+
+  updated:
+    type: date
+    required: true
+    format: 'YYYY-MM-DD'
+    constraint: '>= created'
+
+  verified:
+    type: date
+    required: true
+    format: 'YYYY-MM-DD'
+    constraint: '>= created'
+    notes: >
+      Last time the *claims* were re-checked. A typo fix bumps `updated` only.
+      Staleness keys off this field, not `updated`.
+
+  freshness_days:
+    type: int
+    required: true
+    min: 1
+    max: 3650
+    defaults_by_type:
+      concept: 365
+      pattern: 365
+      pitfall: 365
+      decision: 730
+      howto: 180
+      api: 180
+      incident: 730
+
+  sources:
+    type: list<object>
+    required: true
+    min_items: 0
+    notes: >
+      May be empty only for type=decision and type=incident, which are first-party
+      records. Every other type needs at least one source (DESIGN §12 citation gate).
+    min_items_by_type:
+      concept: 1
+      howto: 1
+      pattern: 1
+      pitfall: 1
+      api: 1
+      decision: 0
+      incident: 0
+    item_fields:
+      url:
+        type: string
+        required: true
+        notes: >
+          An absolute http(s) URL, or a vault-relative path for a first-party source
+          (the audit found `source:` values of both shapes in the existing vault).
+      accessed:
+        type: date
+        required: true
+        format: 'YYYY-MM-DD'
+      kind:
+        type: enum
+        required: true
+        values: [official, spec, blog, paper, video, forum, code, session]
+        notes: >
+          `official` = vendor/project docs. `code` = a file in a repo the user owns.
+          `session` = a Claude Code transcript (the til-writer v1 provenance shape).
+
+  related:
+    type: list<string>
+    required: true
+    min_items: 0
+    item_pattern: '^\[\[[^\]]+\]\]$'
+    notes: >
+      Wikilinks. DESIGN §7.2 wants >= 2 outbound links per new note; that is a quality
+      gate, not a schema error, so the schema floor is 0 and the gate raises it to 2.
+      Link resolution is extension-agnostic: [[log]] and [[log.md]] are the same target.
+
+  supersedes:
+    type: list<string>
+    required: true
+    min_items: 0
+    item_pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+    notes: Slugs merged into this note. Enables redirecting links from absorbed notes.
+
+  forge_version:
+    type: string
+    required: true
+    pattern: '^\d+\.\d+\.\d+$'
+
+  origin:
+    type: enum
+    required: true
+    values: [ask, session-capture, garden, import]
+    notes: >
+      `import` is what the Phase 1 migration stamps on every pre-existing note.
+      Makes DESIGN §14 telemetry possible without a second log format.
+
+  # --- rev-2 fields ----------------------------------------------------------
+
+  engine_trail:
+    type: list<string>
+    required: false
+    default: []
+    item_pattern: '^(recall|research|write|verify|critique|index)=(none|host|api|advisor)$'
+    notes: >
+      Which engine tier served each pipeline stage for this note. `recall`, `write` and
+      `index` may only ever record `none` — the T0 static core makes zero model calls.
+      A value violating that is a schema error, not a warning.
+
+  drift_checked_at:
+    type: string
+    required: false
+    pattern: '^[0-9a-f]{7,40}$'
+    notes: >
+      Git sha of the code tree the note's refs were last checked against. Absent means
+      never checked. Demotion history lives in .forge/, never in the note body.
+
+# Alias map. A note carrying a written form is an error; `forge validate --fix` rewrites
+# it to the canonical form. Derivation and counts: references/taxonomy.md §3.
+aliases:
+  stack:
+    golang: go
+    junit5: junit
+    spring: spring-boot
+    google-oauth: oauth2
+  tags:
+    configuration: config
+    issues: issue
+    migrations: migration
+    database: databases
+    local-model: local-ai
+
+# Key order enforced by `forge validate --fix`. Notes are not rejected for order,
+# only rewritten.
+key_order:
+  - title
+  - slug
+  - type
+  - stack
+  - tags
+  - depth
+  - confidence
+  - created
+  - updated
+  - verified
+  - freshness_days
+  - sources
+  - related
+  - supersedes
+  - forge_version
+  - origin
+  - engine_trail
+  - drift_checked_at
