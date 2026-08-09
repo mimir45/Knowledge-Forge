@@ -4,15 +4,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Status
 
-**Phases 0, 1 and 2 are done** (2026-08-09; Phase 1 merged as `1c9df95`, Phase 2 as
-`3619b72`). The repo is a git repo with a Go source tree: `cmd/forge`
-(`slug validate index reindex capture recall`) over `pkg/vault`, `pkg/graph`,
-`pkg/report`, `pkg/store`, `pkg/dataset`, `pkg/recall`, plus seven note templates in
-`templates/`, `skills/forge/SKILL.md`, `references/recall-spec.md`, and a `hooks/` +
+**Phases 0, 1, 2 and 2b are done** (2026-08-09; Phase 1 merged as `1c9df95`, Phase 2 as
+`3619b72`, Phase 2b committed straight to `main`, `cb12a08`…`15a795f`). The repo is a git
+repo with a Go source tree: `cmd/forge`
+(`slug validate index reindex capture recall drift check`) over `pkg/vault`, `pkg/graph`,
+`pkg/report`, `pkg/store`, `pkg/dataset`, `pkg/recall`, `pkg/similarity`, `pkg/codeindex`,
+`pkg/coderef`, `pkg/gitsig`, `pkg/drift`, `pkg/linkcheck`, plus seven note templates in
+`templates/`, `skills/forge/SKILL.md`, `references/recall-spec.md`, a Makefile with a
+six-target cross-compile matrix, a hash-verifying `bin/forge` shim, and a `hooks/` +
 `scripts/` pair that installs the vault's D3 capture hook. Build and test with
-`CGO_ENABLED=0 go build ./...` / `go test ./...` — both green. Everything else below is
-still design spec; **Phase 2b (drift + the nine reports) is next.**
+`CGO_ENABLED=0 go build ./...` / `go test ./...` — 13 packages, all green. Everything else
+below is still design spec; **Phase 3 (the config chain + `forge init`) is next.**
 `testdata/vault/` is a markdown fixture, described below.
+
+Phase 2b's measured actuals, so no later phase re-derives them: `forge index` 0.02s,
+`forge drift --since-commit` 0.06–0.07s (budget 100ms, the binding one), `forge check`
+0.93s cold / 0.39s warm. Nine reports render deterministically — six consecutive runs,
+md5-identical. Against the real vault: drift finds **9 notes referencing changed code**
+(2 broken, 7 suspect) over 140 citations; 21 of 94 orphans; 23 graph components; 3
+duplicate pairs ≥0.40; 39 of 41 stacks covered. Two knowing deviations: `pkg/gitsig`
+shells out to the `git` CLI rather than go-git (**B-009**), and **B-008 is still open** —
+the IDF weighting it prescribes shipped and fixed neither named case, for a reason the
+backlog entry now records. Do not respond to that by moving the thresholds.
 
 Two Phase 2 decisions that later phases must not undo without reading
 `references/recall-spec.md` first: the score is a weighted **mean over active
@@ -102,11 +115,15 @@ One phase per session. Do not start phase N+1 with phase N unmerged. Never cut 2
 time runs out the cut order is `6b → 5b → advisor tier`. If work comes up outside the
 current phase's scope, write it to `docs/BACKLOG.md` rather than building it.
 
-**Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004, **B-007** and
-**B-008** (Phase 2b's: recall's `tags`/`stack` channels have no IDF weighting) are open;
-B-001 (doc coherence), B-005 (seven note types) and B-006 (link rewrite) closed on
-2026-08-09. B-007 is Phase 4's: `forge-librarian` must stamp `Forge-Write: true` on every
-commit it authors, or `pkg/dataset` records its output as human corrections.
+**Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004, **B-007**, **B-008**,
+**B-009** and the twelve findings 2b recorded are open; B-001 (doc coherence), B-005
+(seven note types) and B-006 (link rewrite) closed on 2026-08-09. B-007 is Phase 4's:
+`forge-librarian` must stamp `Forge-Write: true` on every commit it authors, or
+`pkg/dataset` records its output as human corrections. **B-008 is now Phase 3's** and its
+entry has a second half worth reading before touching `pkg/recall`: the weighting the first
+half prescribes is already implemented and did not fix either case, because the terms that
+carry a question's meaning are filtered out of the denominator when no note carries them.
+The next attempt owns the §3.1 recalibration.
 
 **Then read `docs/AUDIT.md` §8.** It is the output of that pass: thirteen contradictions
 the docs do *not* self-flag, eight resolved by the precedence rule above. **§8.4 is a
@@ -171,37 +188,41 @@ Each is stated in a different doc and each is easy to violate by accident:
 - Telemetry logs the topic and a hash. Never raw question text, code, or file contents.
 - CLI only for v1. Do not build the daemon on speculation — measure first.
 
-## Target layout and budgets (not yet built)
+## Layout and budgets — all built as of 2b
 
 ```
 cmd/forge/        CLI
 pkg/vault/        frontmatter + markdown AST (goldmark), mtime-cached
-pkg/recall/       deterministic question -> note scoring; zero model calls (built)
+pkg/recall/       deterministic question -> note scoring; zero model calls
 pkg/similarity/   MinHash + LSH banding
 pkg/graph/        note link graph: components, hubs, orphans, centrality
-pkg/codeindex/    go-tree-sitter (start with Java + Kotlin only) — the only cgo package
-pkg/gitsig/       go-git: churn, blame ownership, co-change coupling
+pkg/codeindex/    go-tree-sitter (Java + TypeScript) — the only cgo package, tag-gated
+pkg/coderef/      extracts code citations from note bodies and frontmatter
+pkg/gitsig/       churn, ownership, co-change coupling — via the git CLI, not go-git (B-009)
 pkg/drift/        the key package — ADDENDUM §B.6, AST comparison not line diffs
 pkg/linkcheck/    HTTP HEAD on sources, cached, rate-limited
-pkg/report/       renders analyses to markdown
+pkg/report/       renders analyses to markdown; must not import pkg/codeindex
 pkg/store/        SQLite via modernc.org/sqlite, derived cache only
 ```
 
-Latency budgets, to be **measured rather than assumed**: `forge drift` <100ms (the
-binding constraint — it runs on the git-hook path), `forge index` <200ms, `forge check`
-<10s warm, SessionStart hook <200ms.
+Latency budgets and the **measured** actuals on an Apple M4: `forge drift` <100ms → **60–70ms**
+(the binding constraint — it runs on the git-hook path), `forge index` <200ms → **20ms**,
+`forge check` <10s warm → **390ms** (930ms cold). SessionStart hook <200ms is unmeasured;
+nothing installs it until Phase 5.
 
 ## Commands
 
-`CGO_ENABLED=0 go build ./...` and `go test ./...` both work; there is still no Makefile
-and no lint target. Phases 1 and 2's commands ship; the rest is the intended surface, by
-the phase that creates it:
+`CGO_ENABLED=0 go build ./...` and `go test ./...` both work, and 2b added a `Makefile`:
+`make build test bench dist install-hook`. There is still no lint target. Two build lanes,
+because `pkg/codeindex` is the one cgo package and is build-tag gated — the default lane is
+pure Go and cross-compiles; the codeindex lane needs cgo and a host toolchain. Phases 1, 2
+and 2b's commands ship; the rest is the intended surface, by the phase that creates it:
 
 | Command | Phase |
 |---|---|
 | `forge slug`, `forge validate`, `forge index`, `forge reindex`, `forge capture` | 1 — **built** |
 | `forge recall` (deterministic scoring, JSON, `--explain`) | 2 — **built** |
-| `forge drift`, `forge check`, `forge reindex`, cross-compile + goreleaser | 2b / 6 |
+| `forge drift`, `forge check`, cross-compile + goreleaser | 2b — **built** |
 | `forge-init` wizard | 3 |
 | `/forge-check`, `/forge-stats` | 5 |
 | `/forge-export-dataset`, `/forge-dataset-stats` | 6b |
