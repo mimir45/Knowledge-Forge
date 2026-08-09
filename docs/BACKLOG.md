@@ -144,3 +144,33 @@ export. D.1 calls D3 the most valuable dataset; this is the one way to silently 
 **Requirement for Phase 4:** every commit `forge-librarian` authors must end with
 `Forge-Write: true`. Verify with a fixture test that a librarian-authored commit yields
 zero pairs — the guard is already written, only the producer side is missing.
+
+---
+
+## B-008 — `tags` and `stack` recall channels have no IDF weighting
+
+**Owner: Phase 2b (drift + the nine reports). Status: open — measured in Phase 2, not fixed.**
+
+`forge recall`'s tag and stack channels score a term carried by every note exactly like a
+term carried by three. In a vault that is mostly Spring notes, `spring` and `boot` are
+close to zero information, but they fire both channels at 1.000 — half the blend's weight
+— leaving only the 0.4 title channel to discriminate.
+
+Measured on the real vault (`references/recall-spec.md` §3.1):
+
+- *"Redis caching in Spring Boot"* → **0.740** for `spring-cli-and-maven-commands-for-spring-boot`,
+  a note about CLI invocations. `tags 1.000`, `stack 1.000`, `title` only 0.476. That is
+  UPDATE(extend) into the wrong note — the damaging direction, because extend writes.
+- *"Kafka consumers with Testcontainers"* → **0.469** for the genuinely correct
+  `testcontainers-docker-based-integration-testing`, i.e. CREATE when extend was right.
+
+**Do not fix this by moving the thresholds.** Dropping `update_threshold` to 0.45 admits
+the second case but also admits `docker-compose-init-container-pattern` at 0.429 for a
+question about build caching, and does nothing about the 0.740 false positive. The
+thresholds stay at DESIGN §5.3's 0.85 / 0.55 until the cause is addressed.
+
+Shape: weight each tag/stack hit by `log(N / df(term))` over the vault's own note count,
+computed during the frontmatter scan that already walks every note, so it costs no extra
+pass. Cap the weight so a hapax tag cannot dominate. It changes every recall number, which
+is why it belongs in 2b — that phase re-measures the reports against recall anyway, and
+`pkg/recall`'s test suite pins the current values so the delta will be explicit.

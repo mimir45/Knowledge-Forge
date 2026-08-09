@@ -10,6 +10,7 @@ import (
 var commands = map[string]func([]string) int{
 	"slug":     cmdSlug,
 	"validate": cmdValidate,
+	"recall":   cmdRecall,
 	"index":    cmdIndex,
 	"reindex":  cmdReindex,
 	"capture":  cmdCapture,
@@ -22,6 +23,7 @@ usage: forge <command> [flags]
 commands:
   slug       generate the canonical kebab-case slug for a title
   validate   check notes against references/schema.yaml
+  recall     score the vault against a question before any research runs
   index      rebuild <vault>/_index.md from the markdown
   reindex    discard the derived SQLite cache and rebuild it from markdown
   capture    harvest human-correction training pairs from a vault commit
