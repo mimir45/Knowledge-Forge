@@ -113,6 +113,18 @@ func (s *Schema) Canonical(field, value string) (string, bool) {
 	return value, false
 }
 
+// EngineTrailPattern returns the compiled item_pattern behind engine_trail, or nil if the
+// field is absent. Exported so pkg/engine's trail_test.go checks every (stage,tier) pair
+// it can stamp against the schema's real regex, instead of a copy that could drift from
+// it silently.
+func (s *Schema) EngineTrailPattern() *regexp.Regexp {
+	f, ok := s.Fields["engine_trail"]
+	if !ok {
+		return nil
+	}
+	return f.reItem
+}
+
 // FreshnessDefault returns the freshness_days default for a note type, or 0.
 func (s *Schema) FreshnessDefault(noteType string) int {
 	f, ok := s.Fields["freshness_days"]

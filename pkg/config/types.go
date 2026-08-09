@@ -83,9 +83,12 @@ type Advisor struct {
 	Mode  string `yaml:"mode"`
 }
 
+// Local is engines.local — a routing target, not a fifth Engine implementation. Phase 3b's
+// select.go resolves the "local" alias to the api backend pointed at BaseURL.
 type Local struct {
 	Enabled bool   `yaml:"enabled"`
 	Model   string `yaml:"model"`
+	BaseURL string `yaml:"base_url"`
 }
 
 // Budget is §E's block. OnExhausted defaults to queue (D-5: §E beats §A.4's degrade).

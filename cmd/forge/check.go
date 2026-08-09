@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"knowledge-forge/pkg/config"
 )
 
 // checkCfg is the weekly pass's inputs. The destination is fixed rather than a flag:
@@ -17,6 +19,7 @@ type checkCfg struct {
 	days         int
 	offline      bool
 	dupThreshold float64
+	config       *config.Config // nil in tests that build a checkCfg by hand; cost.md degrades then
 }
 
 func cmdCheck(args []string) int {
@@ -56,6 +59,7 @@ func (c *checkCfg) applyConfig() int {
 		c.days = orDefaultInt(cfg.Check.ChurnDays, 90)
 	}
 	c.dupThreshold = cfg.Check.DuplicateThreshold
+	c.config = cfg
 	return 0
 }
 
@@ -70,8 +74,8 @@ const checkUsage = `usage: forge check [--vault DIR] [--repo NAME=PATH] [--month
                    [--offline]
 
 The weekly pass. Collects the vault once and renders the nine ADDENDUM section B.4
-reports into <vault>/reports/, plus section B.5's map into <vault>/moc/codebase.md.
-Zero model calls, like everything else in this binary.
+reports plus cost.md (Phase 3b) into <vault>/reports/, and section B.5's map into
+<vault>/moc/codebase.md. Zero model calls, like everything else in this binary.
 
 Every report is rendered independently: a renderer that fails costs its own file and
 nothing else, and the run says which files it wrote and which it skipped. Headers carry
@@ -162,10 +166,9 @@ func unchangedNote(changed bool) string {
 	return " (unchanged)"
 }
 
-// jobs lists the nine reports of ADDENDUM section B.4 plus section B.5's codebase map.
-// cost.md is deliberately absent: AUDIT section 8.4 D-1 moves it to Phase 3b, where the
-// budget counters it reports on are actually built, and a stub here would be a file that
-// says nothing while looking like a measurement.
+// jobs lists the nine reports of ADDENDUM section B.4, cost.md (Phase 3b, AUDIT section
+// 8.4 D-1), and section B.5's codebase map. cost.md runs unconditionally like the other
+// eight always-on reports — Check.Reports is not filtered against any of them today.
 func jobs(cfg checkCfg, d *checkData) []job {
 	js := []job{
 		{"reports/coverage.md", d.coverage},
@@ -176,6 +179,7 @@ func jobs(cfg checkCfg, d *checkData) []job {
 		{"reports/graph-health.md", d.graphHealth},
 		{"reports/churn.md", d.churn},
 		{"reports/deadlinks.md", d.deadlinks},
+		{"reports/cost.md", d.cost},
 	}
 	if len(cfg.repos) == 0 {
 		return js

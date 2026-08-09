@@ -25,11 +25,13 @@ org wiki → MCP server) that earlier revisions of this roadmap groundworked
 for is now **out of this repo entirely** — a separate project, started only
 after this one's own readiness gate (see "Sequencing notes").
 
-**Status (2026-08-09):** Phases 0, 1, 2 and 2b are **done** — 13 Go packages,
-`go test ./...` green, real vault migrated and measured (drift, dedup,
-coverage numbers in `CLAUDE.md`'s Status section). Phase 3 (config chain +
-`forge init`) is **in progress**, uncommitted in the working tree. Everything
-from 3b on is still design only.
+**Status (2026-08-10):** Phases 0, 1, 2, 2b, 3 and 3b are **done** — 14+
+Go packages (`pkg/engine` new in 3b), `go test ./...` green, real vault
+migrated and measured (drift, dedup, coverage numbers in `CLAUDE.md`'s
+Status section). 3b added the `pkg/engine` interface, per-stage routing
+with fallback chains, SQLite-persisted budget accounting, `engine_trail`
+stamping, and `reports/cost.md`. Everything from Phase 4 on is still
+design only.
 
 ## Phase order
 
@@ -44,8 +46,8 @@ N+1 with phase N unmerged.
 | 1 ✅ | **Contract & migration** | Give every note a machine-readable, validated shape | `references/schema.yaml`, `templates/*.md` per type, `forge slug`, `forge validate`, `forge index`, one-time `migrate_vault.py` (dry-run default), D3 human-edit capture hook | 100% of notes validate; `_index.md` builds in one command | 1-2 days ⭐ highest value/hour |
 | 2 ✅ | **Recall** | The compounding feature: answer from the vault instead of re-researching | `forge recall` (deterministic scoring, JSON output, `--explain`), `references/recall-spec.md`, `SKILL.md` rewritten around the pipeline (<200 lines) | Known question → `ANSWER_FROM_VAULT` in <5s, zero new files created | 1 day (mostly hardening — recall largely exists) |
 | 2b ✅ | **Static core** ⭐ | The no-AI engineering layer — the most defensible part of the project | Go binary (`bin/forge`): `pkg/{vault,similarity,graph,codeindex,gitsig,drift,linkcheck,report,store}`, all 10 reports, `moc/codebase.md`, git-anchored drift with rollback symmetry, cross-compile + goreleaser | `forge drift` <100ms, `forge index` <200ms, full check <10s warm — measured, not assumed | 4-6 days (incl. Go ramp) — **never cut** |
-| 3 🔧 | **Config & personalization** | Installable by a stranger with zero code edits | `forge.config.md`, presets (`java-backend`, `frontend`, `devops`, `minimal`), `profiles/me.md`, `forge-init` wizard, every hardcoded path removed | A stranger installs and runs it without editing plugin files; same question at different `seniority`/`depth` produces visibly different notes | 1-2 days |
-| 3b | **Engine abstraction** ⭐ | One interface, four backends, cost-aware routing | `pkg/engine` interface, per-stage config with fallback chains, hard locks on recall/write/index, advisor in critique-only mode, budget accounting, `engine_trail` in frontmatter | Same question runs cleanly under all 4 presets (`offline`/`claude-only`/`byo-api`/`max`); `offline` degrades usefully instead of failing | 1-2 days |
+| 3 ✅ | **Config & personalization** | Installable by a stranger with zero code edits | `forge.config.md`, presets (`java-backend`, `frontend`, `devops`, `minimal`), `profiles/me.md`, `forge-init` wizard, every hardcoded path removed | A stranger installs and runs it without editing plugin files; same question at different `seniority`/`depth` produces visibly different notes | 1-2 days |
+| 3b ✅ | **Engine abstraction** ⭐ | One interface, four backends, cost-aware routing | `pkg/engine` interface, per-stage config with fallback chains, hard locks on recall/write/index, advisor in critique-only mode, budget accounting, `engine_trail` in frontmatter | Same question runs cleanly under all 4 presets (`offline`/`claude-only`/`byo-api`/`max`); `offline` degrades usefully instead of failing | 1-2 days |
 | 4 | **Subagents & verification** | Catch bad notes before they publish; ground notes in the actual repo | 4 agent defs (`forge-researcher`, `forge-codebase-scout`, `forge-verifier`, `forge-librarian`), parallel researcher+scout, quality gates (schema/citation/code/freshness/anti-slop/link/duplicate), `_inbox/` quarantine | A deliberately wrong snippet gets caught and demoted, not published | 2-3 days |
 | 5 | **Hooks & weekly checker** | Make it a system, not a command you remember to run | `hooks/hooks.json` (SessionStart/UserPromptSubmit/SessionEnd/PostToolUse shims), `/forge-check` (T0-only weekly report), `/forge-stats` | A fresh session's first response cites an existing note unprompted | 2 days |
 | 5b | **Log-back into codebase** | Knowledge discoverable from code, not just the vault | `docs/knowledge-map.md`, per-module `CLAUDE.md` fragments (sentinel-managed), `.forge/code-index.json` kept fresh; inline markers opt-in only | Generated knowledge-map and one CLAUDE.md fragment shown and correct | 1 day |

@@ -162,6 +162,22 @@ Applies to `CREATE` and both `UPDATE` modes.
 
 ---
 
+## Engine trail (Phase 3b)
+
+`forge engine run` and this skill running a step in-session (`host`) both know they made
+a model call, but neither one can stamp the note by itself: `run` has no note path, and
+the binary cannot see a host step at all. After any research or verify step whose
+`forge engine select --stage <name>` did not resolve to `none`, stamp it yourself
+(`write` is locked to `none` always — `forge engine record` refuses any other tier there):
+
+    forge engine record --stage <name> --tier <the tier that ran: host|api|advisor> --rel <path>
+
+Skip this only for `none` — nothing ran, nothing to stamp. Do it once per stage per note —
+a re-verified note gets one fresh `verify=host` line, not a growing history (`forge engine
+record`'s own doc-comment).
+
+---
+
 ## Quality gate
 
 Before publishing a new or extended note:

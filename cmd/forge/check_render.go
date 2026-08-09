@@ -98,6 +98,16 @@ func (d *checkData) drift() ([]byte, error) {
 	}), nil
 }
 
+// cost surfaces d.budgetErr the same way churn and drift surface theirs: store.Open
+// failing here means the same cache forge index and forge drift depend on is broken, and
+// skipping cost.md alone leaves the other reports free to still run.
+func (d *checkData) cost() ([]byte, error) {
+	if d.budgetErr != nil {
+		return nil, d.budgetErr
+	}
+	return report.RenderCost(d.budget), nil
+}
+
 // codebase concatenates one rendered section per repository. RenderCodebase names a single
 // repo because a map of two codebases is two maps; joining them here keeps moc/codebase.md
 // a single entry point without teaching the renderer about a list it cannot rank across.

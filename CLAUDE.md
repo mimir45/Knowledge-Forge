@@ -4,22 +4,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Status
 
-**Phases 0, 1, 2, 2b and 3 are done** (2026-08-09; Phase 1 merged as `1c9df95`, Phase 2 as
-`3619b72`, Phase 2b committed straight to `main`, `cb12a08`…`15a795f`; Phase 3 committed
-straight to `main` in one commit). The repo is a git repo with a Go source tree: `cmd/forge`
-(`slug validate index reindex capture recall drift check config init`) over `pkg/vault`,
-`pkg/graph`, `pkg/report`, `pkg/store`, `pkg/dataset`, `pkg/recall`, `pkg/similarity`,
-`pkg/codeindex`, `pkg/coderef`, `pkg/gitsig`, `pkg/drift`, `pkg/linkcheck`, `pkg/config`
-(the four-layer config chain), plus seven note templates in `templates/`,
-`skills/forge/SKILL.md`, `skills/forge-init/SKILL.md`, `references/recall-spec.md`, eight
-packaged presets in `config/presets/`, a Makefile with a six-target cross-compile matrix, a
-hash-verifying `bin/forge` shim, and a `hooks/` + `scripts/` pair that installs the vault's
-D3 capture hook. Build and test with `CGO_ENABLED=0 go build ./...` / `go test ./...` — 14
-packages report `ok` (`config`, `profiles`, `references` are data-only, no test files), all
-green. Everything else below is still design spec; **Phase 3b (engine
-abstraction) is next.** One item Phase 3 explicitly did not touch: **B-008's §3.1
-recalibration** — see BACKLOG, it needs its own session because honest verification means
-re-deriving the whole calibration table, not re-running two queries.
+**Phases 0, 1, 2, 2b, 3 and 3b are done** (2026-08-09 through 2026-08-10; Phase 1 merged
+as `1c9df95`, Phase 2 as `3619b72`, Phase 2b committed straight to `main`, `cb12a08`…
+`15a795f`; Phase 3 committed straight to `main` in one commit; Phase 3b likewise, on top of
+`847098a`). The repo is a git repo with a Go source tree: `cmd/forge`
+(`slug validate index reindex capture recall drift check config init engine`) over
+`pkg/vault`, `pkg/graph`, `pkg/report`, `pkg/store`, `pkg/dataset`, `pkg/recall`,
+`pkg/similarity`, `pkg/codeindex`, `pkg/coderef`, `pkg/gitsig`, `pkg/drift`, `pkg/linkcheck`,
+`pkg/config` (the four-layer config chain), `pkg/engine` (the four-backend engine
+abstraction — `none/host/api/advisor`, per-stage routing with fallback chains, SQLite-backed
+budget accounting), plus seven note templates in `templates/`, `skills/forge/SKILL.md`,
+`skills/forge-init/SKILL.md`, `references/recall-spec.md`, eight packaged presets in
+`config/presets/`, a Makefile with a six-target cross-compile matrix, a hash-verifying
+`bin/forge` shim, and a `hooks/` + `scripts/` pair that installs the vault's D3 capture
+hook. Build and test with `CGO_ENABLED=0 go build ./...` / `go test ./...` — 15 packages
+report `ok` (`config`, `profiles`, `references` are data-only, no test files), all green.
+Everything else below is still design spec; **Phase 4 (subagents & verification) is next.**
+One item Phase 3 explicitly did not touch: **B-008's §3.1 recalibration** — see BACKLOG, it
+needs its own session because honest verification means re-deriving the whole calibration
+table, not re-running two queries. Two items Phase 3b left open, both recorded rather than
+fixed: **B-022** (`engine_trail`'s schema pattern misses `intake|plan|synthesize|link` and
+wrongly includes `critique`) and **B-023** (code's `on_exhausted: stop` vs. every doc's
+`fail`, and `stop`/`degrade` are behaviorally identical to each other today — nothing reads
+either value).
 `testdata/vault/` is a markdown fixture, described below.
 
 Phase 2b's measured actuals, so no later phase re-derives them: `forge index` 0.02s,
@@ -194,7 +201,7 @@ Each is stated in a different doc and each is easy to violate by accident:
 - Telemetry logs the topic and a hash. Never raw question text, code, or file contents.
 - CLI only for v1. Do not build the daemon on speculation — measure first.
 
-## Layout and budgets — all built as of 2b
+## Layout and budgets — all built as of 3b
 
 ```
 cmd/forge/        CLI
@@ -208,7 +215,9 @@ pkg/gitsig/       churn, ownership, co-change coupling — via the git CLI, not 
 pkg/drift/        the key package — ADDENDUM §B.6, AST comparison not line diffs
 pkg/linkcheck/    HTTP HEAD on sources, cached, rate-limited
 pkg/report/       renders analyses to markdown; must not import pkg/codeindex
-pkg/store/        SQLite via modernc.org/sqlite, derived cache only
+pkg/store/        SQLite via modernc.org/sqlite, derived cache only except the budget table
+pkg/engine/       none/host/api/advisor backends, per-stage select+fallback, engine_trail
+pkg/config/       the four-layer config chain
 ```
 
 Latency budgets and the **measured** actuals on an Apple M4: `forge drift` <100ms → **60–70ms**
@@ -221,8 +230,8 @@ nothing installs it until Phase 5.
 `CGO_ENABLED=0 go build ./...` and `go test ./...` both work, and 2b added a `Makefile`:
 `make build test bench dist install-hook`. There is still no lint target. Two build lanes,
 because `pkg/codeindex` is the one cgo package and is build-tag gated — the default lane is
-pure Go and cross-compiles; the codeindex lane needs cgo and a host toolchain. Phases 1, 2
-and 2b's commands ship; the rest is the intended surface, by the phase that creates it:
+pure Go and cross-compiles; the codeindex lane needs cgo and a host toolchain. Phases 1, 2,
+2b, 3 and 3b's commands ship; the rest is the intended surface, by the phase that creates it:
 
 | Command | Phase |
 |---|---|
@@ -230,6 +239,7 @@ and 2b's commands ship; the rest is the intended surface, by the phase that crea
 | `forge recall` (deterministic scoring, JSON, `--explain`) | 2 — **built** |
 | `forge drift`, `forge check`, cross-compile + goreleaser | 2b — **built** |
 | `forge config` (`--layers`, `--json`), `forge init`, `skills/forge-init/` wizard | 3 — **built** |
+| `forge engine select/run/record` — the zero-model-call binary's one named exception | 3b — **built** |
 | `/forge-check`, `/forge-stats` | 5 |
 | `/forge-export-dataset`, `/forge-dataset-stats` | 6b |
 

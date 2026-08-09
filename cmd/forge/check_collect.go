@@ -5,11 +5,14 @@ import (
 	"strings"
 	"time"
 
+	"knowledge-forge/pkg/config"
 	"knowledge-forge/pkg/drift"
+	"knowledge-forge/pkg/engine"
 	"knowledge-forge/pkg/gitsig"
 	"knowledge-forge/pkg/graph"
 	"knowledge-forge/pkg/report"
 	"knowledge-forge/pkg/similarity"
+	"knowledge-forge/pkg/store"
 	"knowledge-forge/pkg/vault"
 )
 
@@ -52,6 +55,9 @@ type checkData struct {
 	// codeErr fails only the map, which is the cgo-only one.
 	repoErr error
 	codeErr error
+
+	budget    report.CostInput
+	budgetErr error
 }
 
 func collectVault(cfg checkCfg, root string) (*checkData, error) {
@@ -67,6 +73,7 @@ func collectVault(cfg checkCfg, root string) (*checkData, error) {
 	d.churnStats, d.churnErr = vaultHistory(root, cfg.months, d.now)
 	d.links()
 	d.driftAndCode()
+	d.budgetErr = d.budgetSnapshot()
 	return d, nil
 }
 
@@ -162,4 +169,71 @@ func sortedStrings(m map[string][]string) []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+// budgetSnapshot fills d.budget from cfg.Engines.Budget, the SQLite budget table, and
+// cfg.Pipeline — cost.md's whole job is showing what the config chain and today's spend
+// jointly decide, so this is the one collector that reads config and cache directly.
+// A bare checkCfg (as the collectVault tests build) has no config to read; that degrades
+// to an empty report rather than a nil-pointer panic, the same posture duplicateThreshold
+// takes toward a zero threshold.
+func (d *checkData) budgetSnapshot() error {
+	d.budget = report.CostInput{Now: d.now, StageEngine: map[string]string{}}
+	if d.cfg.config == nil {
+		return nil
+	}
+	cfg := d.cfg.config
+	d.budget.OnExhausted = cfg.Engines.Budget.OnExhausted
+	d.budget.CapPerDay = map[string]float64{
+		"api": cfg.Engines.Budget.APIUSDPerDay, "advisor": cfg.Engines.Budget.AdvisorUSDPerDay,
+	}
+	st, err := store.Open(d.root)
+	if err != nil {
+		return err
+	}
+	defer st.Close()
+	if d.budget.SpentToday, err = spentToday(st, d.budget.CapPerDay, time.Now); err != nil {
+		return err
+	}
+	d.budget.StageEngine = stageEngines(cfg, st, time.Now)
+	d.budget.QueuedNotes = countQueued(d.notes)
+	return nil
+}
+
+// spentToday recovers spend from Remaining rather than a second SQL query: Remaining
+// already computes cap-minus-spent, so cap-minus-Remaining is spent, for any cap
+// including the unmetered zero value.
+func spentToday(l engine.Ledger, caps map[string]float64, clock func() time.Time) (map[string]float64, error) {
+	out := make(map[string]float64, len(caps))
+	for tier, cap := range caps {
+		remaining, err := l.Remaining(tier, cap, clock)
+		if err != nil {
+			return nil, err
+		}
+		out[tier] = cap - remaining
+	}
+	return out, nil
+}
+
+// stageEngines is cost.md's "what would today actually run" section — the same Resolve
+// call forge engine select makes, once per pipeline stage.
+func stageEngines(cfg *config.Config, l engine.Ledger, clock func() time.Time) map[string]string {
+	out := make(map[string]string, len(cfg.Pipeline))
+	for stage := range cfg.Pipeline {
+		if name, _, err := engine.Resolve(cfg, l, clock, stage); err == nil {
+			out[stage] = name
+		}
+	}
+	return out
+}
+
+// countQueued reads the same pending_advisor flag queueNote (engine_run.go) writes.
+func countQueued(notes []*vault.Note) int {
+	n := 0
+	for _, note := range notes {
+		if note.FM != nil && strings.EqualFold(note.FM.Str("pending_advisor"), "true") {
+			n++
+		}
+	}
+	return n
 }

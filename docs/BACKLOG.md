@@ -484,3 +484,50 @@ precedence order at all — a conflict against it is `OUT_OF_SCOPE_B2B`, not
 Nothing about the *content* of `KNOWLEDGE-FORGE-B2B.md` changed — ADR-002 (Spring Boot
 vs. an open decision) and everything else in it stands, unexamined, for whenever that
 separate project actually starts.
+
+---
+
+## B-022 — `engine_trail`'s schema pattern doesn't cover four real pipeline stages
+
+**Owner: Phase 4 (`code_refs`/`engine_trail` producers) or whoever next touches
+`references/schema.yaml`. Status: found in 3b, not fixed.**
+
+`references/schema.yaml`'s `engine_trail` field restricts each entry to
+`^(recall|research|write|verify|critique|index)=(none|host|api|advisor)$`. The packaged
+`config/forge.config.example.md` pipeline names nine stages, four of which the pattern
+has no case for: `intake`, `plan`, `synthesize`, `link`. A note whose trail records what
+actually ran one of those stages fails schema validation on a field that exists to
+document exactly that.
+
+`critique` is in the pattern and is not a `cfg.Pipeline` key at all — `pkg/engine`
+deliberately excludes it from `stampable` (an earlier 3b decision, not this gap) because
+the advisor tier's critique pass has no engine of its own to record. So the pattern is
+both under- and over-inclusive relative to the real pipeline. Shape: regenerate the
+alternation from `cfg.Pipeline`'s nine keys minus `critique`, or drop the enumerated list
+and validate stage names against the config chain instead of a fixed regex.
+
+---
+
+## B-023 — code's `on_exhausted` value is `stop`; every doc still says `fail`
+
+**Owner: whoever next edits `KNOWLEDGE-FORGE-ADDENDUM.md` or `CLAUDE-CODE-PROMPT.md`.
+Status: recorded, doc unedited, per the standing "record, don't fix" rule.**
+
+`pkg/config/validate.go` accepts `on_exhausted: queue | degrade | stop`, and that is what
+`config/forge.config.example.md`'s comment and every preset's comment say too — `stop` is
+the code's third value and it is consistent everywhere in `pkg/` and `config/`. Every doc
+mention (`ADDENDUM.md:117`, `:485`, `:671`; `CLAUDE-CODE-PROMPT.md:339`) instead says
+`degrade | queue | fail`. AUDIT §8.4 D-5 settled the *default* (`queue`, resolving C-13)
+but did not touch this third value's name, so the docs' `fail` was carried forward
+unexamined into 3b's implementation, which independently chose `stop`.
+
+Checked this session by grepping every `OnExhausted` read site
+(`cmd/forge/check_collect.go`, `cmd/forge/engine_run.go`): only `"queue"` is ever branched
+on, at `engine_run.go:77`, to stamp `pending_advisor: true`. `degrade` and `stop` are
+accepted by the validator and displayed verbatim in `cost.md`'s summary line, but nothing
+in `pkg/engine` or `cmd/forge` reads either value — `engine.Resolve` already degrades a
+metered stage to `"none"` regardless of `on_exhausted`, so the two configured values
+produce byte-identical behavior today. So this is not just a naming mismatch: `stop` does
+not halt anything, and `degrade` is not a distinct code path from the default silent
+fallthrough. Left for whoever next touches those two files to reconcile the wording *and*
+decide whether `stop`/`degrade` should diverge in behavior before renaming either one.

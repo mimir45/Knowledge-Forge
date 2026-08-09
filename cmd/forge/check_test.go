@@ -36,7 +36,7 @@ func gitVault(t *testing.T) string {
 }
 
 // TestCheckWritesTheVaultReports: without --repo there is nothing to check code against,
-// so the run must produce the eight vault reports and skip drift.md and the codebase map
+// so the run must produce the nine vault reports and skip drift.md and the codebase map
 // rather than writing them empty.
 func TestCheckWritesTheVaultReports(t *testing.T) {
 	root := gitVault(t)
@@ -44,7 +44,7 @@ func TestCheckWritesTheVaultReports(t *testing.T) {
 		t.Fatalf("forge check exit %d", code)
 	}
 	for _, name := range []string{"coverage", "staleness", "duplicates", "orphans",
-		"gaps", "graph-health", "churn", "deadlinks"} {
+		"gaps", "graph-health", "churn", "deadlinks", "cost"} {
 		if _, err := os.Stat(filepath.Join(root, "reports", name+".md")); err != nil {
 			t.Errorf("reports/%s.md: %v", name, err)
 		}

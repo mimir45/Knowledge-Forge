@@ -259,6 +259,15 @@ fields:
       Git sha of the code tree the note's refs were last checked against. Absent means
       never checked. Demotion history lives in .forge/, never in the note body.
 
+  pending_advisor:
+    type: string
+    required: false
+    pattern: '^(true|false)$'
+    notes: >
+      Set true by `on_exhausted: queue` when a stage wanted advisor/api and today's
+      budget was already spent (ADDENDUM §A.4). The weekly checker (Phase 5) is the
+      drain; `forge check` only exposes the hook point (cfg.check.drain_advisor_queue).
+
 # Alias map. A note carrying a written form is an error; `forge validate --fix` rewrites
 # it to the canonical form. Derivation and counts: references/taxonomy.md §3.
 aliases:
@@ -296,3 +305,4 @@ key_order:
   - origin
   - engine_trail
   - drift_checked_at
+  - pending_advisor

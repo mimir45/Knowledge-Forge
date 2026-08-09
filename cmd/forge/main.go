@@ -1,5 +1,6 @@
 // Command forge is the Knowledge Forge static core. Every subcommand here runs with
-// zero model calls; the LLM tiers sit above this binary, never inside it.
+// zero model calls except `forge engine`, Phase 3b's execution layer over the four
+// tiers pkg/config names; the LLM tiers otherwise sit above this binary, never inside it.
 package main
 
 import (
@@ -18,6 +19,7 @@ var commands = map[string]func([]string) int{
 	"capture":  cmdCapture,
 	"drift":    cmdDrift,
 	"check":    cmdCheck,
+	"engine":   cmdEngine,
 }
 
 const usage = `forge — Knowledge Forge static core (no model calls)
@@ -35,6 +37,8 @@ commands:
   capture    harvest human-correction training pairs from a vault commit
   drift      check note code citations against a code repo's git history
   check      the weekly pass: render every report into <vault>/reports/
+  engine     select/run/record against the four engine tiers (the one exception
+             to zero model calls — see forge engine --help)
 
 run "forge <command> --help" for that command's flags.
 `

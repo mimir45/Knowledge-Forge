@@ -28,6 +28,7 @@ func each() map[string][]byte {
 		"churn.md":        RenderChurn(churnFixture()),
 		"deadlinks.md":    RenderDeadlinks(deadlinksFixture()),
 		"drift.md":        RenderDrift(driftFixture()),
+		"cost.md":         RenderCost(costFixture()),
 	}
 }
 
@@ -389,6 +390,60 @@ func TestDriftFindingTiesBreakOnReason(t *testing.T) {
 	}
 	if strings.Index(first, "alpha") > strings.Index(first, "zeta") {
 		t.Errorf("tied findings not ordered by reason:\n%s", first)
+	}
+}
+
+// --- cost ---------------------------------------------------------------------------
+
+func costFixture() CostInput {
+	return CostInput{
+		SpentToday:  map[string]float64{"api": 0.42, "advisor": 0},
+		CapPerDay:   map[string]float64{"api": 1.00, "advisor": 2.00},
+		OnExhausted: "queue",
+		StageEngine: map[string]string{"recall": "none", "research": "api", "write": "none"},
+		QueuedNotes: 2,
+		Now:         at,
+	}
+}
+
+// The three sections answer different questions; a caller grepping for one must find it
+// under its own heading, not folded into the summary line.
+func TestCostSeparatesSpendEngineAndQueue(t *testing.T) {
+	got := string(RenderCost(costFixture()))
+	for _, want := range []string{"## Spend today", "## Per-stage engine", "## Queue"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing section %q:\n%s", want, got)
+		}
+	}
+	if !strings.Contains(got, "recall** — none") {
+		t.Error("the T0 lock is not visible in the per-stage section")
+	}
+	if !strings.Contains(got, "2 notes waiting") {
+		t.Errorf("queue count missing:\n%s", got)
+	}
+}
+
+// A tier with a cap and zero spend must still be listed — "no line" and "spent nothing"
+// are different facts, and only one of them is worth an "all clear".
+func TestCostListsUnspentMeteredTiers(t *testing.T) {
+	got := string(RenderCost(costFixture()))
+	if !strings.Contains(got, "advisor** — $0.00 of $2.00") {
+		t.Errorf("unspent advisor tier vanished:\n%s", got)
+	}
+}
+
+// A cap of 0 makes pkg/engine's availableMetered report the tier exhausted (remaining =
+// cap - spent <= 0), so cost.md must call it unavailable — offline and claude-only both
+// ship cap 0 on tiers they never route to, and "$0.00 of $0.00" reads as merely maxed out.
+func TestCostZeroCapReadsUnavailable(t *testing.T) {
+	in := costFixture()
+	in.CapPerDay["advisor"] = 0
+	got := string(RenderCost(in))
+	if !strings.Contains(got, "advisor** — $0.00 spent, cap $0.00: unavailable") {
+		t.Errorf("zero cap not labeled unavailable:\n%s", got)
+	}
+	if strings.Contains(got, "advisor** — $0.00 of $0.00") {
+		t.Errorf("zero cap still reads as merely maxed out:\n%s", got)
 	}
 }
 
