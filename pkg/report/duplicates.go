@@ -22,6 +22,19 @@ type DuplicatesInput struct {
 // references/duplicate-spec.md, which is what the code follows where the two disagree.
 const specThreshold = 0.85
 
+// TopDuplicatePair returns the highest-scoring pair that clears the 0.85 spec threshold —
+// the same bar duplicates.md's header and weekly.go's Act now section use, not the lower
+// operating threshold pairs is otherwise filtered at. For check.ai_pass's merge-proposal
+// sub-task: pairs must already be sorted best-first, as similarity.Index.Pairs returns it.
+func TopDuplicatePair(pairs []similarity.Pair) (similarity.Pair, bool) {
+	for _, p := range pairs {
+		if p.Score >= specThreshold {
+			return p, true
+		}
+	}
+	return similarity.Pair{}, false
+}
+
 // RenderDuplicates produces duplicates.md.
 //
 // The header states outright that nothing in the vault crosses §B.4's 0.85. That is the

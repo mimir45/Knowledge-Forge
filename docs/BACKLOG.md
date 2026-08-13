@@ -127,7 +127,13 @@ The dry-run summary must count rewritten links separately from moved files.
 
 ## B-007 — Phase 4's librarian must stamp `Forge-Write: true` or it poisons the D3 dataset
 
-**Owner: Phase 4 (Subagents). Status: open — the guard exists, the producer does not.**
+**Owner: Phase 4 (Subagents). Status: done, 2026-08-12.** Both halves landed: the
+fixture test (below) and the producer — `agents/forge-librarian.md`'s prompt instructs
+`git commit --trailer "Forge-Write: true" -m "<summary>"` on the note-write commit and
+any index-rebuild commit it makes. The packaging gap (`agents/` isn't loaded by Claude
+Code today — see `CLAUDE.md`'s Status section) means this is verified spec, not yet a
+live enforced guarantee; re-check once `agents/` is actually wired into a dispatchable
+agent.
 
 `pkg/dataset` (Phase 1) refuses to harvest a commit whose message carries the trailer
 `Forge-Write:` — `dataset.ForgeTrailer`, pinned by `TestSkipsForgeAuthoredCommits`. Today
@@ -144,6 +150,14 @@ export. D.1 calls D3 the most valuable dataset; this is the one way to silently 
 **Requirement for Phase 4:** every commit `forge-librarian` authors must end with
 `Forge-Write: true`. Verify with a fixture test that a librarian-authored commit yields
 zero pairs — the guard is already written, only the producer side is missing.
+
+**Done this session:** `pkg/dataset/d3_forge_write_test.go` — stages `testdata/vault`
+into a fresh temp-dir git repo (never in place, per B-002), commits an edit *with* the
+trailer (asserts zero pairs), then an otherwise-identical edit *without* it (asserts
+exactly one pair, pinning that step one's zero result is the guard firing, not a setup
+bug). No Go write path changed; `forge capture`/`dataset.Capture` already had the guard.
+Still open: nothing in this repo yet issues `git commit --trailer "Forge-Write: true"` —
+that has to live in `agents/forge-librarian.md`'s prompt, not in Go.
 
 ---
 
@@ -490,7 +504,16 @@ separate project actually starts.
 ## B-022 — `engine_trail`'s schema pattern doesn't cover four real pipeline stages
 
 **Owner: Phase 4 (`code_refs`/`engine_trail` producers) or whoever next touches
-`references/schema.yaml`. Status: found in 3b, not fixed.**
+`references/schema.yaml`. Status: done, 2026-08-10.** Fixed exactly as this entry's own
+shape suggested: `references/schema.yaml`'s `item_pattern` now regenerates the alternation
+from `cfg.Pipeline`'s nine keys minus `critique` — a fixed enumerated pattern, not
+config-chain-driven validation, because `pkg/config` deliberately doesn't import
+`pkg/vault` and note validity must not depend on which config happens to be loaded.
+`pkg/engine/trail.go`'s `stampable` map was **not** touched — confirmed by the existing
+`pkg/engine/trail_entry_test.go` (`TestTrailEntryUnstampedStages`, predating this fix) that
+excluding `intake`/`plan`/`synthesize`/`link` from `stampable` was already a deliberate 3b
+decision, not this gap; the schema now merely *accepts* those four stage names for
+whichever future producer records them.
 
 `references/schema.yaml`'s `engine_trail` field restricts each entry to
 `^(recall|research|write|verify|critique|index)=(none|host|api|advisor)$`. The packaged
@@ -531,3 +554,98 @@ produce byte-identical behavior today. So this is not just a naming mismatch: `s
 not halt anything, and `degrade` is not a distinct code path from the default silent
 fallthrough. Left for whoever next touches those two files to reconcile the wording *and*
 decide whether `stop`/`degrade` should diverge in behavior before renaming either one.
+
+---
+
+## B-024 — `D2Tag` is spelled `"d2_advisor"`; the packaged config says `"d2"`
+
+**Owner: whoever next touches `pkg/dataset/d2.go` or `config/forge.config.example.md`.
+Status: recorded, not fixed — found while building Phase 4's D4 dataset, out of that
+task's owned scope (only B-007 and B-022 were).**
+
+`pkg/dataset/d2.go:17` defines `D2Tag = "d2_advisor"`, and `Enabled(capture []string)`
+does an exact-string match against it. `config/forge.config.example.md:169` ships
+`dataset.capture: [d1, d2, d3, d4, d5]` — the packaged config says `"d2"`, the code checks
+for `"d2_advisor"`. They never match, so `dataset.Enabled` returns `false` and
+`captureD2` (`cmd/forge/engine_run.go`) never writes a `d2.jsonl` line under the packaged
+config, silently, today — confirmed by reading both files directly, not by running
+anything (D2 capture requires a live advisor call this session didn't make).
+
+Two equally defensible fixes, not chosen here: rename `D2Tag` to `"d2"` to match the
+config, or change the packaged config's list entry to `"d2_advisor"` to match the code.
+Either is a one-line change; the only reason to pick one is whichever string is easier
+for `forge init`'s wizard prompt to explain to a user. Don't touch `D2Kind`/`D2Path` — this
+is a `capture:`-list membership bug, not a dataset-identity one.
+
+`pkg/dataset/d4.go`'s `D4Tag = "d4"` was deliberately spelled to match the packaged
+config exactly, so it does not repeat this mismatch — D4 fires under
+`dataset.capture: [d1, d2, d3, d4, d5]` today where D2 silently does not. See that file's
+doc comment.
+
+---
+
+## B-025 — `forge cache-source`'s `PostToolUse`/WebFetch `tool_response` JSON shape is unconfirmed
+
+**Owner: whoever next touches `cmd/forge/cache_source.go`. Status: recorded, not fixed —
+found while building Phase 5's five hook subcommands; out of that task's scope to chase
+further.**
+
+Three separate `WebFetch` calls this phase, against both
+`https://code.claude.com/docs/en/hooks` and `https://code.claude.com/docs/en/tools-
+reference`, failed to surface a literal field-by-field schema for `PostToolUse`'s
+`tool_response` when `tool_name` is `"WebFetch"`. `tool_input.url`/`tool_input.prompt` are
+known with confidence — they're WebFetch's own published tool parameters — but whether
+`tool_response` is a plain string, or an object with a `content`/`result`/`text` key, was
+never confirmed from official docs (checked 2026-08-13).
+
+`cacheFetch`/`cacheBody` (`cmd/forge/cache_source.go`) deliberately does not guess a
+field name: it unmarshals `tool_response` as a JSON string and uses it verbatim if that
+succeeds, otherwise caches the raw JSON bytes Claude Code sent, unmodified. This means an
+object-shaped response is cached as its full JSON text (e.g. `{"content":"...","ok":
+true}`) rather than as just the extracted content — correct today only in the sense that
+it never silently drops data or asserts a false schema. If a future session confirms the
+real shape (e.g. by inspecting a live `.claude/settings.json` hook firing against a real
+WebFetch call), `cacheBody` should be updated to extract the actual text field instead of
+caching the wrapper JSON.
+
+---
+
+## B-026 — a citation to a fully deleted file can never verdict BROKEN
+
+**Owner: whoever next touches `pkg/coderef/resolve.go` or `pkg/drift/check.go`. Status:
+recorded, not fixed — found while smoke-testing Phase 5's git-anchored drift hooks
+against a real citation-and-deletion scenario; pre-existing in `pkg/drift` (Phase 2b),
+out of Phase 5's scope to fix.**
+
+`cmd/forge/drift.go`'s `registryOf` builds the `coderef.Registry` from
+`coderef.ScanRepo(r.Name, r.Root, "HEAD")` — the literal string `"HEAD"`, i.e. the
+*current* tree, every run. `checkRef` (`pkg/drift/drift.go`) resolves every path-kind
+citation (canonical `repo:path[:line][#symbol]` refs included, not just body-inline
+shorthand) through that registry *before* it ever reaches `checkPath`'s file-existence
+ladder. A file that has been fully deleted is, by construction, absent from a registry
+built off current HEAD — `Registry.Resolve` returns `Unresolved` (`byBase` has no entry
+for that basename), and `checkRef` reports `Skipped: "no registered repository contains
+this path"` rather than reaching `checkPath`'s `Broken: "file no longer exists at HEAD"`
+branch, which is dead code for this exact case. `Skipped` does not demote
+(`Finding.Demoting()` is `Broken`-only), so **a note whose cited file was deleted outright
+keeps its confidence forever** — it only gets caught if some other declaration happens to
+share the same basename in the registry.
+
+Confirmed empirically, not just read: a scratch note citing `repo:App.java` via
+`code_refs` kept `confidence: high` and `drift_checked_at` advancing normally across a
+commit that `git rm`'d `App.java` entirely — `forge drift --deep --json` on that state
+returns `"verdict": "skipped", "reason": "no registered repository contains this path"`,
+never `"broken"`. The addendum's ladder ("file gone, then symbol gone, then line moved,
+then body changed") is written as if `checkPath` always runs; it silently doesn't for
+this input.
+
+This is orthogonal to `checkSymbol`'s and `absentSymbol`'s handling of a *symbol* going
+missing while its file survives (or a bare symbol-only citation, which uses
+`src.Find`/`--deep`'s verified-era lookup instead of the registry and correctly reports
+`Broken`) — those paths are unaffected and already covered by
+`TestCheckLadder`. The gap is specifically: path-kind citation + the entire file gone
+from the current tree. A fix likely means giving `checkRef` a fallback when
+`Registry.Resolve` returns `Unresolved` for a *canonical* (not body-inline) ref: probe
+`src.At(ref.Repo, ref.Path, head)` directly using the ref's own literal repo/path before
+giving up, since a canonical ref already claims to know the exact path and doesn't need
+the registry's basename fuzzy-matching to find it.

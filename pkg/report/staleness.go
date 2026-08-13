@@ -61,6 +61,18 @@ func haveAsks(asks map[string]int) bool {
 	return false
 }
 
+// CountOverdue is overdueBy's count only, exported so a caller outside this package
+// (weekly.md's collector) doesn't redefine "past its freshness window" a second way.
+func CountOverdue(entries []Entry, now time.Time) int {
+	n := 0
+	for _, e := range entries {
+		if _, ok := overdueBy(e, now); ok {
+			n++
+		}
+	}
+	return n
+}
+
 func rankOverdue(in StalenessInput) []Overdue {
 	weighted := haveAsks(in.Asks)
 	var out []Overdue

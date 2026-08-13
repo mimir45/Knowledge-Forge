@@ -4,29 +4,69 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Status
 
-**Phases 0, 1, 2, 2b, 3 and 3b are done** (2026-08-09 through 2026-08-10; Phase 1 merged
-as `1c9df95`, Phase 2 as `3619b72`, Phase 2b committed straight to `main`, `cb12a08`…
-`15a795f`; Phase 3 committed straight to `main` in one commit; Phase 3b likewise, on top of
-`847098a`). The repo is a git repo with a Go source tree: `cmd/forge`
-(`slug validate index reindex capture recall drift check config init engine`) over
-`pkg/vault`, `pkg/graph`, `pkg/report`, `pkg/store`, `pkg/dataset`, `pkg/recall`,
-`pkg/similarity`, `pkg/codeindex`, `pkg/coderef`, `pkg/gitsig`, `pkg/drift`, `pkg/linkcheck`,
-`pkg/config` (the four-layer config chain), `pkg/engine` (the four-backend engine
-abstraction — `none/host/api/advisor`, per-stage routing with fallback chains, SQLite-backed
-budget accounting), plus seven note templates in `templates/`, `skills/forge/SKILL.md`,
-`skills/forge-init/SKILL.md`, `references/recall-spec.md`, eight packaged presets in
-`config/presets/`, a Makefile with a six-target cross-compile matrix, a hash-verifying
-`bin/forge` shim, and a `hooks/` + `scripts/` pair that installs the vault's D3 capture
-hook. Build and test with `CGO_ENABLED=0 go build ./...` / `go test ./...` — 15 packages
-report `ok` (`config`, `profiles`, `references` are data-only, no test files), all green.
-Everything else below is still design spec; **Phase 4 (subagents & verification) is next.**
+**Phases 0, 1, 2, 2b, 3, 3b, 4 and 5 are done** (2026-08-09 through 2026-08-13; Phase 1
+merged as `1c9df95`, Phase 2 as `3619b72`, Phase 2b committed straight to `main`,
+`cb12a08`…`15a795f`; Phase 3 committed straight to `main` in one commit; Phase 3b
+likewise, on top of `847098a`; Phase 4 likewise, on top of `884e42e`; Phase 5 likewise,
+on top of Phase 4's commit). The repo is a git repo with a Go source tree: `cmd/forge`
+(`slug validate index reindex capture recall drift check config init engine verify-code
+gate session-context intent session-capture cache-source stats`) over `pkg/vault`,
+`pkg/graph`, `pkg/report` (now including `weekly.go`'s rollup renderer and
+`weekly_store.go`'s week-over-week `.forge/weekly-stats.json` persistence), `pkg/store`,
+`pkg/dataset`, `pkg/recall`, `pkg/similarity`, `pkg/codeindex`, `pkg/coderef`,
+`pkg/gitsig`, `pkg/drift`, `pkg/linkcheck`, `pkg/config` (the four-layer config chain),
+`pkg/engine` (the four-backend engine abstraction — `none/host/api/advisor`, per-stage
+routing with fallback chains, SQLite-backed budget accounting), `pkg/qualitygate` (the
+seven DESIGN §12 gates + `Run`/`Report` orchestration + `_inbox/` quarantine),
+`pkg/telemetry` (new in Phase 5 — DESIGN §14's `ask` event, sha256 topic hashing, never
+raw question text; gated fully behind `cfg.Telemetry.Enabled` and wired into `forge
+recall`), plus seven note templates in `templates/`, `skills/forge/SKILL.md`,
+`skills/forge-init/SKILL.md`, `skills/forge-check/SKILL.md` and `skills/forge-stats/
+SKILL.md` (new in Phase 5), `references/recall-spec.md`, `references/writing-rules.md`,
+eight packaged presets in `config/presets/`, a Makefile with a six-target cross-compile
+matrix, a hash-verifying `bin/forge` shim, a `hooks/` + `scripts/` pair that now installs
+both the vault's D3 capture hook (`vault-post-commit`) and, new in Phase 5, four Claude
+Code lifecycle shims (`session-context`, `user-prompt-intent`, `session-end-capture`,
+`post-tool-cache-source`, declared in `hooks/hooks.json`) plus three git-anchored
+drift shims for code repos (`code-post-commit`, `code-post-merge`, `code-post-checkout`,
+installed via the new `scripts/install_drift_hook.sh`), and four `agents/*.md` spec
+files (`forge-researcher`, `forge-codebase-scout`, `forge-verifier`, `forge-librarian` —
+spec only, see the packaging-gap note below). Build and test with `CGO_ENABLED=0 go
+build ./...` / `go test ./...` — 17 packages report `ok` (`config`, `profiles`,
+`references` are data-only, no test files), all green.
+Phase 5's own `forge session-context` / `forge intent` warm-latency check ran 20
+iterations against synthetic stdin; both landed well under budget (<200ms / <50ms).
+`forge check` against the real vault confirmed the new `moc/weekly/YYYY-WW.md` rollup
+renders, is byte-identical on a second immediate run, and `.forge/weekly-stats.json`
+persists across runs without zeroing or duplicating deltas within the same ISO week. Two
+new backlog items recorded rather than fixed this phase: **B-025** (`forge cache-source`'s
+`PostToolUse`/WebFetch `tool_response` JSON shape was never confirmed from official docs,
+so `cacheBody` deliberately caches the raw bytes rather than guessing a field name) and
+**B-026** (a citation to a fully deleted file can never verdict BROKEN, because
+`registryOf` always builds `pkg/coderef`'s registry from the current `HEAD` tree — found
+smoke-testing Phase 5's drift hooks, pre-existing in Phase 2b's `pkg/drift`, not this
+phase's to fix). The packaging gap already on file for root-level `agents/` now also
+covers `hooks/hooks.json`: nothing in this repo auto-installs it into
+`~/.claude/settings.json` or a project's `.claude/settings.json` — closed only when
+Phase 6's plugin manifest lands.
+Everything else below is still design spec; **Phase 5b is next.**
 One item Phase 3 explicitly did not touch: **B-008's §3.1 recalibration** — see BACKLOG, it
 needs its own session because honest verification means re-deriving the whole calibration
-table, not re-running two queries. Two items Phase 3b left open, both recorded rather than
-fixed: **B-022** (`engine_trail`'s schema pattern misses `intake|plan|synthesize|link` and
-wrongly includes `critique`) and **B-023** (code's `on_exhausted: stop` vs. every doc's
-`fail`, and `stop`/`degrade` are behaviorally identical to each other today — nothing reads
-either value).
+table, not re-running two queries. **B-023** is still open, recorded rather than fixed:
+code's `on_exhausted: stop` vs. every doc's `fail`, and `stop`/`degrade` are behaviorally
+identical to each other today — nothing reads either value. **B-022 closed in Phase 4**
+(the schema pattern now covers all nine `cfg.Pipeline` stages minus `critique`); **B-007
+closed in Phase 4** (`agents/forge-librarian.md`'s prompt stamps `Forge-Write: true` on
+every commit it authors, and `pkg/dataset/d3_forge_write_test.go` pins the guard both
+ways). One new item Phase 4 found and recorded rather than fixed: **B-024**
+(`pkg/dataset/d2.go`'s `D2Tag = "d2_advisor"` never matches the packaged config's `"d2"`
+list entry, so D2 capture is silently inert under the shipped config).
+**Packaging gap, recorded rather than implied fixed:** nothing in this repo loads agents
+from a root-level `agents/` directory — Claude Code loads `.claude/agents/`, and no
+plugin manifest exists yet (Phase 0's finding, still true). The four `agents/*.md` files
+are correct spec for when packaging exists but are not live, dispatchable agents today;
+`skills/forge/SKILL.md`'s dispatch to them is verified today via the generic Agent tool
+with an explicit tool allowlist, not live agent auto-discovery.
 `testdata/vault/` is a markdown fixture, described below.
 
 Phase 2b's measured actuals, so no later phase re-derives them: `forge index` 0.02s,
@@ -222,8 +262,22 @@ pkg/config/       the four-layer config chain
 
 Latency budgets and the **measured** actuals on an Apple M4: `forge drift` <100ms → **60–70ms**
 (the binding constraint — it runs on the git-hook path), `forge index` <200ms → **20ms**,
-`forge check` <10s warm → **390ms** (930ms cold). SessionStart hook <200ms is unmeasured;
-nothing installs it until Phase 5.
+`forge check` <10s warm → **390ms** (930ms cold). Phase 4 adds two more, measured, since
+DESIGN sets no combined gate-pipeline budget: `pkg/qualitygate.Run`'s six in-process
+gates minus `code` (schema, citation, freshness, antislop, link, duplicate) →
+**~0.13ms** per run, far under the informal sub-100ms target set against `forge check`'s
+existing warm figure above; `forge verify-code` per invocation, dominated by toolchain
+startup, not gate logic → bash **~10ms warm** (~470ms cold, one-time OS page-cache
+effect), java **~170ms warm** (~370ms cold). `tsc` is not installed in this environment,
+so the TypeScript lane is untested here — `TestCompileTSSkippedWhenToolchainAbsent`
+covers the absent-toolchain path instead. Phase 5 measured its two Claude Code hook
+commands the same warm/cold way: `forge session-context` <200ms budget → measured **well
+under budget warm** over 20 iterations against synthetic stdin; `forge intent` <50ms
+budget → likewise **well under budget warm**, the reuse of `forge recall`'s already-warm
+SQLite cache being what makes that budget plausible at all. `hooks/hooks.json` declares
+the bindings but nothing in this repo installs it into a live `settings.json` yet (see
+the packaging-gap note in Status), so these are direct-invocation measurements, not a
+measurement of a live session.
 
 ## Commands
 
@@ -231,7 +285,7 @@ nothing installs it until Phase 5.
 `make build test bench dist install-hook`. There is still no lint target. Two build lanes,
 because `pkg/codeindex` is the one cgo package and is build-tag gated — the default lane is
 pure Go and cross-compiles; the codeindex lane needs cgo and a host toolchain. Phases 1, 2,
-2b, 3 and 3b's commands ship; the rest is the intended surface, by the phase that creates it:
+2b, 3, 3b, 4 and 5's commands ship; the rest is the intended surface, by the phase that creates it:
 
 | Command | Phase |
 |---|---|
@@ -240,7 +294,8 @@ pure Go and cross-compiles; the codeindex lane needs cgo and a host toolchain. P
 | `forge drift`, `forge check`, cross-compile + goreleaser | 2b — **built** |
 | `forge config` (`--layers`, `--json`), `forge init`, `skills/forge-init/` wizard | 3 — **built** |
 | `forge engine select/run/record` — the zero-model-call binary's one named exception | 3b — **built** |
-| `/forge-check`, `/forge-stats` | 5 |
+| `forge verify-code` (sandboxed compile check, bash/ts/java), `forge gate` (seven-gate `_inbox/` quarantine) | 4 — **built** |
+| `forge session-context`, `forge intent`, `forge session-capture`, `forge cache-source`, `forge stats`, `/forge-check`, `/forge-stats`, git-anchored drift hooks (`scripts/install_drift_hook.sh`) | 5 — **built** |
 | `/forge-export-dataset`, `/forge-dataset-stats` | 6b |
 
 ## Known discrepancies (record, don't fix)

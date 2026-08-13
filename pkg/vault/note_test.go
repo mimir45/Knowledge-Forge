@@ -28,6 +28,16 @@ func TestMOCIsAGraphNodeButNotContractBound(t *testing.T) {
 	}
 }
 
+// A weekly rollup is dated output, not a stable map: counting it in the next run's graph
+// would move the very duplicate/orphan/drift counts it quotes inside itself.
+func TestWeeklyRollupIsNotACountedNote(t *testing.T) {
+	const rel = "moc/weekly/2026-W33.md"
+	if IsContentNote(rel) {
+		t.Errorf("IsContentNote(%q) = true; a weekly rollup would count itself on the run "+
+			"after it was written", rel)
+	}
+}
+
 func TestOrdinaryNotesAreStillBothThings(t *testing.T) {
 	const rel = "notes/concept/soft-delete.md"
 	if !IsContentNote(rel) || !IsContractNote(rel) {

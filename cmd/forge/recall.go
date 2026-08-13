@@ -11,6 +11,8 @@ import (
 
 	"knowledge-forge/pkg/config"
 	"knowledge-forge/pkg/recall"
+	"knowledge-forge/pkg/telemetry"
+	"knowledge-forge/pkg/vault"
 )
 
 func cmdRecall(args []string) int {
@@ -35,7 +37,7 @@ func cmdRecall(args []string) int {
 	if code != 0 {
 		return code
 	}
-	return runRecall(root, *question, *stack, *explain, thresholdsFrom(cfg))
+	return runRecall(root, *question, *stack, *explain, thresholdsFrom(cfg), cfg)
 }
 
 // thresholdsFrom is AUDIT §8.4 D-7 in one function: the decision tree's numbers now come
@@ -65,7 +67,8 @@ for the scoring blend and DESIGN 5.3's decision tree.
 
 `
 
-func runRecall(vaultDir, question, stack string, explain bool, th recall.Thresholds) int {
+func runRecall(vaultDir, question, stack string, explain bool, th recall.Thresholds,
+	cfg *config.Config) int {
 	root, err := filepath.Abs(vaultDir)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "forge recall: %v\n", err)
@@ -81,7 +84,22 @@ func runRecall(vaultDir, question, stack string, explain bool, th recall.Thresho
 	if explain {
 		printExplain(os.Stderr, q, res)
 	}
+	logAsk(root, cfg, question, res)
 	return emit(res)
+}
+
+// logAsk records DESIGN §14's ask event when telemetry is enabled. Sources and
+// DurationMS stay zero: forge recall has no research-time or citation-count signal to
+// report — a known limitation, not an omission, until a caller upstream supplies one.
+func logAsk(root string, cfg *config.Config, question string, res recall.Result) {
+	if cfg == nil || !cfg.Telemetry.Enabled {
+		return
+	}
+	ev := telemetry.Event{TS: time.Now().UTC(), Event: "ask", QHash: telemetry.QHash(question),
+		Topic: vault.Slug(question), Decision: string(res.Verdict), RecallTopScore: res.TopScore}
+	if err := telemetry.Append(root, ev); err != nil {
+		fmt.Fprintf(os.Stderr, "forge recall: telemetry: %v\n", err)
+	}
 }
 
 func splitStack(s string) []string {

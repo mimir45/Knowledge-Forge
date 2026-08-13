@@ -81,6 +81,13 @@ func notesWith(fs []drift.Finding, vs ...drift.Verdict) []string {
 	return out
 }
 
+// AffectedByDrift is notesWith's count, exported for weekly.md's collector: the same
+// "distinct notes carrying any of these verdicts" question drift.md already answers
+// internally, without redefining it a second way outside this package.
+func AffectedByDrift(fs []drift.Finding, vs ...drift.Verdict) int {
+	return len(notesWith(fs, vs...))
+}
+
 func writeFindings(b *strings.Builder, in DriftInput, v drift.Verdict, title string) {
 	byNote := groupByNote(in.Findings, v)
 	fmt.Fprintf(b, "\n## %s — %d\n", title, len(byNote))

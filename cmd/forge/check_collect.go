@@ -1,6 +1,7 @@
 package main
 
 import (
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -51,6 +52,9 @@ type checkData struct {
 	findings   []drift.Finding
 	code       []report.CodebaseInput
 
+	askCounts map[string]int
+	askList   []report.Ask
+
 	// repoErr fails drift.md and the codebase map together — both read the same registry.
 	// codeErr fails only the map, which is the cgo-only one.
 	repoErr error
@@ -68,6 +72,7 @@ func collectVault(cfg checkCfg, root string) (*checkData, error) {
 	d := &checkData{cfg: cfg, root: root, now: time.Now(), notes: notes}
 	d.schema, _ = vault.LoadSchema()
 	d.slugs, d.types = slugMap(notes), typeMap(notes)
+	d.askCounts, d.askList = loadAskLog(filepath.Join(root, ".forge", "log.jsonl"), d.slugs)
 	d.buildGraph()
 	d.similar()
 	d.churnStats, d.churnErr = vaultHistory(root, cfg.months, d.now)
@@ -231,9 +236,15 @@ func stageEngines(cfg *config.Config, l engine.Ledger, clock func() time.Time) m
 func countQueued(notes []*vault.Note) int {
 	n := 0
 	for _, note := range notes {
-		if note.FM != nil && strings.EqualFold(note.FM.Str("pending_advisor"), "true") {
+		if isQueued(note) {
 			n++
 		}
 	}
 	return n
+}
+
+// isQueued is countQueued's per-note predicate, shared with check_drain.go's dispatch
+// loop so the two never drift apart on what "queued" means.
+func isQueued(n *vault.Note) bool {
+	return n.FM != nil && strings.EqualFold(n.FM.Str("pending_advisor"), "true")
 }

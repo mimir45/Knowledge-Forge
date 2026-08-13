@@ -373,6 +373,37 @@ func TestUncoveredTiesBreakOnPath(t *testing.T) {
 	}
 }
 
+// TestTopUncoveredMatchesTheReportsOwnRanking: check.ai_pass's ADR-stub sub-task must pick
+// the same module moc/codebase.md itself would rank first, not a second, independent order.
+func TestTopUncoveredMatchesTheReportsOwnRanking(t *testing.T) {
+	u := []Uncovered{
+		{Symbol: "Small", Path: "a.go", LOC: 10, Commits: 2},
+		{Symbol: "RefundOrchestrator", Path: "b.go", LOC: 312, Commits: 9},
+	}
+	top, ok := TopUncovered(u)
+	if !ok || top.Symbol != "RefundOrchestrator" {
+		t.Errorf("TopUncovered = %+v, %v; want RefundOrchestrator, true", top, ok)
+	}
+	if _, ok := TopUncovered(nil); ok {
+		t.Error("TopUncovered(nil) = _, true; want false on an empty pool")
+	}
+}
+
+// TestTopDuplicatePairRequiresTheSpecThreshold: check.ai_pass's merge-proposal sub-task
+// must use the same 0.85 bar duplicates.md's header and weekly.go's Act now cite, not the
+// lower operating threshold pairs is otherwise filtered at — BACKLOG B-019 is about this bar.
+func TestTopDuplicatePairRequiresTheSpecThreshold(t *testing.T) {
+	pairs := []similarity.Pair{{A: "x", B: "y", Score: 0.60}, {A: "p", B: "q", Score: 0.40}}
+	if _, ok := TopDuplicatePair(pairs); ok {
+		t.Error("TopDuplicatePair found a pair below 0.85; B-019 says this almost never clears")
+	}
+	pairs = append([]similarity.Pair{{A: "m", B: "n", Score: 0.90}}, pairs...)
+	got, ok := TopDuplicatePair(pairs)
+	if !ok || got.A != "m" || got.B != "n" {
+		t.Errorf("TopDuplicatePair = %+v, %v; want the 0.90 pair, true", got, ok)
+	}
+}
+
 // TestDriftFindingTiesBreakOnReason: one note can cite one ref twice and collect two
 // reasons, and the ref alone does not separate them.
 func TestDriftFindingTiesBreakOnReason(t *testing.T) {

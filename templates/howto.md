@@ -41,6 +41,11 @@ inlining it. -->
 
 ## Steps
 1. {{imperative, one action per step, in the order you actually ran them}}
+   ```{{lang}}
+   {{the actual command or config for this step — antislop's structural rule
+   requires at least one fenced block in every howto note; delete this fence
+   only if a later step already has one}}
+   ```
 <!-- Numbered, imperative, each step independently checkable. Do NOT bundle two
 actions into one numbered step. Do NOT include steps you assume work but never
 ran — Verified means run. -->

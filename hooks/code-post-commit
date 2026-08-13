@@ -1,0 +1,43 @@
+#!/bin/sh
+# Knowledge Forge — git-anchored drift, code repo's post-commit (STACK/AUDIT §8.2: drift
+# is git-tree anchored, never file-save anchored — see the invariant in CLAUDE.md).
+#
+# Installed into a CODE repository's .git/hooks/post-commit by
+# scripts/install_drift_hook.sh. After every commit it re-checks the notes citing this
+# repo's code changed since HEAD^, and (--apply) demotes any that no longer match.
+#
+# Same three rules as hooks/vault-post-commit: never fails the commit, never prints (all
+# output goes through forge drift's own vault-side logging — there is no separate log
+# file here since drift's own confidence/drift_checked_at stamps in the vault ARE the
+# record), finds forge without trusting $PATH.
+#
+# Repo name: deliberately not pinned anywhere. It's always this repo's own basename —
+# there is no ambiguity to resolve, unlike the vault pairing below, which install_drift_
+# hook.sh has no way to infer and so pins explicitly.
+
+set -u
+
+repo=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+[ -n "$repo" ] || exit 0
+name=$(basename "$repo")
+
+vault=""
+[ -r "$repo/.forge/vault-path" ] && vault=$(cat "$repo/.forge/vault-path")
+[ -n "$vault" ] || exit 0
+
+forge=${FORGE_BIN:-}
+[ -n "$forge" ] || forge="$HOME/.forge/bin/forge"
+[ -x "$forge" ] || forge=$(command -v forge 2>/dev/null) || exit 0
+[ -x "$forge" ] || exit 0
+
+# No parent commit means nothing to diff since — skip rather than error on the repo's
+# very first commit. Resolve to a concrete SHA (not the literal "HEAD^") so the value
+# passed to --since-commit, and anything drift persists from it, stays reproducible
+# independent of where HEAD points by the time the command runs.
+since=$(git rev-parse --verify -q HEAD^ 2>/dev/null) || exit 0
+[ -n "$since" ] || exit 0
+
+"$forge" drift --vault "$vault" --repo "$name=$repo" --since-commit "$since" --apply \
+    >/dev/null 2>&1 || true
+
+exit 0

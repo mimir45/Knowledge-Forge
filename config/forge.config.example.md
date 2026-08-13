@@ -116,6 +116,8 @@ research:
 verify:
   run_code: auto           # auto | never | ask — always in a throwaway directory
   require_citation_for: [version-specific, performance-claim, security-claim]
+  duplicate_threshold: 0.40  # write-time gate trigger — separate from check.duplicate_threshold
+                              # below (a report threshold); see references/duplicate-spec.md §6
 
 write:
   language: en
@@ -128,6 +130,7 @@ static:
   code_index: true
   languages: [java, kotlin, python, typescript]
   git_signals: true
+  cache_ttl_days: 30      # forge cache-source's .forge/cache/<hash>.md TTL (Phase 5)
 
   drift:
     enabled: true

@@ -44,7 +44,7 @@ func RenderIndex(in IndexInput) []byte {
 	writeRecent(&b, in)
 	writeStale(&b, in)
 	writeGaps(&b, in)
-	return []byte(truncate(b.String(), in.MaxSize))
+	return []byte(Trim(b.String(), in.MaxSize))
 }
 
 func summaryLine(in IndexInput) string {
@@ -175,9 +175,11 @@ func head[T any](s []T, n int) []T {
 	return s
 }
 
-// truncate cuts at a line boundary and says so, rather than emitting a half-written
+// Trim cuts at a line boundary and says so, rather than emitting a half-written
 // bullet that a SessionStart hook would feed to a model as if it were complete.
-func truncate(s string, max int) string {
+// Exported for cmd/forge's session-context hook, which shares this exact 4KB-budget
+// contract for the profile it appends after the index.
+func Trim(s string, max int) string {
 	if len(s) <= max {
 		return s
 	}

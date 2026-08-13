@@ -1,0 +1,30 @@
+#!/bin/sh
+# Knowledge Forge — UserPromptSubmit hook (DESIGN §13, ADDENDUM §C).
+#
+# Runs `forge intent`, which reads the hook's stdin JSON (the user_prompt field), does a
+# cheap model-free recall check, and — only when the top hit scores above 0.7 — prints the
+# UserPromptSubmit output schema (`{"additionalContext": "...", "continue": true}`) to
+# stdout. That JSON is what must pass straight through unredirected; below threshold the
+# Go command prints nothing at all, which is also correct output (no nudge offered).
+#
+# Must stay cheap (~50ms budget) and never block a prompt: cmd/forge/intent.go already
+# exits 0 on every path, malformed stdin included. Nothing here is time-sensitive to fix,
+# either — mid-session hook output is REPLAYED from the saved transcript on
+# --continue/--resume, not re-executed, so a stale hint from an old session is expected
+# and not this shim's problem to solve.
+#
+# Known, un-fixed risk carried from cmd/forge/intent.go: BACKLOG B-008 means the 0.7
+# threshold can false-positive near 0.740.
+#
+# forge binary resolution matches hooks/session-context: $FORGE_BIN, then
+# ~/.forge/bin/forge, then $PATH.
+
+set -u
+
+forge=${FORGE_BIN:-}
+[ -n "$forge" ] || forge="$HOME/.forge/bin/forge"
+[ -x "$forge" ] || forge=$(command -v forge 2>/dev/null) || exit 0
+[ -x "$forge" ] || exit 0
+
+"$forge" intent || true
+exit 0

@@ -26,9 +26,7 @@ func parseAll(ix *Index, blobs <-chan blob) {
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 	for i := 0; i < runtime.GOMAXPROCS(0); i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for b := range blobs {
 				f, err := Parse(b.path, b.src)
 				if err != nil || len(f.Symbols) == 0 {
@@ -38,7 +36,7 @@ func parseAll(ix *Index, blobs <-chan blob) {
 				ix.Files[b.path] = f
 				mu.Unlock()
 			}
-		}()
+		})
 	}
 	wg.Wait()
 }

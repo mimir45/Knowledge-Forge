@@ -102,7 +102,15 @@ func Walk(root string) ([]string, error) {
 // wikilinks inside duplicates.md and orphans.md would give their subjects inbound links,
 // so orphans.md would erase the orphans it exists to list. A report must never change the
 // number it reports.
-var excludedPrefixes = []string{"raw/", "sources/", "_archive/", "archive/", "reports/"}
+//
+// moc/weekly/ is excluded for the same reason, not moc/codebase.md's: a MOC is a stable
+// map meant to stay in the graph, but a weekly rollup is dated output that accumulates one
+// new file per ISO week and quotes duplicate/orphan/drift counts inside itself — counting
+// it would move the very numbers it reports, and on the run that follows writing it, the
+// vault it measured is no longer the vault it measures.
+var excludedPrefixes = []string{
+	"raw/", "sources/", "_archive/", "archive/", "reports/", "moc/weekly/",
+}
 
 // excludedNames are root-level files that live in the vault but are not notes.
 var excludedNames = map[string]bool{

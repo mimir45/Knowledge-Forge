@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"knowledge-forge/pkg/config"
+	"knowledge-forge/pkg/report"
 )
 
 // checkCfg is the weekly pass's inputs. The destination is fixed rather than a flag:
@@ -74,8 +75,9 @@ const checkUsage = `usage: forge check [--vault DIR] [--repo NAME=PATH] [--month
                    [--offline]
 
 The weekly pass. Collects the vault once and renders the nine ADDENDUM section B.4
-reports plus cost.md (Phase 3b) into <vault>/reports/, and section B.5's map into
-<vault>/moc/codebase.md. Zero model calls, like everything else in this binary.
+reports plus cost.md (Phase 3b) into <vault>/reports/, section B.5's map into
+<vault>/moc/codebase.md, and section C's rollup into <vault>/moc/weekly/<ISO-week>.md.
+Zero model calls, like everything else in this binary.
 
 Every report is rendered independently: a renderer that fails costs its own file and
 nothing else, and the run says which files it wrote and which it skipped. Headers carry
@@ -99,7 +101,10 @@ func runWeekly(cfg checkCfg) int {
 		fmt.Fprintf(os.Stderr, "forge check: %v\n", err)
 		return 1
 	}
-	return writeAll(root, jobs(cfg, data))
+	code := writeAll(root, jobs(cfg, data))
+	aiPass(data)
+	drainAdvisorQueue(data)
+	return code
 }
 
 // job is one report: where it goes and how to build it. The closure defers the render
@@ -167,8 +172,9 @@ func unchangedNote(changed bool) string {
 }
 
 // jobs lists the nine reports of ADDENDUM section B.4, cost.md (Phase 3b, AUDIT section
-// 8.4 D-1), and section B.5's codebase map. cost.md runs unconditionally like the other
-// eight always-on reports — Check.Reports is not filtered against any of them today.
+// 8.4 D-1), section B.5's codebase map, and section C's weekly rollup. cost.md and weekly
+// run unconditionally like the other eight always-on reports — Check.Reports is not
+// filtered against any of them today.
 func jobs(cfg checkCfg, d *checkData) []job {
 	js := []job{
 		{"reports/coverage.md", d.coverage},
@@ -181,8 +187,10 @@ func jobs(cfg checkCfg, d *checkData) []job {
 		{"reports/deadlinks.md", d.deadlinks},
 		{"reports/cost.md", d.cost},
 	}
-	if len(cfg.repos) == 0 {
-		return js
+	if len(cfg.repos) > 0 {
+		js = append(js, job{"reports/drift.md", d.drift}, job{"moc/codebase.md", d.codebase})
 	}
-	return append(js, job{"reports/drift.md", d.drift}, job{"moc/codebase.md", d.codebase})
+	// weekly runs unconditionally, unlike drift/codebase — it has no --repo dependency
+	// and degrades gracefully (B-017/B-019 caveats) when there is nothing to act on.
+	return append(js, job{"moc/weekly/" + report.WeekKey(d.now) + ".md", d.weekly})
 }

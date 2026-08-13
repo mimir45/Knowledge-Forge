@@ -1,0 +1,38 @@
+#!/bin/sh
+# Knowledge Forge — git-anchored drift, code repo's post-checkout (STACK/AUDIT §8.2).
+#
+# Installed into a CODE repository's .git/hooks/post-checkout by
+# scripts/install_drift_hook.sh. Git passes three args: $1=previous HEAD, $2=new HEAD,
+# $3=1 for a branch-level checkout / 0 for a file-level checkout (e.g. `git checkout --
+# path`). Only a branch-level checkout that actually moved HEAD is worth a drift pass —
+# skip file checkouts and no-op checkouts (switching to the branch you're already on).
+#
+# Same contract as hooks/code-post-commit: never fails the checkout, never prints.
+
+set -u
+
+prev=${1:-}
+new=${2:-}
+flag=${3:-0}
+
+[ "$flag" = "1" ] || exit 0
+[ -n "$prev" ] && [ -n "$new" ] || exit 0
+[ "$prev" != "$new" ] || exit 0
+
+repo=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+[ -n "$repo" ] || exit 0
+name=$(basename "$repo")
+
+vault=""
+[ -r "$repo/.forge/vault-path" ] && vault=$(cat "$repo/.forge/vault-path")
+[ -n "$vault" ] || exit 0
+
+forge=${FORGE_BIN:-}
+[ -n "$forge" ] || forge="$HOME/.forge/bin/forge"
+[ -x "$forge" ] || forge=$(command -v forge 2>/dev/null) || exit 0
+[ -x "$forge" ] || exit 0
+
+"$forge" drift --vault "$vault" --repo "$name=$repo" --since-commit "$prev" --apply \
+    >/dev/null 2>&1 || true
+
+exit 0

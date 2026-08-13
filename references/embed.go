@@ -10,3 +10,6 @@ import _ "embed"
 
 //go:embed schema.yaml
 var SchemaYAML []byte
+
+//go:embed writing-rules.md
+var WritingRulesMD []byte

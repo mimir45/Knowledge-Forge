@@ -68,3 +68,31 @@ enough to measure it; `BenchmarkPairs500Notes` bounds the no-pruning case at 90m
 `duplicates.md` states in its header that **no pair in the vault crosses §B.4's 0.85**. That
 is the honest headline, not a footnote: a reader who knows the spec must not read three rows
 at 0.40 as three rows at 0.85.
+
+## 6. Write-time gate
+
+Phase 4's `duplicate` gate (`pkg/qualitygate/duplicate.go`) reuses this file's threshold,
+shingle width, and same-type scoping unchanged — but reads its own config key,
+`cfg.Verify.DuplicateThreshold` (`verify.duplicate_threshold`), not `cfg.Check`'s
+(`check.duplicate_threshold`). Both default to 0.40 today and both trace to §1 above, but
+they are two separate knobs on purpose: a user who lowers the weekly report's threshold to
+surface more candidate pairs in `duplicates.md` must not silently change what blocks a
+write. Falls back to `similarity.DuplicateThreshold` (0.40) when the config value is
+unset (`<= 0`), the same zero-value convention the rest of `pkg/config` uses.
+
+**0.40 as a write-time trigger is asymmetric from 0.40 as a passive report threshold.**
+§1's table is read after the fact, by a human deciding whether three rows are worth
+merging. The gate fires *during* a write, on a note that may legitimately extend
+well-covered ground — the vault's measured ceiling for unrelated same-type pairs is 0.504
+(§3), so a write about a topic the vault already covers well will routinely brush 0.40
+without being a duplicate in any useful sense. Trip rate scales with how crowded the
+group is, not with how redundant the new note is.
+
+That is why the gate's remedy is `SwitchToUpdate`, never a hard block: `duplicateGate`
+returns `Fail` + `Remedy: SwitchToUpdate`, and `Report.Quarantine` does not set on that
+outcome alone (`pkg/qualitygate/gate.go`'s remedy table). It is a recommendation the
+calling skill can act on — usually by routing to the existing `UPDATE(extend)` branch
+instead of `CREATE` — or override with a stated reason (DESIGN §12 permits publishing two
+notes on the same topic when they earn separate treatment, e.g. a `pattern` and the
+`pitfall` that motivated it). What the gate must never do is fail a write silently on a
+threshold everyone already knew would trip on routine, well-covered topics.

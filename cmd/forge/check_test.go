@@ -12,6 +12,7 @@ import (
 	"knowledge-forge/pkg/coderef"
 	"knowledge-forge/pkg/gitsig"
 	"knowledge-forge/pkg/linkcheck"
+	"knowledge-forge/pkg/report"
 	"knowledge-forge/pkg/vault"
 )
 
@@ -69,6 +70,35 @@ func TestCheckIsIdempotentOnDisk(t *testing.T) {
 		if !was.Equal(before[path]) {
 			t.Errorf("%s rewritten on an unchanged vault", filepath.Base(path))
 		}
+	}
+}
+
+// TestWeeklyIsIdempotentOnDisk: TestCheckIsIdempotentOnDisk only looks under reports/, so
+// the weekly file — outside that directory — needs its own check. The interesting input
+// is Prev: run 2 has already Record-ed this week's snapshot, and a naive "diff against the
+// last saved snapshot" would make run 2 diff against itself instead of the prior week.
+func TestWeeklyIsIdempotentOnDisk(t *testing.T) {
+	root := gitVault(t)
+	cmdCheck([]string{"--vault", root, "--offline"})
+	key := report.WeekKey(time.Now())
+	weekly := filepath.Join(root, "moc", "weekly", key+".md")
+	before, err := os.ReadFile(weekly)
+	if err != nil {
+		t.Fatalf("moc/weekly/%s.md: %v", key, err)
+	}
+	time.Sleep(10 * time.Millisecond)
+	cmdCheck([]string{"--vault", root, "--offline"})
+	after, err := os.ReadFile(weekly)
+	if err != nil {
+		t.Fatalf("moc/weekly/%s.md: %v", key, err)
+	}
+	if string(before) != string(after) {
+		t.Errorf("moc/weekly/%s.md changed on a second same-week run", key)
+	}
+	store := report.OpenWeeklyStore(filepath.Join(root, ".forge"))
+	if len(store.Weeks) != 1 {
+		t.Errorf(".forge/weekly-stats.json has %d weeks, want 1: a second run this week "+
+			"must overwrite the snapshot, not append one", len(store.Weeks))
 	}
 }
 

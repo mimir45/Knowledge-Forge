@@ -245,9 +245,12 @@ fields:
     type: list<string>
     required: false
     default: []
-    item_pattern: '^(recall|research|write|verify|critique|index)=(none|host|api|advisor)$'
+    item_pattern: '^(intake|recall|plan|research|synthesize|verify|write|link|index)=(none|host|api|advisor)$'
     notes: >
-      Which engine tier served each pipeline stage for this note. `recall`, `write` and
+      Which engine tier served each pipeline stage for this note, one entry per
+      cfg.Pipeline key (nine stages — B-022 widened this from the original five-stage,
+      critique-including pattern; `critique` was never a real stage, only the advisor
+      engine's operating mode, see config's engines.advisor.mode). `recall`, `write` and
       `index` may only ever record `none` — the T0 static core makes zero model calls.
       A value violating that is a schema error, not a warning.
 

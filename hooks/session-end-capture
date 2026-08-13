@@ -1,0 +1,25 @@
+#!/bin/sh
+# Knowledge Forge — SessionEnd hook (DESIGN §13, ADDENDUM §C).
+#
+# Runs `forge session-capture`, which reads the hook's stdin JSON (session_id,
+# transcript_path, reason), regex-scans the transcript's assistant-role text for
+# "we established/decided/concluded/agreed that…" sentences, and writes up to 3
+# low-confidence stub notes to <vault>/_inbox/ via the same convention forge gate already
+# uses. Nothing here is context Claude Code consumes, so — unlike session-context and
+# user-prompt-intent — this hook stays silent: stdout/stderr are discarded rather than
+# passed through. cmd/forge/session_capture.go already never fails the session on its own
+# (fail-silent, always exits 0); this redirect is belt-and-braces so a future change to
+# that command can't leak noise into the transcript either.
+#
+# forge binary resolution matches hooks/session-context: $FORGE_BIN, then
+# ~/.forge/bin/forge, then $PATH.
+
+set -u
+
+forge=${FORGE_BIN:-}
+[ -n "$forge" ] || forge="$HOME/.forge/bin/forge"
+[ -x "$forge" ] || forge=$(command -v forge 2>/dev/null) || exit 0
+[ -x "$forge" ] || exit 0
+
+"$forge" session-capture >/dev/null 2>&1 || true
+exit 0

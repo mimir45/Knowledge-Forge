@@ -31,6 +31,13 @@ func Fix(n *Note, s *Schema) ([]byte, []string, error) {
 	return out, changes, err
 }
 
+// RenderNote emits frontmatter in schema key order followed by body, byte-for-byte the
+// same as Fix's own render step. Exported for pkg/vault/quarantine.go, which builds a
+// fresh Frontmatter for an _inbox/ draft rather than fixing an existing note.
+func RenderNote(fm *Frontmatter, s *Schema, body []byte) ([]byte, error) {
+	return render(fm, s, body)
+}
+
 func applyAll(n *Note, s *Schema, fm *Frontmatter) []string {
 	var changes []string
 	changes = append(changes, normalizeLists(s, fm)...)

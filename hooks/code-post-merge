@@ -1,0 +1,33 @@
+#!/bin/sh
+# Knowledge Forge — git-anchored drift, code repo's post-merge (STACK/AUDIT §8.2).
+#
+# Installed into a CODE repository's .git/hooks/post-merge by
+# scripts/install_drift_hook.sh. `ORIG_HEAD` is the ref git itself sets to the pre-merge
+# commit — that, not HEAD^, is the correct since-SHA here: a merge can bring in many
+# commits at once, and HEAD^ would only see the last parent.
+#
+# Same contract as hooks/code-post-commit: never fails the merge, never prints, resolves
+# both the paired vault (via the install-time pin) and the forge binary the same way.
+
+set -u
+
+repo=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+[ -n "$repo" ] || exit 0
+name=$(basename "$repo")
+
+vault=""
+[ -r "$repo/.forge/vault-path" ] && vault=$(cat "$repo/.forge/vault-path")
+[ -n "$vault" ] || exit 0
+
+forge=${FORGE_BIN:-}
+[ -n "$forge" ] || forge="$HOME/.forge/bin/forge"
+[ -x "$forge" ] || forge=$(command -v forge 2>/dev/null) || exit 0
+[ -x "$forge" ] || exit 0
+
+since=$(git rev-parse --verify -q ORIG_HEAD 2>/dev/null) || exit 0
+[ -n "$since" ] || exit 0
+
+"$forge" drift --vault "$vault" --repo "$name=$repo" --since-commit "$since" --apply \
+    >/dev/null 2>&1 || true
+
+exit 0

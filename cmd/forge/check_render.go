@@ -1,6 +1,9 @@
 package main
 
 import (
+	"path/filepath"
+
+	"knowledge-forge/pkg/drift"
 	"knowledge-forge/pkg/report"
 )
 
@@ -25,12 +28,12 @@ func (d *checkData) values(field string) []string {
 	return f.Values
 }
 
-// staleness passes a nil ask log, which is the truth today: every note in this vault is
-// origin: import, so nothing has been asked for and the report says so and falls back to
-// days overdue. Phase 4's capture log is what fills this in.
+// staleness reads d.askCounts, loaded from .forge/log.jsonl by loadAskLog. On a vault
+// with no telemetry-enabled `forge recall` runs yet — everything imported, nothing
+// asked — that map is empty and the report falls back to days overdue, same as before.
 func (d *checkData) staleness() ([]byte, error) {
 	return report.RenderStaleness(report.StalenessInput{
-		Entries: d.entries, Asks: nil, Now: d.now,
+		Entries: d.entries, Asks: d.askCounts, Now: d.now,
 	}), nil
 }
 
@@ -51,10 +54,11 @@ func (d *checkData) orphans() ([]byte, error) {
 	}), nil
 }
 
-// gaps has no ask log to read, so it reports the honest empty state: not "no gaps" but
-// "no data yet". The renderer keeps those two apart; see reports/gaps.md.
+// gaps reads d.askList, loaded from .forge/log.jsonl by loadAskLog. An empty list still
+// renders the honest "no data yet" state the renderer already distinguishes from "no
+// gaps" — see reports/gaps.md — it just now means telemetry is off or unused, not absent.
 func (d *checkData) gaps() ([]byte, error) {
-	return report.RenderGaps(report.GapsInput{Asks: nil, Now: d.now}), nil
+	return report.RenderGaps(report.GapsInput{Asks: d.askList, Now: d.now}), nil
 }
 
 func (d *checkData) graphHealth() ([]byte, error) {
@@ -126,4 +130,51 @@ func (d *checkData) codebase() ([]byte, error) {
 		out = append(out, report.RenderCodebase(in)...)
 	}
 	return out, nil
+}
+
+// weekly is the one report in this file that is not a pure function of d: it also reads
+// and writes .forge/weekly-stats.json, because a week-over-week delta has nowhere else to
+// live. A second run in the same ISO week overwrites that week's snapshot rather than
+// duplicating it — see report.WeeklyStore.Record — so this is not a correctness risk.
+func (d *checkData) weekly() ([]byte, error) {
+	store := report.OpenWeeklyStore(filepath.Join(d.root, ".forge"))
+	key := report.WeekKey(d.now)
+	prev := store.Prev(key)
+	stats := d.vaultStats()
+
+	md := report.RenderWeekly(d.weeklyInput(stats, prev))
+	store.Record(key, stats)
+	store.Prune(12) // .forge/ is not a place we want unbounded weekly history
+	return md, store.Save()
+}
+
+func (d *checkData) vaultStats() report.VaultStats {
+	return report.VaultStats{
+		Notes:   len(d.notes),
+		HitRate: report.HitRate(d.askList),
+		Orphans: len(d.graph.Orphans(d.nodes)),
+		Drift:   report.AffectedByDrift(d.findings, drift.Broken, drift.Suspect),
+	}
+}
+
+func (d *checkData) weeklyInput(stats report.VaultStats, prev *report.VaultStats) report.WeeklyInput {
+	week, year := d.now.ISOWeek()
+	return report.WeeklyInput{
+		Week: week, Year: year,
+		Broken: d.findings, Uncovered: d.allUncovered(), UncoveredDays: d.cfg.days,
+		DuplicatePairs: d.pairs, DeadCitations: d.citations,
+		StaleCount: report.CountOverdue(d.entries, d.now), MergeCandidates: len(d.pairs),
+		OrphanCount: stats.Orphans, Stats: stats, Prev: prev,
+		Asks: d.askList, Slugs: d.slugs, Now: d.now,
+	}
+}
+
+// allUncovered flattens moc/codebase.md's per-repo sections into one ranked pool — Act
+// now ranks across repos, unlike codebase.md which ranks within each one.
+func (d *checkData) allUncovered() []report.Uncovered {
+	var out []report.Uncovered
+	for _, c := range d.code {
+		out = append(out, c.Uncovered...)
+	}
+	return out
 }

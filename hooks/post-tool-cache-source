@@ -1,0 +1,25 @@
+#!/bin/sh
+# Knowledge Forge — PostToolUse (WebFetch) hook (DESIGN §13, ADDENDUM §C).
+#
+# Runs `forge cache-source`, which reads the hook's stdin JSON (tool_name, tool_input,
+# tool_response), and — only when tool_name is "WebFetch" — writes
+# <vault>/.forge/cache/<url-hash>.md with a TTL header. hooks.json's matcher already scopes
+# this hook to WebFetch, but cmd/forge/cache_source.go re-checks tool_name itself too, so
+# this shim stays correct even if it's ever wired to a broader matcher by mistake.
+#
+# Silent like session-end-capture: PostToolUse output isn't consumed as context, so
+# stdout/stderr are discarded rather than passed through. cmd/forge/cache_source.go
+# already never fails the session on its own (fail-silent, always exits 0).
+#
+# forge binary resolution matches hooks/session-context: $FORGE_BIN, then
+# ~/.forge/bin/forge, then $PATH.
+
+set -u
+
+forge=${FORGE_BIN:-}
+[ -n "$forge" ] || forge="$HOME/.forge/bin/forge"
+[ -x "$forge" ] || forge=$(command -v forge 2>/dev/null) || exit 0
+[ -x "$forge" ] || exit 0
+
+"$forge" cache-source >/dev/null 2>&1 || true
+exit 0

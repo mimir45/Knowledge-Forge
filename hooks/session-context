@@ -1,0 +1,28 @@
+#!/bin/sh
+# Knowledge Forge — SessionStart hook (DESIGN §13, ADDENDUM §C).
+#
+# Runs `forge session-context`, which prints a trimmed _index.md + the developer profile
+# to stdout — that output is what lands in the fresh session's context. This shim's only
+# job is finding the forge binary and letting stdout/stderr pass straight through
+# unredirected; the Go command itself already never fails the session (it logs read
+# failures to <vault>/.forge/session-context.log and always exits 0 — see
+# cmd/forge/session_context.go).
+#
+# Claude Code re-runs SessionStart on --continue/--resume (with source: resume) — that is
+# expected and fine here, since re-printing the index/profile is idempotent and cheap
+# (<200ms budget, measured well under it).
+#
+# forge binary resolution, in order: $FORGE_BIN, ~/.forge/bin/forge (the global install
+# location CLAUDE.md documents for hooks that run outside the vault repo itself — the D3
+# vault hook uses a vault-local pin instead because it always runs inside the vault; this
+# hook can run in any project, so it needs the global one), then $PATH.
+
+set -u
+
+forge=${FORGE_BIN:-}
+[ -n "$forge" ] || forge="$HOME/.forge/bin/forge"
+[ -x "$forge" ] || forge=$(command -v forge 2>/dev/null) || exit 0
+[ -x "$forge" ] || exit 0
+
+"$forge" session-context || true
+exit 0

@@ -79,6 +79,13 @@ func fromMapping(root *yaml.Node) *Frontmatter {
 // Has reports whether the key was present in the source, even if its value was null.
 func (f *Frontmatter) Has(k string) bool { _, ok := f.Vals[k]; return ok }
 
+// SetScalar stages a key=val write in memory, without touching disk — the counterpart
+// callers outside this package need before handing a Note to WriteToInbox (e.g. a
+// supersedes-style back-pointer on an UPDATE-mode quarantine draft; see quarantine.go's
+// doc comment). fix.go's unexported setScalar delegates here so the node-construction
+// logic exists in exactly one place.
+func (f *Frontmatter) SetScalar(k, val string) { setScalar(f, k, val) }
+
 // Str returns a scalar value as a string, or "" if absent or not a scalar.
 func (f *Frontmatter) Str(k string) string {
 	n, ok := f.Vals[k]

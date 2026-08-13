@@ -156,6 +156,27 @@ func TestE2EIndexRespectsTheBudget(t *testing.T) {
 	}
 }
 
+// TestE2ESessionContextRespectsTheBudget: DESIGN §7.1's SessionStart budget applies to
+// the index and the profile independently — each section must fit on its own, matching
+// readTrimmed's per-section contract, not just the combined total.
+func TestE2ESessionContextRespectsTheBudget(t *testing.T) {
+	root := fixtureCopy(t)
+	writeProfile(t, root, strings.Repeat("primary_language: go\n", 500))
+	runIndex(root, "_index.md", 4096, false)
+
+	out := captureStdout(t, func() { printSessionContext(root, 4096) })
+	parts := strings.SplitN(out, "\n---\n\n", 2)
+	if len(parts) != 2 {
+		t.Fatalf("expected index and profile separated by '---', got %d parts", len(parts))
+	}
+	if len(parts[0]) > 4096 {
+		t.Errorf("index section is %d bytes, over the 4096 budget", len(parts[0]))
+	}
+	if len(parts[1]) > 4096 {
+		t.Errorf("profile section is %d bytes, over the 4096 budget", len(parts[1]))
+	}
+}
+
 // TestE2EReindexRebuildsFromMarkdown: deleting the derived cache must lose nothing.
 // Markdown is the only source of truth.
 func TestE2EReindexRebuildsFromMarkdown(t *testing.T) {

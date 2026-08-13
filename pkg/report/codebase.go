@@ -143,3 +143,15 @@ func sortUncovered(u []Uncovered) {
 		return u[i].Path < u[j].Path
 	})
 }
+
+// TopUncovered is sortUncovered's ranking, exported for the check.ai_pass ADR-stub
+// sub-task: the same "which undocumented module is most urgent" question this file
+// already answers for moc/codebase.md, not redefined a second way outside this package.
+func TopUncovered(u []Uncovered) (Uncovered, bool) {
+	if len(u) == 0 {
+		return Uncovered{}, false
+	}
+	cp := append([]Uncovered(nil), u...)
+	sortUncovered(cp)
+	return cp[0], true
+}

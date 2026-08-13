@@ -42,10 +42,13 @@ authentication, limits, breaking-change policy. Do NOT restate the Surface table
 in prose here. -->
 
 ## In {{primary_stack}}
+```{{lang}}
 {{concrete code, verified, minimal, idiomatic}}
+```
 <!-- One minimal, verified call against the surface above. Do NOT build this into
 a multi-step walkthrough — a full workflow belongs in howto.md, this is "how you
-call it", not "how you accomplish a task with it". -->
+call it", not "how you accomplish a task with it". Fenced block is required —
+antislop's structural rule fails any api note with zero code. -->
 
 ## Pitfalls
 | Pitfall | Why it happens | Fix |

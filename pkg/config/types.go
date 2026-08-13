@@ -131,9 +131,14 @@ type Research struct {
 	ScanCodebase bool     `yaml:"scan_codebase"`
 }
 
+// Verify is verify-time policy — Phase 4's gate stage. DuplicateThreshold is deliberately
+// its own field, not a read of Check.DuplicateThreshold: a user lowering the weekly
+// report's threshold to see more pairs must not silently change what the write-time gate
+// trips on. See references/duplicate-spec.md §6.
 type Verify struct {
 	RunCode            string   `yaml:"run_code"`
 	RequireCitationFor []string `yaml:"require_citation_for"`
+	DuplicateThreshold float64  `yaml:"duplicate_threshold"`
 }
 
 type Write struct {
@@ -150,6 +155,12 @@ type Static struct {
 	Drift      Drift     `yaml:"drift"`
 	LinkCheck  LinkCheck `yaml:"linkcheck"`
 	LogBack    LogBack   `yaml:"logback"`
+
+	// CacheTTLDays is Phase 5's forge cache-source TTL for .forge/cache/<hash>.md
+	// entries. Zero means unset, not "expire immediately" — the command-level default
+	// (30) is applied at the call site, matching Check.ChurnDays' own pattern rather
+	// than baking a magic number into the config chain's zero value.
+	CacheTTLDays int `yaml:"cache_ttl_days"`
 }
 
 // Drift is §B.6. Trigger stays git — the invariant is that drift never runs on file save

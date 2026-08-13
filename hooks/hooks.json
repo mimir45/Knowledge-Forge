@@ -1,0 +1,71 @@
+{
+  "_notes": [
+    "Knowledge Forge Phase 5 — Claude Code hook bindings (DESIGN §13, ADDENDUM §C).",
+    "Nothing in this repo merges this file into ~/.claude/settings.json or a project's",
+    "own .claude/settings.json automatically — that install step is a known, recorded",
+    "packaging gap (same class as the root-level agents/ gap CLAUDE.md already notes),",
+    "closed only once Phase 6's plugin manifest lands. Until then, copy the four entries",
+    "under \"hooks\" below into the target settings.json's own \"hooks\" object by hand.",
+    "",
+    "Resume gotcha: SessionStart re-runs on --continue/--resume (with source: resume) —",
+    "that's expected, forge session-context's output is idempotent and cheap to re-print.",
+    "But every OTHER hook's output on a resumed session is REPLAYED from the saved",
+    "transcript text, not re-executed. So nothing time-sensitive belongs in",
+    "UserPromptSubmit (or any hook here) — a stale recall hit from the original session is",
+    "expected on resume, not a bug in forge intent.",
+    "",
+    "Command paths below are absolute to this checkout (/Users/mimir45/TIL). Update them",
+    "if this repo, or its ~/.forge/bin/forge install, ever moves."
+  ],
+
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/mimir45/TIL/hooks/session-context",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/mimir45/TIL/hooks/user-prompt-intent",
+            "timeout": 2
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/mimir45/TIL/hooks/session-end-capture",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "WebFetch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/mimir45/TIL/hooks/post-tool-cache-source",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
