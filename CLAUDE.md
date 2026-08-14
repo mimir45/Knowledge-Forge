@@ -4,36 +4,42 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Status
 
-**Phases 0, 1, 2, 2b, 3, 3b, 4 and 5 are done** (2026-08-09 through 2026-08-13; Phase 1
+**Phases 0, 1, 2, 2b, 3, 3b, 4, 5 and 5b are done** (2026-08-09 through 2026-08-14; Phase 1
 merged as `1c9df95`, Phase 2 as `3619b72`, Phase 2b committed straight to `main`,
 `cb12a08`…`15a795f`; Phase 3 committed straight to `main` in one commit; Phase 3b
 likewise, on top of `847098a`; Phase 4 likewise, on top of `884e42e`; Phase 5 likewise,
-on top of Phase 4's commit). The repo is a git repo with a Go source tree: `cmd/forge`
+on top of Phase 4's commit; Phase 5b likewise, on top of Phase 5's commit). The repo is
+a git repo with a Go source tree: `cmd/forge`
 (`slug validate index reindex capture recall drift check config init engine verify-code
-gate session-context intent session-capture cache-source stats`) over `pkg/vault`,
-`pkg/graph`, `pkg/report` (now including `weekly.go`'s rollup renderer and
-`weekly_store.go`'s week-over-week `.forge/weekly-stats.json` persistence), `pkg/store`,
+gate session-context intent session-capture cache-source stats logback`) over `pkg/vault`,
+`pkg/graph`, `pkg/report` (now including `weekly.go`'s rollup renderer,
+`weekly_store.go`'s week-over-week `.forge/weekly-stats.json` persistence, and, new in
+Phase 5b, `knowledgemap.go`'s `RenderKnowledgeMap`), `pkg/store`,
 `pkg/dataset`, `pkg/recall`, `pkg/similarity`, `pkg/codeindex`, `pkg/coderef`,
 `pkg/gitsig`, `pkg/drift`, `pkg/linkcheck`, `pkg/config` (the four-layer config chain),
 `pkg/engine` (the four-backend engine abstraction — `none/host/api/advisor`, per-stage
 routing with fallback chains, SQLite-backed budget accounting), `pkg/qualitygate` (the
 seven DESIGN §12 gates + `Run`/`Report` orchestration + `_inbox/` quarantine),
-`pkg/telemetry` (new in Phase 5 — DESIGN §14's `ask` event, sha256 topic hashing, never
+`pkg/telemetry` (DESIGN §14's `ask` event, sha256 topic hashing, never
 raw question text; gated fully behind `cfg.Telemetry.Enabled` and wired into `forge
-recall`), plus seven note templates in `templates/`, `skills/forge/SKILL.md`,
+recall`), `pkg/sentinel` (new in Phase 5b — the id-based begin/end managed-block
+primitive `forge logback` uses for CLAUDE.md fragments and inline markers; `Upsert`/
+`UpsertBefore`/`Remove`, idempotent, position-independent), plus seven note templates in
+`templates/`, `skills/forge/SKILL.md`,
 `skills/forge-init/SKILL.md`, `skills/forge-check/SKILL.md` and `skills/forge-stats/
-SKILL.md` (new in Phase 5), `references/recall-spec.md`, `references/writing-rules.md`,
+SKILL.md`, `references/recall-spec.md`, `references/writing-rules.md`,
 eight packaged presets in `config/presets/`, a Makefile with a six-target cross-compile
 matrix, a hash-verifying `bin/forge` shim, a `hooks/` + `scripts/` pair that now installs
-both the vault's D3 capture hook (`vault-post-commit`) and, new in Phase 5, four Claude
+both the vault's D3 capture hook (`vault-post-commit`) and four Claude
 Code lifecycle shims (`session-context`, `user-prompt-intent`, `session-end-capture`,
 `post-tool-cache-source`, declared in `hooks/hooks.json`) plus three git-anchored
 drift shims for code repos (`code-post-commit`, `code-post-merge`, `code-post-checkout`,
-installed via the new `scripts/install_drift_hook.sh`), and four `agents/*.md` spec
+installed via `scripts/install_drift_hook.sh`), and four `agents/*.md` spec
 files (`forge-researcher`, `forge-codebase-scout`, `forge-verifier`, `forge-librarian` —
 spec only, see the packaging-gap note below). Build and test with `CGO_ENABLED=0 go
-build ./...` / `go test ./...` — 17 packages report `ok` (`config`, `profiles`,
-`references` are data-only, no test files), all green.
+build ./...` / `go test ./...` — 18 packages report `ok` (`config`, `profiles`,
+`references` are data-only, no test files), all green under both `CGO_ENABLED=0` and
+`CGO_ENABLED=1`.
 Phase 5's own `forge session-context` / `forge intent` warm-latency check ran 20
 iterations against synthetic stdin; both landed well under budget (<200ms / <50ms).
 `forge check` against the real vault confirmed the new `moc/weekly/YYYY-WW.md` rollup
@@ -49,7 +55,29 @@ phase's to fix). The packaging gap already on file for root-level `agents/` now 
 covers `hooks/hooks.json`: nothing in this repo auto-installs it into
 `~/.claude/settings.json` or a project's `.claude/settings.json` — closed only when
 Phase 6's plugin manifest lands.
-Everything else below is still design spec; **Phase 5b is next.**
+Phase 5b (ADDENDUM §B.7 / DESIGN §15, "Log-back into the codebase") built `forge logback`:
+T0, deterministic, idempotent, generates `docs/knowledge-map.md` and per-module `CLAUDE.md`
+fragments in the target code repo (both gated independently by
+`static.logback.{knowledge_map,claude_md_fragment}`), plus opt-in inline
+`// forge:logback:<symbol>` markers (`static.logback.inline_markers`, default off,
+revertible via `--remove-markers`) — new package `pkg/sentinel` is the id-based
+begin/end managed-block primitive both the CLAUDE.md fragments and the inline markers
+share, and it never touches anything outside its own marker pair. `.forge/code-index-
+<repo>.json` freshness was already solved by Phase 2b's `pkg/drift`/`pkg/codeindex` and
+is reused as-is, not rebuilt. Verified via `logback_test.go` (dispatch, full pipeline,
+idempotent rerun, `--remove-markers` round-trip, per-flag config gating) passing under
+both `CGO_ENABLED=0` and `CGO_ENABLED=1`, plus a hand-built smoke test against a real
+temp git repo confirming byte-identical reruns (`diff`, no output) and a byte-for-byte
+`--remove-markers` revert. One correctness fix worth naming: inline-marker resolution
+must key off `coderef.Ref.Symbol != ""`, not `Ref.Kind == KindSymbol` — the canonical
+`code_refs:` citation form (`repo:path#Symbol`) parses to `KindPath` with `Symbol` set,
+so filtering on `Kind` alone would silently skip nearly every real citation. New backlog
+item recorded rather than fixed this phase: **B-027** (`pkg/drift/gitindex.go` caches
+per-repo as `.forge/code-index-<repo>.json`, while ADDENDUM/DESIGN both describe the
+singular `.forge/code-index.json` — correct behavior, since one shared name would
+collide across repos, but undocumented; found during Phase 5b's explore pass,
+pre-existing since Phase 2b, not this phase's to fix).
+Everything else below is still design spec; **Phase 6 is next.**
 One item Phase 3 explicitly did not touch: **B-008's §3.1 recalibration** — see BACKLOG, it
 needs its own session because honest verification means re-deriving the whole calibration
 table, not re-running two queries. **B-023** is still open, recorded rather than fixed:
@@ -258,6 +286,7 @@ pkg/report/       renders analyses to markdown; must not import pkg/codeindex
 pkg/store/        SQLite via modernc.org/sqlite, derived cache only except the budget table
 pkg/engine/       none/host/api/advisor backends, per-stage select+fallback, engine_trail
 pkg/config/       the four-layer config chain
+pkg/sentinel/     id-based begin/end managed comment blocks; Upsert/UpsertBefore/Remove
 ```
 
 Latency budgets and the **measured** actuals on an Apple M4: `forge drift` <100ms → **60–70ms**
@@ -285,7 +314,7 @@ measurement of a live session.
 `make build test bench dist install-hook`. There is still no lint target. Two build lanes,
 because `pkg/codeindex` is the one cgo package and is build-tag gated — the default lane is
 pure Go and cross-compiles; the codeindex lane needs cgo and a host toolchain. Phases 1, 2,
-2b, 3, 3b, 4 and 5's commands ship; the rest is the intended surface, by the phase that creates it:
+2b, 3, 3b, 4, 5 and 5b's commands ship; the rest is the intended surface, by the phase that creates it:
 
 | Command | Phase |
 |---|---|
@@ -296,6 +325,7 @@ pure Go and cross-compiles; the codeindex lane needs cgo and a host toolchain. P
 | `forge engine select/run/record` — the zero-model-call binary's one named exception | 3b — **built** |
 | `forge verify-code` (sandboxed compile check, bash/ts/java), `forge gate` (seven-gate `_inbox/` quarantine) | 4 — **built** |
 | `forge session-context`, `forge intent`, `forge session-capture`, `forge cache-source`, `forge stats`, `/forge-check`, `/forge-stats`, git-anchored drift hooks (`scripts/install_drift_hook.sh`) | 5 — **built** |
+| `forge logback` (`docs/knowledge-map.md`, per-module `CLAUDE.md` fragments, opt-in inline markers, `--remove-markers`, `--dry-run`) | 5b — **built** |
 | `/forge-export-dataset`, `/forge-dataset-stats` | 6b |
 
 ## Known discrepancies (record, don't fix)

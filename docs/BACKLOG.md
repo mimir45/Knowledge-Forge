@@ -649,3 +649,25 @@ from the current tree. A fix likely means giving `checkRef` a fallback when
 `src.At(ref.Repo, ref.Path, head)` directly using the ref's own literal repo/path before
 giving up, since a canonical ref already claims to know the exact path and doesn't need
 the registry's basename fuzzy-matching to find it.
+
+---
+
+## B-027 — `.forge/code-index-<repo>.json` is plural-per-repo; ADDENDUM/DESIGN say the singular `.forge/code-index.json`
+
+**Owner: whoever next touches `pkg/drift/gitindex.go` or the ADDENDUM/DESIGN text.
+Status: recorded, not fixed — found during Phase 5b's explore pass while confirming
+`forge logback`'s requirement 3 ("keep the code index fresh") was already satisfied by
+existing machinery; the naming predates Phase 5b, live since Phase 2b's `pkg/drift`.**
+
+`pkg/drift/gitindex.go`'s `GitSource.build` caches each repo's symbol table at
+`.forge/code-index-<repo>.json` — one file per configured `--repo name=path`, keyed by
+name. ADDENDUM §B.6 and DESIGN §15 both describe a single `.forge/code-index.json`, no
+per-repo suffix. The code's shape is the correct one: `forge drift`/`forge check`/`forge
+logback` all accept repeatable `--repo`, so a single shared filename would let a second
+repo's index overwrite the first's on the very next run. Nothing is broken — every
+caller that reads the cache already goes through `GitSource`, which knows its own
+suffix — but a reader following the docs literally would look for a file that never
+exists under that name. Fix is documentation, not code: update ADDENDUM §B.6 and DESIGN
+§15 to show the `-<repo>` suffix, or update `gitindex.go`'s doc comment for `build` to
+say explicitly why it deviates, whichever the next phase touching either file finds it
+easier to keep in sync.

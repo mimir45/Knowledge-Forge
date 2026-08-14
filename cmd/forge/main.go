@@ -27,6 +27,7 @@ var commands = map[string]func([]string) int{
 	"session-capture": cmdSessionCapture,
 	"cache-source":    cmdCacheSource,
 	"stats":           cmdStats,
+	"logback":         cmdLogback,
 }
 
 const usage = `forge — Knowledge Forge static core (no model calls)
@@ -61,6 +62,9 @@ commands:
                    TTL (static.cache_ttl_days, default 30), fail-silent, exit 0 always
   stats            hit rate, most-asked topics, gaps, an approximate time-saved
                    estimate, and the weekly vault-stats trend — see forge stats --help
+  logback          make the vault's knowledge discoverable from the code repo itself:
+                   docs/knowledge-map.md, per-module CLAUDE.md fragments, opt-in inline
+                   markers — see forge logback --help
 
 run "forge <command> --help" for that command's flags.
 `
