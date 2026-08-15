@@ -4,7 +4,6 @@ import (
 	"math/rand"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"sort"
 	"testing"
 
@@ -68,16 +67,12 @@ func assertResolveAt(t *testing.T, gs *GitSource, ref coderef.Ref, asOf string,
 	}
 }
 
-// commitDated is writeRepo/commit's real-git-repo pattern (rollback_test.go) with an
+// commitDated is commit (rollback_test.go), sharing its ensureGitRepo setup, but with an
 // explicit commit date, needed here so a "verified at" asOf can land strictly between the
 // add and the delete regardless of when the test itself runs.
 func commitDated(t *testing.T, root, msg, date string) string {
 	t.Helper()
-	if _, err := os.Stat(filepath.Join(root, ".git")); os.IsNotExist(err) {
-		git(t, root, "init", "-q")
-		git(t, root, "config", "user.email", "t@example.com")
-		git(t, root, "config", "user.name", "t")
-	}
+	ensureGitRepo(t, root)
 	git(t, root, "add", "-A")
 	cmd := exec.Command("git", "-C", root, "commit", "-q", "-m", msg)
 	cmd.Env = append(os.Environ(), "GIT_AUTHOR_DATE="+date, "GIT_COMMITTER_DATE="+date)

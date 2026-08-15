@@ -180,14 +180,22 @@ func writeRepo(t *testing.T, root, src string) {
 
 func commit(t *testing.T, root, msg string) string {
 	t.Helper()
+	ensureGitRepo(t, root)
+	git(t, root, "add", "-A")
+	git(t, root, "commit", "-q", "-m", msg)
+	return head(t, root)
+}
+
+// ensureGitRepo is commit and commitDated's (gitindex_test.go) shared one-time init: both
+// need a repo with a committer identity before their first commit, and only their final
+// commit invocation differs (commitDated needs GIT_AUTHOR_DATE/GIT_COMMITTER_DATE).
+func ensureGitRepo(t *testing.T, root string) {
+	t.Helper()
 	if _, err := os.Stat(filepath.Join(root, ".git")); os.IsNotExist(err) {
 		git(t, root, "init", "-q")
 		git(t, root, "config", "user.email", "t@example.com")
 		git(t, root, "config", "user.name", "t")
 	}
-	git(t, root, "add", "-A")
-	git(t, root, "commit", "-q", "-m", msg)
-	return head(t, root)
 }
 
 func head(t *testing.T, root string) string {
