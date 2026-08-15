@@ -115,6 +115,33 @@ func (g *GitSource) collect(m *nameMap, repo, rev string) {
 	}
 }
 
+// ResolveAt answers a path-shaped citation against one repository's file list as it stood
+// at asOf. It goes through coderef.ScanRepo, not codeindex.Build, so — unlike Find and At
+// — it answers identically on both the cgo and the pure-Go build lane.
+func (g *GitSource) ResolveAt(ref coderef.Ref, asOf string) coderef.Resolution {
+	return g.registryAt(asOf).Resolve(ref)
+}
+
+// registryAt is memoised per asOf the same way nameIndex memoises per asOf: forge check
+// resolves one revision per distinct verified date across the whole vault, not once per
+// citation, so this costs one git ls-tree per distinct (repo, date) pair, not per note.
+func (g *GitSource) registryAt(asOf string) *coderef.Registry {
+	if rg, ok := g.registries[asOf]; ok {
+		return rg
+	}
+	out := make([]coderef.Repo, 0, len(g.repos))
+	for _, r := range g.repos {
+		if rev := g.revFor(r.Name, asOf); rev != "" {
+			if scanned, err := coderef.ScanRepo(r.Name, r.Root, rev); err == nil {
+				out = append(out, scanned)
+			}
+		}
+	}
+	rg := coderef.NewRegistry(out)
+	g.registries[asOf] = rg
+	return rg
+}
+
 func (g *GitSource) revFor(repo, asOf string) string {
 	if asOf == "" {
 		return g.Head(repo)

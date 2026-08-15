@@ -613,9 +613,41 @@ caching the wrapper JSON.
 ## B-026 — a citation to a fully deleted file can never verdict BROKEN
 
 **Owner: whoever next touches `pkg/coderef/resolve.go` or `pkg/drift/check.go`. Status:
-recorded, not fixed — found while smoke-testing Phase 5's git-anchored drift hooks
-against a real citation-and-deletion scenario; pre-existing in `pkg/drift` (Phase 2b),
-out of Phase 5's scope to fix.**
+done for a full sweep with a verified date, 2026-08-16 — see the closure note below for
+the two conditions it does not cover. Found while smoke-testing Phase 5's git-anchored
+drift hooks against a real citation-and-deletion scenario; pre-existing in `pkg/drift`
+(Phase 2b), out of Phase 5's scope to fix.**
+
+**Closure note.** Fixed by generalizing `absentSymbol`'s existing shallow/deep split
+(`pkg/drift/check.go`) from symbols to paths: `checkRef`'s `Unresolved` case now calls
+`unresolvedPath`, which on a full deep sweep with a verified date calls the new
+`Source.ResolveAt(ref, asOf)` — `GitSource.ResolveAt` builds a `coderef.Registry` at the
+note's verified-era revision via `coderef.ScanRepo` (memoised per `(repo, asOf)` in
+`GitSource.registryAt`, not per citation) and, if the citation resolved there and is
+`Unresolved` at HEAD, verdicts `Broken`. Four things this does *not* close, so a reader
+does not assume more than what shipped:
+
+1. **Full sweep only.** The fix fires only when `opts.Deep` is true *and* `changed ==
+   nil` (a true full sweep — `forge check`'s weekly run, or `forge drift --deep` with no
+   `--since-commit`) *and* the note carries a `verified:` date. The hook path
+   (`forge drift`'s default, `opts.Deep == false`) gains no immediacy — a same-commit
+   deletion is only caught on the next full sweep. That gap is **B-028**, filed rather
+   than built.
+2. **Deletion and rename verdict identically.** The fallback cannot tell a file that was
+   deleted from one that was renamed or moved: both resolve at the verified date and
+   `Unresolved` at HEAD, and `Broken` is correct for both, because the citation as written
+   is unopenable at HEAD either way — repairing a stale citation and retiring a dead claim
+   are different fixes for the same verdict, but that distinction is for the human reading
+   `drift.md`, not something the verdict can carry.
+3. **A basename collision still hides the deletion.** A deleted file whose basename
+   matches something else at HEAD resolves `Ambiguous`, not `Unresolved`, and `checkRef`'s
+   `Ambiguous` branch already `skip`s it, unchanged by this fix — not newly caught.
+4. **Cost bound, corrected.** This entry's original text called the trigger condition
+   rare. It is not: `pkg/coderef/resolve.go`'s own comment names the underlying case "NF-4's
+   14-of-19", i.e. most path citations in the real vault fail to resolve at HEAD as
+   written. What actually bounds the cost is that `registryAt` is memoised per distinct
+   `(repo, verified-date)` pair across the whole vault, not once per citation — one extra
+   `git ls-tree` per pair, not per citation.
 
 `cmd/forge/drift.go`'s `registryOf` builds the `coderef.Registry` from
 `coderef.ScanRepo(r.Name, r.Root, "HEAD")` — the literal string `"HEAD"`, i.e. the
@@ -650,6 +682,12 @@ from the current tree. A fix likely means giving `checkRef` a fallback when
 giving up, since a canonical ref already claims to know the exact path and doesn't need
 the registry's basename fuzzy-matching to find it.
 
+**This sketch is not what shipped.** Probing `src.At` with the ref's literal path at HEAD
+cannot distinguish "never existed" (a typo'd citation) from "was deleted" (a real drift
+finding) — both return `!ok`. The closure note above resolves against the *verified-era*
+tree instead, mirroring `absentSymbol`'s existing shallow/deep pattern for symbols, so
+only a citation proven to have once resolved verdicts `Broken`.
+
 ---
 
 ## B-027 — `.forge/code-index-<repo>.json` is plural-per-repo; ADDENDUM/DESIGN say the singular `.forge/code-index.json`
@@ -671,3 +709,28 @@ exists under that name. Fix is documentation, not code: update ADDENDUM §B.6 an
 §15 to show the `-<repo>` suffix, or update `gitindex.go`'s doc comment for `build` to
 say explicitly why it deviates, whichever the next phase touching either file finds it
 easier to keep in sync.
+
+---
+
+## B-028 — the drift hook path gains no immediacy on a deleted-file citation
+
+**Owner: whoever next touches `pkg/drift/check.go`'s `checkRef`/`unresolvedPath`. Status:
+recorded, not built — filed while closing B-026, 2026-08-16; deferred rather than
+built.**
+
+B-026's fix only fires on a full sweep (`opts.Deep == true`, `changed == nil`): `forge
+drift`'s default hook-path run (`opts.Deep == false`) still leaves a same-commit
+deletion `Skipped` until the next weekly `forge check`. The hook already computes
+`changed` — the set of paths the triggering commit range touched — cheaply, as the gate
+`checkRef` applies after resolution. In principle that same set could prove existence:
+if an `Unresolved` citation's basename appears among `changed`'s deleted paths, that is
+strong same-commit evidence of a deletion, no historical `git ls-tree` scan required.
+
+Not worth building now: `pkg/coderef`'s subsequence-over-basename matching
+(`Registry.lookup`, `matching`, `isSubsequence`) is unexported, so proving a citation
+*would have* matched a since-deleted path means either exporting that matching logic for
+`checkRef` to call standalone, or building a second registry from the pre-commit tree
+just for this — both cut across `checkRef`'s separation of concerns (resolve, then
+verdict) for a gap `absentSymbol` already accepts for symbols. Revisit only if the
+hook-path latency gap (deletions caught up to a week late) turns out to matter in
+practice.

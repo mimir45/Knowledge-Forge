@@ -39,6 +39,18 @@ func (f *fakeSource) Find(name, asOf string) (string, string, codeindex.Symbol, 
 	return "", "", codeindex.Symbol{}, false
 }
 
+func (f *fakeSource) ResolveAt(ref coderef.Ref, asOf string) coderef.Resolution {
+	rev := headRev
+	if asOf != "" {
+		rev = f.revs["app@"+asOf]
+	}
+	if _, ok := f.files["app@"+rev+"@"+ref.Path]; ok {
+		ref.Repo = "app"
+		return coderef.Resolution{Ref: ref, Status: coderef.Resolved, RepoPath: ref.Path}
+	}
+	return coderef.Resolution{Ref: ref, Status: coderef.Unresolved}
+}
+
 func sym(name string, start int, body string) codeindex.Symbol {
 	return codeindex.Symbol{Name: name, Kind: "method", Start: start, BodyHash: body}
 }
@@ -130,6 +142,56 @@ func TestSymbolOnlyCitations(t *testing.T) {
 	t.Run("absent at both revisions", func(t *testing.T) {
 		got := Check([]Note{n}, registry(), src(codeindex.File{}, codeindex.File{}), nil,
 			Opts{Deep: true})
+		assertOne(t, got, Skipped)
+	})
+}
+
+// p2 is a second path, never registered by registry(), so a citation naming it always
+// resolves Unresolved against the registry — the routing bug's trigger condition — while
+// still being locatable in a fakeSource's own files/revs for the ResolveAt fallback.
+const p2 = "src/main/java/OldOrder.java"
+
+func p2Ref() coderef.Ref { return coderef.Ref{Raw: p2, Kind: coderef.KindPath, Path: p2} }
+
+// TestUnresolvedPathFallback covers unresolvedPath's shallow/deep, gate-ordering and
+// no-baseline branches. Every case resolves Unresolved against registry() (p2 is not
+// registered); what varies is whether the deep-sweep fallback then finds p2 in history.
+func TestUnresolvedPathFallback(t *testing.T) {
+	wasP2 := file(p2, sym("OldOrder.cancel", 5, "h1"))
+	deleted := src(codeindex.File{}, wasP2) // gone at HEAD, present at the verified date
+	n := Note{Rel: "notes/a.md", Verified: "2026-01-01", Refs: []coderef.Ref{p2Ref()}}
+
+	// (a) regression test for the gate-ordering bug: a partial run (changed != nil, and
+	// it does not contain p2) must not demote a file outside the range being checked.
+	t.Run("partial run stays skipped even with confirmed history", func(t *testing.T) {
+		got := Check([]Note{n}, registry(), deleted, map[string]bool{"other/File.java": true},
+			Opts{Deep: true})
+		assertOne(t, got, Skipped)
+	})
+
+	// (b) the true full sweep: changed == nil, deep, history confirms the file existed.
+	t.Run("full sweep finds the deletion", func(t *testing.T) {
+		got := Check([]Note{n}, registry(), deleted, nil, Opts{Deep: true})
+		assertOne(t, got, Broken)
+	})
+
+	// (c) full sweep, but history has no record of p2 either — absent at both revisions.
+	t.Run("absent at both revisions stays skipped", func(t *testing.T) {
+		neverExisted := src(codeindex.File{}, codeindex.File{})
+		got := Check([]Note{n}, registry(), neverExisted, nil, Opts{Deep: true})
+		assertOne(t, got, Skipped)
+	})
+
+	// (d) Deep alone gates this, independent of the gate-ordering check above.
+	t.Run("shallow run stays skipped regardless of gate", func(t *testing.T) {
+		got := Check([]Note{n}, registry(), deleted, nil, Opts{Deep: false})
+		assertOne(t, got, Skipped)
+	})
+
+	// (e) no verified date: no baseline to prove "it was there."
+	t.Run("no verified date stays skipped", func(t *testing.T) {
+		unverified := Note{Rel: "notes/a.md", Refs: []coderef.Ref{p2Ref()}}
+		got := Check([]Note{unverified}, registry(), deleted, nil, Opts{Deep: true})
 		assertOne(t, got, Skipped)
 	})
 }

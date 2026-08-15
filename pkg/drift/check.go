@@ -84,6 +84,27 @@ func absentSymbol(f Finding, n Note, ref coderef.Ref, src Source, opts Opts) Fin
 	return f
 }
 
+// unresolvedPath decides what "no registered repository contains this path" means,
+// mirroring absentSymbol's shallow/deep split. changed must be nil (a true full sweep):
+// checkRef resolves Unresolved before the changed-gate check runs, so there is no known
+// f.Path yet to gate on — this function gates on changed itself instead.
+func unresolvedPath(f Finding, n Note, ref coderef.Ref, src Source, changed map[string]bool,
+	opts Opts) Finding {
+
+	if changed != nil || !opts.Deep || n.Verified == "" {
+		return skip(f, "no registered repository contains this path")
+	}
+	res := src.ResolveAt(ref, n.Verified)
+	if res.Status != coderef.Resolved {
+		return skip(f, "no registered repository contained this path at "+n.Verified+" either")
+	}
+	f.Repo, f.Path = res.Ref.Repo, res.RepoPath
+	f.Verdict = Broken
+	f.Reason = fmt.Sprintf("no path matching this citation exists at HEAD; it resolved at %s",
+		n.Verified)
+	return f
+}
+
 // checkFileBody is the weakest case: the note named a file and nothing inside it. There
 // is no declaration to anchor to, so the verdict is about the file as a whole.
 func checkFileBody(f Finding, n Note, now codeindex.File, src Source) Finding {

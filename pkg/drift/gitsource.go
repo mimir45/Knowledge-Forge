@@ -23,6 +23,8 @@ type GitSource struct {
 	revs  map[string]string          // repo@date -> sha
 	idx   map[string]codeindex.Index // repo@rev
 	names map[string]*nameMap        // asOf -> flattened symbol lookup
+
+	registries map[string]*coderef.Registry // asOf -> path registry
 }
 
 func NewGitSource(repos []Repo, cacheDir string) *GitSource {
@@ -30,6 +32,8 @@ func NewGitSource(repos []Repo, cacheDir string) *GitSource {
 		repos: repos, cache: cacheDir,
 		heads: map[string]string{}, revs: map[string]string{},
 		idx: map[string]codeindex.Index{}, names: map[string]*nameMap{},
+
+		registries: map[string]*coderef.Registry{},
 	}
 }
 

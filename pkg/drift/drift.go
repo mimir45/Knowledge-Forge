@@ -69,6 +69,9 @@ type Source interface {
 	// last commit on or before it. A citation that names a class and no file — the shape
 	// most of this vault's references take — has nothing else to resolve through.
 	Find(name, asOf string) (repo, path string, sym codeindex.Symbol, ok bool)
+	// ResolveAt resolves a path-shaped citation against one repository's file list as it
+	// stood at asOf ("" for HEAD, else a YYYY-MM-DD date). Mirrors Find's asOf contract.
+	ResolveAt(ref coderef.Ref, asOf string) coderef.Resolution
 }
 
 // Opts carries the one behavioural switch, which exists because the two callers have
@@ -115,7 +118,7 @@ func checkRef(n Note, ref coderef.Ref, rg *coderef.Registry, src Source,
 	res := rg.Resolve(ref)
 	switch res.Status {
 	case coderef.Unresolved:
-		return skip(f, "no registered repository contains this path"), true
+		return unresolvedPath(f, n, ref, src, changed, opts), true
 	case coderef.Ambiguous:
 		return skip(f, "matches "+strings.Join(res.Ambiguity, ", ")), true
 	}

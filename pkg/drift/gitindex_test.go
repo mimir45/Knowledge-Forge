@@ -2,10 +2,14 @@ package drift
 
 import (
 	"math/rand"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"sort"
 	"testing"
 
 	"knowledge-forge/pkg/codeindex"
+	"knowledge-forge/pkg/coderef"
 )
 
 // TestNameMapOrdersDeclarationsWithinOneFile is the bug drift.md showed on the real vault:
@@ -28,6 +32,59 @@ func TestNameMapOrdersDeclarationsWithinOneFile(t *testing.T) {
 			t.Fatalf("run %d: %+v, want %+v", run, got, want)
 		}
 	}
+}
+
+// TestResolveAtFindsFileDeletedFromHistory is B-026's real-git twin of
+// TestUnresolvedPathFallback: everything in that test answers ResolveAt by map
+// membership, which cannot fail the way production code can. Only GitSource.registryAt
+// exercises coderef.ScanRepo against real git objects at a past revision, so this test
+// writes an actual .java file, deletes it, and confirms ResolveAt tells the two revisions
+// apart — and that registryAt memoises rather than rescanning per call. It needs no
+// codeindex.Available() guard: ResolveAt never touches codeindex, so it must pass
+// identically on both build lanes.
+func TestResolveAtFindsFileDeletedFromHistory(t *testing.T) {
+	repo := t.TempDir()
+	writeRepo(t, repo, orderV1)
+	commitDated(t, repo, "add Order", "2020-01-01T12:00:00")
+	git(t, repo, "rm", "-q", "src/main/java/Order.java")
+	commitDated(t, repo, "delete Order", "2020-06-01T12:00:00")
+
+	gs := NewGitSource([]Repo{{Name: "app", Root: repo}}, "")
+	ref := coderef.Ref{Raw: "Order.java", Kind: coderef.KindPath, Path: "src/main/java/Order.java"}
+	assertResolveAt(t, gs, ref, "2020-01-01", coderef.Resolved)
+	assertResolveAt(t, gs, ref, "", coderef.Unresolved)
+
+	if rg1, rg2 := gs.registryAt(""), gs.registryAt(""); rg1 != rg2 {
+		t.Error("registryAt(HEAD) not memoised: distinct *Registry on repeat calls")
+	}
+}
+
+func assertResolveAt(t *testing.T, gs *GitSource, ref coderef.Ref, asOf string,
+	want coderef.Status) {
+
+	t.Helper()
+	if res := gs.ResolveAt(ref, asOf); res.Status != want {
+		t.Fatalf("ResolveAt(asOf=%q) = %+v, want status %s", asOf, res, want)
+	}
+}
+
+// commitDated is writeRepo/commit's real-git-repo pattern (rollback_test.go) with an
+// explicit commit date, needed here so a "verified at" asOf can land strictly between the
+// add and the delete regardless of when the test itself runs.
+func commitDated(t *testing.T, root, msg, date string) string {
+	t.Helper()
+	if _, err := os.Stat(filepath.Join(root, ".git")); os.IsNotExist(err) {
+		git(t, root, "init", "-q")
+		git(t, root, "config", "user.email", "t@example.com")
+		git(t, root, "config", "user.name", "t")
+	}
+	git(t, root, "add", "-A")
+	cmd := exec.Command("git", "-C", root, "commit", "-q", "-m", msg)
+	cmd.Env = append(os.Environ(), "GIT_AUTHOR_DATE="+date, "GIT_COMMITTER_DATE="+date)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git commit: %v\n%s", err, out)
+	}
+	return head(t, root)
 }
 
 func sameOrder(got, want []loc) bool {
