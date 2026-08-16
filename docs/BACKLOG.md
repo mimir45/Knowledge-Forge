@@ -614,7 +614,7 @@ caching the wrapper JSON.
 
 **Owner: whoever next touches `pkg/coderef/resolve.go` or `pkg/drift/check.go`. Status:
 done for a full sweep with a verified date, 2026-08-16 — see the closure note below for
-the two conditions it does not cover. Found while smoke-testing Phase 5's git-anchored
+the five conditions it does not cover. Found while smoke-testing Phase 5's git-anchored
 drift hooks against a real citation-and-deletion scenario; pre-existing in `pkg/drift`
 (Phase 2b), out of Phase 5's scope to fix.**
 
@@ -622,10 +622,11 @@ drift hooks against a real citation-and-deletion scenario; pre-existing in `pkg/
 (`pkg/drift/check.go`) from symbols to paths: `checkRef`'s `Unresolved` case now calls
 `unresolvedPath`, which on a full deep sweep with a verified date calls the new
 `Source.ResolveAt(ref, asOf)` — `GitSource.ResolveAt` builds a `coderef.Registry` at the
-note's verified-era revision via `coderef.ScanRepo` (memoised per `(repo, asOf)` in
-`GitSource.registryAt`, not per citation) and, if the citation resolved there and is
-`Unresolved` at HEAD, verdicts `Broken`. Four things this does *not* close, so a reader
-does not assume more than what shipped:
+note's verified-era revision via `coderef.ScanRepo` (memoised per `asOf` in
+`GitSource.registryAt` — the underlying `git ls-tree` cost is one per (repo, date) pair,
+not per citation) and, if the citation resolved there and is `Unresolved` at HEAD,
+verdicts `Broken`. Five things this does *not* close, so a reader does not assume more
+than what shipped:
 
 1. **Full sweep only.** The fix fires only when `opts.Deep` is true *and* `changed ==
    nil` (a true full sweep — `forge check`'s weekly run, or `forge drift --deep` with no
@@ -648,6 +649,16 @@ does not assume more than what shipped:
    written. What actually bounds the cost is that `registryAt` is memoised per distinct
    `(repo, verified-date)` pair across the whole vault, not once per citation — one extra
    `git ls-tree` per pair, not per citation.
+5. **No shipped invocation applies the `Broken` verdict.** `forge check`'s full sweep
+   (`cmd/forge/check_codebase.go`) passes `opts.Deep: true`, satisfying the fallback's
+   gate, but only renders `drift.md` — it never calls `drift.Apply`. `hooks/code-
+   post-commit` does call `--apply`, but not `--deep`, so `changed != nil` closes the
+   gate before `unresolvedPath` ever runs. The only combination that both triggers the
+   fallback and demotes a note today is a hand-typed `forge drift --deep --apply` with no
+   `--since-commit`. So this fix makes `drift.md` accurate on a full sweep; it does not
+   yet demote a note through any automated path. Distinct from B-028 below (the hook
+   path's lack of same-commit immediacy) — this is the deep-sweep path having no writer
+   at all.
 
 `cmd/forge/drift.go`'s `registryOf` builds the `coderef.Registry` from
 `coderef.ScanRepo(r.Name, r.Root, "HEAD")` — the literal string `"HEAD"`, i.e. the
