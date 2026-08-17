@@ -55,6 +55,24 @@ phase's to fix). The packaging gap already on file for root-level `agents/` now 
 covers `hooks/hooks.json`: nothing in this repo auto-installs it into
 `~/.claude/settings.json` or a project's `.claude/settings.json` — closed only when
 Phase 6's plugin manifest lands.
+**B-026 and its sequel B-028 were later closed by standalone fixes on `main`, not tied to
+a phase.** B-026 (2026-08-16): `pkg/coderef`'s registry-based resolution now falls back to
+a verified-era `ResolveAt` scan on a full sweep (`opts.Deep`, no `--since-commit`), so a
+fully deleted cited file verdicts `Broken` there instead of `Skipped` forever — but
+`forge check`'s full sweep never calls `drift.Apply`, so B-026 alone made `drift.md`
+accurate and demoted nothing automatically, and its weekly cadence plus the hook path's
+(`forge drift`'s default, what `code-post-commit`/`code-post-merge`/`code-post-checkout`
+actually run) total lack of immediacy on a same-commit deletion is what got filed as
+B-028. B-028 (2026-08-17): the hook's already-computed cheap gate
+(`coderef.ChangedFilesStatus`, `--name-status` instead of `--name-only`) now carries
+deletion evidence (`drift.Changed{Touched, Deleted}`), so an `Unresolved` citation
+matching a same-commit deletion verdicts `Broken` immediately under `--apply` — the only
+automated demotion path a deleted-file citation has — with no `--deep` and no historical
+registry scan required, plus a gate-ordering correction over the backlog's own sketch (an
+unmatched hook-path miss produces no finding at all, never `Skipped`, so an unrelated
+later commit cannot flip a still-broken note back to `high`; see
+`TestRollbackSymmetryOnDeletion`). See BACKLOG.md's B-026 and B-028 entries for the full
+closure notes, including each fix's residual basename-collision limitation.
 Phase 5b (ADDENDUM §B.7 / DESIGN §15, "Log-back into the codebase") built `forge logback`:
 T0, deterministic, idempotent, generates `docs/knowledge-map.md` and per-module `CLAUDE.md`
 fragments in the target code repo (both gated independently by

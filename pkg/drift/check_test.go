@@ -116,7 +116,7 @@ func TestChangedGateSkipsUntouchedFiles(t *testing.T) {
 	was := file(p, sym("Order.place", 10, "h1"))
 	n := Note{Rel: "notes/a.md", Verified: "2026-01-01", Refs: []coderef.Ref{pathRef(10)}}
 	got := Check([]Note{n}, registry(), src(codeindex.File{}, was),
-		map[string]bool{"other/File.java": true}, Opts{})
+		&Changed{Touched: map[string]bool{"other/File.java": true}}, Opts{})
 	if len(got) != 0 {
 		t.Fatalf("findings = %+v, want none: the file was outside the gate", got)
 	}
@@ -162,11 +162,15 @@ func TestUnresolvedPathFallback(t *testing.T) {
 	n := Note{Rel: "notes/a.md", Verified: "2026-01-01", Refs: []coderef.Ref{p2Ref()}}
 
 	// (a) regression test for the gate-ordering bug: a partial run (changed != nil, and
-	// it does not contain p2) must not demote a file outside the range being checked.
-	t.Run("partial run stays skipped even with confirmed history", func(t *testing.T) {
-		got := Check([]Note{n}, registry(), deleted, map[string]bool{"other/File.java": true},
-			Opts{Deep: true})
-		assertOne(t, got, Skipped)
+	// its Deleted set does not name p2) must produce no finding at all, not SKIPPED —
+	// SKIPPED would let Apply's restore path flip the note back up on an unrelated later
+	// commit, which is exactly what B-028's own fix must not reintroduce.
+	t.Run("partial run produces no finding outside its own deletion evidence", func(t *testing.T) {
+		got := Check([]Note{n}, registry(), deleted,
+			&Changed{Touched: map[string]bool{"other/File.java": true}}, Opts{Deep: true})
+		if len(got) != 0 {
+			t.Fatalf("findings = %+v, want none: outside the gate, nothing to report", got)
+		}
 	})
 
 	// (b) the true full sweep: changed == nil, deep, history confirms the file existed.
@@ -193,6 +197,40 @@ func TestUnresolvedPathFallback(t *testing.T) {
 		unverified := Note{Rel: "notes/a.md", Refs: []coderef.Ref{p2Ref()}}
 		got := Check([]Note{unverified}, registry(), deleted, nil, Opts{Deep: true})
 		assertOne(t, got, Skipped)
+	})
+}
+
+// TestUnresolvedPathSameCommitDeletion covers B-028: the hook path (changed != nil,
+// Deep == false) now gets same-commit deletion evidence straight from the gate, with no
+// historical registry scan and no wait for the next full sweep.
+func TestUnresolvedPathSameCommitDeletion(t *testing.T) {
+	n := Note{Rel: "notes/a.md", Refs: []coderef.Ref{p2Ref()}}
+	shallow := src(codeindex.File{}, codeindex.File{}) // no historical baseline needed
+
+	t.Run("gate reports the exact path deleted", func(t *testing.T) {
+		gate := &Changed{Deleted: map[string]string{p2: "app"}}
+		got := Check([]Note{n}, registry(), shallow, gate, Opts{})
+		assertOne(t, got, Broken)
+	})
+	t.Run("gate reports a different basename deleted elsewhere", func(t *testing.T) {
+		gate := &Changed{Deleted: map[string]string{"other/Unrelated.java": "app"}}
+		got := Check([]Note{n}, registry(), shallow, gate, Opts{})
+		if len(got) != 0 {
+			t.Fatalf("findings = %+v, want none: no deletion evidence for this citation", got)
+		}
+	})
+	t.Run("gate touched but did not delete", func(t *testing.T) {
+		gate := &Changed{Touched: map[string]bool{p2: true}}
+		got := Check([]Note{n}, registry(), shallow, gate, Opts{})
+		if len(got) != 0 {
+			t.Fatalf("findings = %+v, want none: touched is not deleted", got)
+		}
+	})
+	// The whole point of B-028: no --deep, no verified date, still BROKEN immediately.
+	t.Run("shallow, no verified date, still catches it", func(t *testing.T) {
+		gate := &Changed{Deleted: map[string]string{p2: "app"}}
+		got := Check([]Note{n}, registry(), shallow, gate, Opts{Deep: false})
+		assertOne(t, got, Broken)
 	})
 }
 

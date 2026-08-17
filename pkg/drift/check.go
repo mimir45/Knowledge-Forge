@@ -2,6 +2,8 @@ package drift
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 
 	"knowledge-forge/pkg/codeindex"
 	"knowledge-forge/pkg/coderef"
@@ -84,14 +86,12 @@ func absentSymbol(f Finding, n Note, ref coderef.Ref, src Source, opts Opts) Fin
 	return f
 }
 
-// unresolvedPath decides what "no registered repository contains this path" means,
-// mirroring absentSymbol's shallow/deep split. changed must be nil (a true full sweep):
-// checkRef resolves Unresolved before the changed-gate check runs, so there is no known
-// f.Path yet to gate on — this function gates on changed itself instead.
-func unresolvedPath(f Finding, n Note, ref coderef.Ref, src Source, changed map[string]bool,
-	opts Opts) Finding {
-
-	if changed != nil || !opts.Deep || n.Verified == "" {
+// unresolvedPath decides what "no registered repository contains this path" means on a
+// true full sweep, mirroring absentSymbol's shallow/deep split. checkUnresolvedPath only
+// delegates here when changed == nil — the hook path's same-commit deletion evidence is
+// handled there instead, before this function is ever reached.
+func unresolvedPath(f Finding, n Note, ref coderef.Ref, src Source, opts Opts) Finding {
+	if !opts.Deep || n.Verified == "" {
 		return skip(f, "no registered repository contains this path")
 	}
 	res := src.ResolveAt(ref, n.Verified)
@@ -103,6 +103,39 @@ func unresolvedPath(f Finding, n Note, ref coderef.Ref, src Source, changed map[
 	f.Reason = fmt.Sprintf("no path matching this citation exists at HEAD; it resolved at %s",
 		n.Verified)
 	return f
+}
+
+// deletedInGate reports whether ref's basename matches a path the cheap gate reported
+// deleted in the commit range this run is checking. Basename-only, not coderef's
+// ambiguity-resolving subsequence matcher: checkUnresolvedPath only reaches here after
+// the registry has already failed to resolve ref, so there is no candidate set to
+// disambiguate among — only one citation's target to confirm gone. Deterministic on a
+// basename collision: lexicographically first path wins, so two runs on the same tree
+// never disagree.
+func deletedInGate(ref coderef.Ref, deleted map[string]string) (repo, path string, ok bool) {
+	base := lastSegment(ref.Path)
+	if base == "" {
+		return "", "", false
+	}
+	var matches []string
+	for p := range deleted {
+		if strings.EqualFold(lastSegment(p), base) {
+			matches = append(matches, p)
+		}
+	}
+	if len(matches) == 0 {
+		return "", "", false
+	}
+	sort.Strings(matches)
+	return deleted[matches[0]], matches[0], true
+}
+
+func lastSegment(p string) string {
+	seg := coderef.Segments(p)
+	if len(seg) == 0 {
+		return ""
+	}
+	return seg[len(seg)-1]
 }
 
 // checkFileBody is the weakest case: the note named a file and nothing inside it. There

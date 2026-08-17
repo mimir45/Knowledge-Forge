@@ -5,8 +5,10 @@
 //
 // Git-anchored. Drift runs from post-commit / post-merge / post-checkout hooks against
 // `--since-commit <sha>`, never on file save and never against the uncommitted working
-// tree. `git diff --name-only <sha>..HEAD` is the cheap gate; symbol comparison touches
-// only the files in that set, and the vault is never re-scanned.
+// tree. `git diff --name-status <sha>..HEAD` is the cheap gate (Changed); symbol
+// comparison touches only the files it reports touched, a deleted-path citation
+// verdicts BROKEN immediately from the paths it reports deleted, and the vault is never
+// re-scanned.
 //
 // Verdicts are a pure function of (note refs, tree state). Nothing here consults a
 // stored hash from a previous run, which is why a revert restores a demoted note
@@ -16,6 +18,7 @@
 package drift
 
 import (
+	"fmt"
 	"strings"
 
 	"knowledge-forge/pkg/codeindex"
@@ -74,6 +77,17 @@ type Source interface {
 	ResolveAt(ref coderef.Ref, asOf string) coderef.Resolution
 }
 
+// Changed is the cheap gate's output. Touched is the flat, non-repo-qualified set of
+// repo-relative paths git reported between the anchor sha and HEAD — over-inclusive
+// across repos is the safe direction, since its only job is keeping work off the hook
+// path. Deleted is the subset git reported gone, mapped to the repo that reported it:
+// same-commit evidence that lets an Unresolved citation verdict BROKEN immediately
+// instead of waiting for the next full sweep (B-028).
+type Changed struct {
+	Touched map[string]bool
+	Deleted map[string]string // repo-relative path -> repo name
+}
+
 // Opts carries the one behavioural switch, which exists because the two callers have
 // budgets two orders of magnitude apart. `forge drift` runs on the git-hook path with
 // 100ms and checks symbol-only citations against HEAD alone. `forge check` runs weekly
@@ -90,11 +104,10 @@ type Note struct {
 	Refs     []coderef.Ref
 }
 
-// Check evaluates every citation of every note. Changed is the output of the cheap gate
-// — the repo-relative paths touched between the anchor sha and HEAD. A nil Changed
-// means "evaluate everything", which is what `forge check` does weekly and what the
-// hook path must never do.
-func Check(notes []Note, rg *coderef.Registry, src Source, changed map[string]bool,
+// Check evaluates every citation of every note. changed is the cheap gate's output; a
+// nil changed means "evaluate everything", which is what `forge check` does weekly and
+// what the hook path must never do.
+func Check(notes []Note, rg *coderef.Registry, src Source, changed *Changed,
 	opts Opts) []Finding {
 
 	var out []Finding
@@ -109,7 +122,7 @@ func Check(notes []Note, rg *coderef.Registry, src Source, changed map[string]bo
 }
 
 func checkRef(n Note, ref coderef.Ref, rg *coderef.Registry, src Source,
-	changed map[string]bool, opts Opts) (Finding, bool) {
+	changed *Changed, opts Opts) (Finding, bool) {
 
 	f := Finding{Note: n.Rel, Ref: ref.Raw, Symbol: ref.Symbol, WasLine: ref.Line}
 	if ref.Kind == coderef.KindSymbol {
@@ -118,15 +131,38 @@ func checkRef(n Note, ref coderef.Ref, rg *coderef.Registry, src Source,
 	res := rg.Resolve(ref)
 	switch res.Status {
 	case coderef.Unresolved:
-		return unresolvedPath(f, n, ref, src, changed, opts), true
+		return checkUnresolvedPath(f, n, ref, src, changed, opts)
 	case coderef.Ambiguous:
 		return skip(f, "matches "+strings.Join(res.Ambiguity, ", ")), true
 	}
 	f.Repo, f.Path = res.Ref.Repo, res.RepoPath
-	if changed != nil && !changed[f.Path] {
+	if changed != nil && !changed.Touched[f.Path] {
 		return Finding{}, false // outside the gate: the file did not move, so nothing can have
 	}
 	return checkPath(f, n, ref, src), true
+}
+
+// checkUnresolvedPath is the Unresolved dispatch checkRef delegates to. On the hook path
+// (changed != nil), same-commit deletion evidence already sits in changed.Deleted, so a
+// match verdicts BROKEN immediately (B-028) and a miss produces no finding at all — never
+// SKIPPED, because a note whose citations produced no findings reads as "not looked at",
+// and Apply must never confuse that with "not broken" (see apply.go's Apply doc comment).
+// changed == nil means a true full sweep, which is unresolvedPath's own case to decide.
+func checkUnresolvedPath(f Finding, n Note, ref coderef.Ref, src Source,
+	changed *Changed, opts Opts) (Finding, bool) {
+
+	if changed == nil {
+		return unresolvedPath(f, n, ref, src, opts), true
+	}
+	repo, path, ok := deletedInGate(ref, changed.Deleted)
+	if !ok {
+		return Finding{}, false
+	}
+	f.Repo, f.Path = repo, path
+	f.Verdict = Broken
+	f.Reason = fmt.Sprintf("%s no longer exists; %s was deleted in the commits this run checked",
+		ref.Raw, path)
+	return f, true
 }
 
 func skip(f Finding, reason string) Finding {

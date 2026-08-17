@@ -726,8 +726,53 @@ easier to keep in sync.
 ## B-028 — the drift hook path gains no immediacy on a deleted-file citation
 
 **Owner: whoever next touches `pkg/drift/check.go`'s `checkRef`/`unresolvedPath`. Status:
-recorded, not built — filed while closing B-026, 2026-08-16; deferred rather than
-built.**
+done, 2026-08-17 — see the closure note below for the gate-ordering correction and the
+residual limitation it does not close.**
+
+**Closure note.** Fixed largely as this entry's own sketch describes, plus one correction
+the sketch did not anticipate. `coderef.ChangedFilesStatus` (`pkg/coderef/scan.go`) is a
+new, additive sibling to `ChangedFiles`: same `git diff --no-renames` cheap-gate call,
+`--name-status` instead of `--name-only`, so it can tell a same-commit deletion from an
+edit without a second subprocess. `cmd/forge/drift.go`'s `gateOf` now returns a
+`*drift.Changed{Touched, Deleted}` instead of a flat `map[string]bool` — `Touched` keeps
+its existing over-inclusive-across-repos shape, `Deleted` maps each deleted path to the
+repo that reported it, because a `Broken` finding built from it needs a real repo to
+resolve against. `checkRef`'s `Unresolved` case now delegates to a new
+`checkUnresolvedPath`, which on the hook path (`changed != nil`) checks the citation's
+basename against `changed.Deleted` via a new `deletedInGate` (basename-equality only, not
+`pkg/coderef`'s unexported subsequence matcher — by the time this path is reached the
+registry has already failed to resolve the citation, so there is no candidate set left to
+disambiguate among) and verdicts `Broken` on a match, with no historical `git ls-tree`
+scan and no `--deep` required.
+
+**The gate-ordering correction.** A literal reading of this entry's sketch — verdict
+`Broken` on a match, otherwise fall through to the existing `Skipped` — is self-defeating.
+Trace it: a file deleted in commit C demotes the note to `low`; an unrelated commit D then
+fires the hook with `--since-commit C..D`; the citation is still `Unresolved`, but its
+basename no longer appears in *this* narrower range's `Deleted` set, so a naive fix still
+emits `Finding{Skipped}` — and `apply.go`'s own invariant (a note with no `Broken` finding
+falls through to `restore`) would then flip the note straight back to `high` while the
+file is still gone. The actual fix: on the hook path, an `Unresolved` citation with no
+deletion match produces **no finding at all**, mirroring the resolved-path gate `checkRef`
+already applies a few lines up. `unresolvedPath` itself shrank back to being purely the
+full-sweep branch it was already documented as — `checkUnresolvedPath` only delegates to
+it when `changed == nil`. `TestRollbackSymmetryOnDeletion`
+(`pkg/drift/rollback_test.go`) is the regression test for exactly this: same-commit
+deletion demotes, an unrelated later commit does *not* restore it, and reverting the
+deletion does restore it — real repo, real `Apply`, real `.forge/` store, not a unit test
+against `Check` alone.
+
+**What this does not close**, same shape as B-026's own caveat: a basename collision (an
+unrelated same-basename file deleted elsewhere in the same commit range) can still match
+the wrong path in `deletedInGate` — narrow, deterministic (lexicographically first path
+wins, so two runs on the same tree never disagree), and not engineered away, matching the
+class of imprecision B-026 already accepted for the full-sweep case. Distinct from a
+citation whose basename still exists elsewhere at HEAD — that resolves `Ambiguous`
+upstream in `Registry.Resolve` and never reaches this code at all, unaffected by this fix.
+Verified via `CGO_ENABLED=0` and `CGO_ENABLED=1` `go test ./...`, both green, plus a
+hand-built smoke test against a real temp repo confirming `forge drift --since-commit
+<sha> --apply` with no `--deep` demotes a note to `low` immediately on a same-commit file
+deletion — the case that was previously impossible on any automated path.
 
 B-026's fix only fires on a full sweep (`opts.Deep == true`, `changed == nil`): `forge
 drift`'s default hook-path run (`opts.Deep == false`) still leaves a same-commit

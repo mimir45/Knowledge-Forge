@@ -173,28 +173,34 @@ func registryOf(repos []drift.Repo) (*coderef.Registry, error) {
 	return coderef.NewRegistry(out), nil
 }
 
-// gateOf unions the changed sets of every repository. Paths are not repo-qualified, so a
-// path present in two repos over-includes rather than under-includes — the safe direction
-// for a gate whose only job is to keep work off the hook path.
+// gateOf unions the changed sets of every repository. Touched paths are not
+// repo-qualified, so a path present in two repos over-includes rather than
+// under-includes — the safe direction for a gate whose only job is to keep work off the
+// hook path. Deleted paths are repo-qualified, because a BROKEN finding built from one
+// needs a real repo to resolve against (B-028).
 //
 // It fails closed. An empty gate and an unresolvable anchor produce the same findings —
 // none — but they mean opposite things, and the second is drift silently never running on
 // a hook that by design never prints. So a sha no repository can resolve is an error, not
 // a clean run.
-func gateOf(cfg driftCfg) (map[string]bool, error) {
+func gateOf(cfg driftCfg) (*drift.Changed, error) {
 	if cfg.since == "" {
 		return nil, nil
 	}
-	gate, resolved, last := map[string]bool{}, 0, error(nil)
+	gate := &drift.Changed{Touched: map[string]bool{}, Deleted: map[string]string{}}
+	resolved, last := 0, error(nil)
 	for _, r := range cfg.repos {
-		files, err := coderef.ChangedFiles(r.Root, cfg.since, "HEAD")
+		files, err := coderef.ChangedFilesStatus(r.Root, cfg.since, "HEAD")
 		if err != nil {
 			last = fmt.Errorf("%s: %w", r.Name, err) // one bad anchor must not silence the others
 			continue
 		}
 		resolved++
 		for _, f := range files {
-			gate[f] = true
+			gate.Touched[f.Path] = true
+			if f.Deleted {
+				gate.Deleted[f.Path] = r.Name
+			}
 		}
 	}
 	if resolved == 0 {

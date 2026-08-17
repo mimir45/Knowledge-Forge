@@ -78,6 +78,52 @@ func TestRollbackSymmetry(t *testing.T) {
 	assertLogCitesBoth(t, vaultDir, broke, restored)
 }
 
+// TestRollbackSymmetryOnDeletion covers B-028 end to end: a file deleted in the very
+// commit the hook checks demotes the citing note immediately, an unrelated later commit
+// must not restore it (the flip-flop the gate-ordering fix in checkUnresolvedPath exists
+// to prevent — a naive fix would emit SKIPPED on the unrelated commit, and Apply's
+// restore path would treat that as "not broken"), and reverting the deletion restores it.
+// Only that last leg needs a symbol table (codeindex.Available()): the deletion and
+// flip-flop legs are pure path matching and must run — and do — under CGO_ENABLED=0,
+// the repo's default build lane, since that is the fix this test exists to pin.
+func TestRollbackSymmetryOnDeletion(t *testing.T) {
+	repo, vaultDir := t.TempDir(), t.TempDir()
+	writeRepo(t, repo, orderV1)
+	base := commit(t, repo, "add Order")
+	notePath := filepath.Join(vaultDir, "note.md")
+	if err := os.WriteFile(notePath, []byte(noteSrc), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.Remove(filepath.Join(repo, "src/main/java/Order.java")); err != nil {
+		t.Fatal(err)
+	}
+	deleted := commit(t, repo, "delete Order.java")
+	if got := run(t, repo, vaultDir, base, deleted); got != "low" {
+		t.Fatalf("confidence after deletion = %q, want low", got)
+	}
+	assertStored(t, vaultDir, "high")
+
+	if err := os.WriteFile(filepath.Join(repo, "unrelated.txt"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	unrelated := commit(t, repo, "unrelated change")
+	if got := run(t, repo, vaultDir, deleted, unrelated); got != "low" {
+		t.Fatalf("confidence after unrelated commit = %q, want still low: the flip-flop bug", got)
+	}
+
+	if !codeindex.Available() {
+		return // the deletion and flip-flop legs above are pure path matching; only the
+		// restore leg below needs a symbol table to resolve the citation back to OK.
+	}
+	git(t, repo, "revert", "--no-edit", deleted)
+	restored := head(t, repo)
+	if got := run(t, repo, vaultDir, unrelated, restored); got != "high" {
+		t.Fatalf("confidence after revert = %q, want high", got)
+	}
+	assertCleared(t, vaultDir)
+}
+
 // run is one `forge drift --since-commit` invocation: gate, check, apply.
 func run(t *testing.T, repo, vaultDir, since, to string) string {
 	t.Helper()
@@ -97,17 +143,20 @@ func run(t *testing.T, repo, vaultDir, since, to string) string {
 	return reload(t, vaultDir).FM.Str("confidence")
 }
 
-func gate(t *testing.T, repo, since, to string) map[string]bool {
+func gate(t *testing.T, repo, since, to string) *Changed {
 	t.Helper()
-	files, err := coderef.ChangedFiles(repo, since, to)
+	files, err := coderef.ChangedFilesStatus(repo, since, to)
 	if err != nil {
 		t.Fatal(err)
 	}
-	m := map[string]bool{}
+	g := &Changed{Touched: map[string]bool{}, Deleted: map[string]string{}}
 	for _, f := range files {
-		m[f] = true
+		g.Touched[f.Path] = true
+		if f.Deleted {
+			g.Deleted[f.Path] = "app"
+		}
 	}
-	return m
+	return g
 }
 
 func registryFor(t *testing.T, repo, rev string) *coderef.Registry {
