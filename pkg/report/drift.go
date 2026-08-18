@@ -2,6 +2,8 @@ package report
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -96,7 +98,7 @@ func writeFindings(b *strings.Builder, in DriftInput, v drift.Verdict, title str
 		return
 	}
 	b.WriteString("\n")
-	for _, rel := range sortedKeys(byNote) {
+	for _, rel := range slices.Sorted(maps.Keys(byNote)) {
 		fmt.Fprintf(b, "- %s\n", note(in.Slugs[rel], rel))
 		for _, f := range byNote[rel] {
 			fmt.Fprintf(b, "  - `%s` — %s\n", f.Ref, f.Reason)
@@ -135,13 +137,4 @@ func writeSkipped(b *strings.Builder, counts map[drift.Verdict]int) {
 	fmt.Fprintf(b, "\n## Not checked — %d\n\n", counts[drift.Skipped])
 	b.WriteString("Citations nothing on this machine could adjudicate, usually a repo that " +
 		"is not cloned here. They are neither verified nor broken.\n")
-}
-
-func sortedKeys[V any](m map[string]V) []string {
-	out := make([]string, 0, len(m))
-	for k := range m {
-		out = append(out, k)
-	}
-	sort.Strings(out)
-	return out
 }

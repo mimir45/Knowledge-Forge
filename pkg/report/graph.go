@@ -2,6 +2,8 @@ package report
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 	"strings"
 	"time"
 
@@ -30,7 +32,7 @@ func RenderOrphans(in OrphansInput) []byte {
 		return []byte(b.String())
 	}
 	groups := byType(in.Orphans, in.Types)
-	for _, t := range sortedKeys(groups) {
+	for _, t := range slices.Sorted(maps.Keys(groups)) {
 		fmt.Fprintf(&b, "\n## %s\n\n", t)
 		for _, rel := range groups[t] {
 			fmt.Fprintf(&b, "- %s\n", note(in.Slugs[rel], rel))

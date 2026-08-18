@@ -7,10 +7,10 @@ import (
 	"knowledge-forge/pkg/config"
 )
 
-// LockedStages mirrors pkg/config.LockedStages so this package can refuse a tampered
-// config without importing pkg/config's validate.go — defense in depth, not a shortcut
-// around it: config.Load already refuses to start on the same violation.
-var LockedStages = []string{"recall", "write", "index"}
+// LockedStages re-exports pkg/config's list so this package can refuse a tampered config
+// by checking the stage name directly — defense in depth, not a shortcut around it:
+// config.Load already refuses to start on the same violation via validateLockedStages.
+var LockedStages = config.LockedStages
 
 // Resolve walks stage's Engine/Fallback/Then chain and returns the winning engine name —
 // "none", "host", "api", "advisor", or the "local" alias — plus a human reason a caller

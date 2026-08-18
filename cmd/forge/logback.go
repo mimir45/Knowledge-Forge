@@ -95,7 +95,7 @@ func runOneRepo(cfg logbackCfg, gcfg *config.Config, r drift.Repo,
 		return false
 	}
 	if cfg.removeMarkers {
-		return removeMarkers(cfg.vault, r, rg, src, cfg.dryRun)
+		return removeMarkers(cfg.vault, r, src, cfg.dryRun)
 	}
 	ok := true
 	if gcfg.Static.LogBack.KnowledgeMap {
@@ -105,7 +105,7 @@ func runOneRepo(cfg logbackCfg, gcfg *config.Config, r drift.Repo,
 		ok = writeClaudeFragments(r, groups, cfg.dryRun) && ok
 	}
 	if gcfg.Static.LogBack.InlineMarkers {
-		ok = writeInlineMarkers(cfg.vault, r, rg, src, cfg.dryRun) && ok
+		ok = writeInlineMarkers(cfg.vault, r, src, cfg.dryRun) && ok
 	}
 	return ok
 }

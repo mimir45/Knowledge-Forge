@@ -81,7 +81,7 @@ func printInstruction(label string, req engine.Request) {
 }
 
 // topBroken picks the top BROKEN finding by (Note, Ref) — the same lexicographic tiebreak
-// pattern pkg/report's groupByNote/sortedKeys use, kept local since only this file needs it.
+// pattern pkg/report's groupByNote callers use, kept local since only this file needs it.
 func topBroken(fs []drift.Finding) (drift.Finding, bool) {
 	var top drift.Finding
 	found := false

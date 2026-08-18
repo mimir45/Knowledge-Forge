@@ -6,17 +6,28 @@ import (
 	"strings"
 )
 
+// runGit runs one git subcommand rooted at root and returns its trimmed stdout. Every
+// function below shells out through it — pkg/gitsig makes the same CLI-not-go-git choice
+// (B-009) — so the exec.Command boilerplate lives in one place instead of four.
+func runGit(root string, args ...string) (string, error) {
+	out, err := exec.Command("git", append([]string{"-C", root}, args...)...).Output()
+	if err != nil {
+		return "", err
+	}
+	return string(out), nil
+}
+
 // ScanRepo lists the source files git tracks at the given revision. Tracked files only,
 // and at a named revision rather than the working tree: drift is a pure function of
 // (note refs, tree state), so an untracked scratch file must not make a citation
 // resolve and a half-finished edit must not make one break.
 func ScanRepo(name, root, rev string) (Repo, error) {
-	out, err := exec.Command("git", "-C", root, "ls-tree", "-r", "--name-only", rev).Output()
+	out, err := runGit(root, "ls-tree", "-r", "--name-only", rev)
 	if err != nil {
 		return Repo{}, err
 	}
 	r := Repo{Name: name, Root: root}
-	for _, line := range strings.Split(strings.TrimRight(string(out), "\n"), "\n") {
+	for _, line := range strings.Split(strings.TrimRight(out, "\n"), "\n") {
 		if line != "" && sourceExt[strings.ToLower(filepath.Ext(line))] {
 			r.Files = append(r.Files, filepath.ToSlash(line))
 		}
@@ -27,11 +38,11 @@ func ScanRepo(name, root, rev string) (Repo, error) {
 // HeadSHA resolves a revision to a full sha, which is what a note's drift_checked_at
 // records and what the next run diffs against.
 func HeadSHA(root, rev string) (string, error) {
-	out, err := exec.Command("git", "-C", root, "rev-parse", rev).Output()
+	out, err := runGit(root, "rev-parse", rev)
 	if err != nil {
 		return "", err
 	}
-	return strings.TrimSpace(string(out)), nil
+	return strings.TrimSpace(out), nil
 }
 
 // ChangedFiles is drift's cheap gate: the files touched between two revisions. AST
@@ -42,13 +53,12 @@ func HeadSHA(root, rev string) (string, error) {
 // destination, and a note citing the old path would then sit outside the gate and be
 // scored OK while its file no longer exists.
 func ChangedFiles(root, since, head string) ([]string, error) {
-	out, err := exec.Command("git", "-C", root, "diff", "--name-only", "--no-renames",
-		since+".."+head).Output()
+	out, err := runGit(root, "diff", "--name-only", "--no-renames", since+".."+head)
 	if err != nil {
 		return nil, err
 	}
 	var files []string
-	for _, line := range strings.Split(strings.TrimRight(string(out), "\n"), "\n") {
+	for _, line := range strings.Split(strings.TrimRight(out, "\n"), "\n") {
 		if line != "" {
 			files = append(files, filepath.ToSlash(line))
 		}
@@ -71,13 +81,12 @@ type ChangedFile struct {
 // over unchanged from ChangedFiles, for the same reason: a moved file must still report
 // its old path as deleted, which is exactly what a stale citation names.
 func ChangedFilesStatus(root, since, head string) ([]ChangedFile, error) {
-	out, err := exec.Command("git", "-C", root, "diff", "--name-status", "--no-renames",
-		since+".."+head).Output()
+	out, err := runGit(root, "diff", "--name-status", "--no-renames", since+".."+head)
 	if err != nil {
 		return nil, err
 	}
 	var files []ChangedFile
-	for _, line := range strings.Split(strings.TrimRight(string(out), "\n"), "\n") {
+	for _, line := range strings.Split(strings.TrimRight(out, "\n"), "\n") {
 		status, p, ok := strings.Cut(line, "\t")
 		if !ok || !sourceExt[strings.ToLower(filepath.Ext(p))] {
 			continue

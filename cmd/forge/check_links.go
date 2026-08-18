@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"maps"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -33,7 +35,7 @@ func (d *checkData) links() {
 }
 
 func (d *checkData) statuses(byURL map[string][]string) []report.Citation {
-	urls := sortedStrings(byURL)
+	urls := slices.Sorted(maps.Keys(byURL))
 	dir := filepath.Join(d.root, ".forge")
 	var got []linkcheck.Status
 	if d.cfg.offline {

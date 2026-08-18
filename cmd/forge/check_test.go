@@ -285,6 +285,8 @@ func (s symbolSource) Find(name, asOf string) (string, string, codeindex.Symbol,
 	return "repo", p, codeindex.Symbol{Name: name}, ok
 }
 
+func (s symbolSource) Index(repo, rev string) codeindex.Index { return codeindex.Index{} }
+
 // TestSymbolCitationCoversItsFile is the defect the first real run produced: leprecoin's
 // map listed SignUpPage as "0 notes" in the same run where drift.md named two notes citing
 // it. Most of the vault cites a class and no path, and coderef gives those no RepoPath, so

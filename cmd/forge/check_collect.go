@@ -2,7 +2,6 @@ package main
 
 import (
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 
@@ -165,15 +164,6 @@ func vaultHistory(root string, months int, now time.Time) (*gitsig.Stats, error)
 		return nil, err
 	}
 	return gitsig.Analyze(commits), nil
-}
-
-func sortedStrings(m map[string][]string) []string {
-	out := make([]string, 0, len(m))
-	for k := range m {
-		out = append(out, k)
-	}
-	sort.Strings(out)
-	return out
 }
 
 // budgetSnapshot fills d.budget from cfg.Engines.Budget, the SQLite budget table, and

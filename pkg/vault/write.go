@@ -2,8 +2,9 @@ package vault
 
 import (
 	"errors"
+	"maps"
 	"os"
-	"sort"
+	"slices"
 )
 
 // ErrNoFM is returned when a caller tries to stamp a note that has no frontmatter block
@@ -21,7 +22,7 @@ func SetScalars(n *Note, s *Schema, kv map[string]string) error {
 	if n.FM == nil {
 		return ErrNoFM
 	}
-	for _, k := range sortedKeys(kv) {
+	for _, k := range slices.Sorted(maps.Keys(kv)) {
 		setScalar(n.FM, k, kv[k])
 	}
 	out, err := render(n.FM, s, n.Body)
@@ -48,13 +49,4 @@ func SetList(n *Note, s *Schema, key string, items []string) error {
 		return err
 	}
 	return os.WriteFile(n.Path, out, 0o644)
-}
-
-func sortedKeys(kv map[string]string) []string {
-	keys := make([]string, 0, len(kv))
-	for k := range kv {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	return keys
 }

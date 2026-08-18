@@ -2,11 +2,14 @@ package vault
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
+
+	"knowledge-forge/pkg/config"
 )
 
 // Issue is one validation failure. Code is stable and machine-greppable; Msg is the
@@ -308,7 +311,7 @@ func checkEngineTrail(n *Note) []Issue {
 }
 
 func isStaticStage(s string) bool {
-	return s == "recall" || s == "write" || s == "index"
+	return slices.Contains(config.LockedStages, s)
 }
 
 // checkDates enforces the ordering the schema states as `constraint`.

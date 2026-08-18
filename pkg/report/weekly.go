@@ -2,6 +2,8 @@ package report
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 	"strings"
 	"time"
 
@@ -93,7 +95,7 @@ func actNowLines(in WeeklyInput) []string {
 func brokenLines(in WeeklyInput) []string {
 	byNote := groupByNote(in.Broken, drift.Broken)
 	var out []string
-	for _, rel := range sortedKeys(byNote) {
+	for _, rel := range slices.Sorted(maps.Keys(byNote)) {
 		var reasons []string
 		for _, f := range byNote[rel] {
 			reasons = append(reasons, f.Reason)
@@ -130,7 +132,7 @@ func duplicateLines(in WeeklyInput) []string {
 func deadLinkLines(in WeeklyInput) []string {
 	counts := deadCountByNote(in.DeadCitations)
 	var out []string
-	for _, rel := range sortedKeys(counts) {
+	for _, rel := range slices.Sorted(maps.Keys(counts)) {
 		n := counts[rel]
 		out = append(out, fmt.Sprintf("%d dead %s in %s",
 			n, plural(n, "source URL", "source URLs"), note(in.Slugs[rel], rel)))

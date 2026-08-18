@@ -4,8 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"text/tabwriter"
 
@@ -125,19 +127,10 @@ func writeTrend(tw *tabwriter.Writer, store *report.WeeklyStore) {
 		return
 	}
 	fmt.Fprintf(tw, "  week\tnotes\thit rate\torphans\tdrift\n")
-	for _, k := range sortedWeekKeys(store) {
+	for _, k := range slices.Sorted(maps.Keys(store.Weeks)) {
 		s := store.Weeks[k]
 		fmt.Fprintf(tw, "  %s\t%d\t%.1f%%\t%d\t%d\n", k, s.Notes, s.HitRate, s.Orphans, s.Drift)
 	}
-}
-
-func sortedWeekKeys(store *report.WeeklyStore) []string {
-	keys := make([]string, 0, len(store.Weeks))
-	for k := range store.Weeks {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	return keys
 }
 
 // sortedByCount and unwrittenAsks share BACKLOG B-020's deterministic tiebreak (count

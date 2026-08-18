@@ -81,6 +81,14 @@ func (g *GitSource) At(repo, path, rev string) (codeindex.File, bool) {
 	return f, ok
 }
 
+// Index exposes the same cache-preferring, patch-forward index indexAt already builds for
+// At and Find, so a caller that also wants the full symbol table (coverage reporting, for
+// one) doesn't pay for a second full tree-sitter parse to get what this package already
+// has in hand.
+func (g *GitSource) Index(repo, rev string) codeindex.Index {
+	return g.indexAt(repo, rev)
+}
+
 func (g *GitSource) indexAt(repo, rev string) codeindex.Index {
 	key := repo + "@" + rev
 	if ix, ok := g.idx[key]; ok {

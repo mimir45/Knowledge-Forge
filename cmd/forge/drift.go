@@ -161,16 +161,39 @@ func byRel(notes []*vault.Note) map[string]*vault.Note {
 	return m
 }
 
-func registryOf(repos []drift.Repo) (*coderef.Registry, error) {
-	out := make([]coderef.Repo, 0, len(repos))
+// scanRepos runs coderef.ScanRepo once per repository, keyed by name. registryOf and
+// forge check's codebase collector both need every repo's file list — the registry to
+// resolve citations, the collector to list files per module — so scanning once here and
+// sharing the result avoids a second `git ls-tree` per repo on every run.
+func scanRepos(repos []drift.Repo) (map[string]coderef.Repo, error) {
+	out := make(map[string]coderef.Repo, len(repos))
 	for _, r := range repos {
 		scanned, err := coderef.ScanRepo(r.Name, r.Root, "HEAD")
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", r.Name, err)
 		}
-		out = append(out, scanned)
+		out[r.Name] = scanned
 	}
-	return coderef.NewRegistry(out), nil
+	return out, nil
+}
+
+// newRegistryFrom builds the registry in repos' order rather than the map's — coderef's
+// registry breaks same-base-name ties by (repo, path) order, so scan order is part of its
+// verdict and a map iteration would make that verdict non-deterministic.
+func newRegistryFrom(repos []drift.Repo, scans map[string]coderef.Repo) *coderef.Registry {
+	out := make([]coderef.Repo, 0, len(repos))
+	for _, r := range repos {
+		out = append(out, scans[r.Name])
+	}
+	return coderef.NewRegistry(out)
+}
+
+func registryOf(repos []drift.Repo) (*coderef.Registry, error) {
+	scans, err := scanRepos(repos)
+	if err != nil {
+		return nil, err
+	}
+	return newRegistryFrom(repos, scans), nil
 }
 
 // gateOf unions the changed sets of every repository. Touched paths are not

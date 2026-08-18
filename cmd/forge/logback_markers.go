@@ -110,67 +110,64 @@ func markerBody(slugs []string) string {
 // writeInlineMarkers is opt-in (static.logback.inline_markers) and degrades cleanly on a
 // CGO_ENABLED=0 build: no symbol table means no anchor line, so it reports skipped rather
 // than erroring the whole run.
-func writeInlineMarkers(vaultRoot string, r drift.Repo, rg *coderef.Registry, src symbolFinder, dryRun bool) bool {
-	if !codeindex.Available() {
-		fmt.Printf("%s: inline markers skipped: %v\n", r.Name, codeindex.ErrUnavailable)
-		return true
-	}
-	refs, err := noteRefsOf(vaultRoot)
-	if err != nil {
-		fmt.Printf("%s: inline markers: %v\n", r.Name, err)
-		return false
-	}
-	ok := true
-	for _, m := range resolveMarkers(refs, src, r.Name) {
-		style, known := markerStyles[codeindex.Lang(m.path)]
-		if !known {
-			continue
-		}
-		abs := filepath.Join(r.Root, m.path)
-		if dryRun {
-			fmt.Printf("%s: %s: marker for %s would be written (dry run)\n", r.Name, m.path, m.sym.Name)
-			continue
-		}
-		if err := sentinel.UpsertBefore(abs, markerID(m.sym), style, markerBody(m.slugs), m.sym.Start); err != nil {
-			fmt.Printf("%s: %s: %v\n", r.Name, m.path, err)
-			ok = false
-			continue
-		}
-		fmt.Printf("%s: %s: marker for %s written\n", r.Name, m.path, m.sym.Name)
-	}
-	return ok
+func writeInlineMarkers(vaultRoot string, r drift.Repo, src symbolFinder, dryRun bool) bool {
+	return applyMarkers(vaultRoot, r, src, dryRun, "inline markers", "written",
+		func(abs, id string, style sentinel.Style, m marker) error {
+			return sentinel.UpsertBefore(abs, id, style, markerBody(m.slugs), m.sym.Start)
+		})
 }
 
 // removeMarkers strips every marker forge logback could have written, independent of the
 // current inline_markers config — --remove-markers is meant to work even after the config
 // gate was turned back off, which is when a leftover marker is most likely to be found.
-func removeMarkers(vaultRoot string, r drift.Repo, rg *coderef.Registry, src symbolFinder, dryRun bool) bool {
+func removeMarkers(vaultRoot string, r drift.Repo, src symbolFinder, dryRun bool) bool {
+	return applyMarkers(vaultRoot, r, src, dryRun, "--remove-markers", "removed",
+		func(abs, id string, style sentinel.Style, m marker) error {
+			return sentinel.Remove(abs, id, style)
+		})
+}
+
+// applyMarkers is the walk writeInlineMarkers and removeMarkers share: resolve every
+// symbol citation in this repo to a marker, then apply one sentinel operation to each.
+// errLabel, verb and apply are the only things that differ between a write and a remove.
+func applyMarkers(vaultRoot string, r drift.Repo, src symbolFinder, dryRun bool,
+	errLabel, verb string, apply func(abs, id string, style sentinel.Style, m marker) error) bool {
 	if !codeindex.Available() {
-		fmt.Printf("%s: --remove-markers skipped: %v\n", r.Name, codeindex.ErrUnavailable)
+		fmt.Printf("%s: %s skipped: %v\n", r.Name, errLabel, codeindex.ErrUnavailable)
 		return true
 	}
 	refs, err := noteRefsOf(vaultRoot)
 	if err != nil {
-		fmt.Printf("%s: --remove-markers: %v\n", r.Name, err)
+		fmt.Printf("%s: %s: %v\n", r.Name, errLabel, err)
 		return false
 	}
 	ok := true
 	for _, m := range resolveMarkers(refs, src, r.Name) {
-		style, known := markerStyles[codeindex.Lang(m.path)]
-		if !known {
-			continue
-		}
-		abs := filepath.Join(r.Root, m.path)
-		if dryRun {
-			fmt.Printf("%s: %s: marker for %s would be removed (dry run)\n", r.Name, m.path, m.sym.Name)
-			continue
-		}
-		if err := sentinel.Remove(abs, markerID(m.sym), style); err != nil {
-			fmt.Printf("%s: %s: %v\n", r.Name, m.path, err)
+		if !applyOneMarker(r, m, dryRun, verb, apply) {
 			ok = false
-			continue
 		}
-		fmt.Printf("%s: %s: marker for %s removed\n", r.Name, m.path, m.sym.Name)
 	}
 	return ok
+}
+
+// applyOneMarker applies (or dry-run announces) one marker, skipping languages
+// markerStyles doesn't cover. It reports false only on a real apply error — an unknown
+// language or a dry run both count as "nothing to fail."
+func applyOneMarker(r drift.Repo, m marker, dryRun bool, verb string,
+	apply func(abs, id string, style sentinel.Style, m marker) error) bool {
+	style, known := markerStyles[codeindex.Lang(m.path)]
+	if !known {
+		return true
+	}
+	abs := filepath.Join(r.Root, m.path)
+	if dryRun {
+		fmt.Printf("%s: %s: marker for %s would be %s (dry run)\n", r.Name, m.path, m.sym.Name, verb)
+		return true
+	}
+	if err := apply(abs, markerID(m.sym), style, m); err != nil {
+		fmt.Printf("%s: %s: %v\n", r.Name, m.path, err)
+		return false
+	}
+	fmt.Printf("%s: %s: marker for %s %s\n", r.Name, m.path, m.sym.Name, verb)
+	return true
 }

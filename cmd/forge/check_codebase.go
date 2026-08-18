@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"maps"
 	"path"
 	"path/filepath"
+	"slices"
 	"sort"
 
 	"knowledge-forge/pkg/codeindex"
@@ -26,28 +28,30 @@ func (d *checkData) driftAndCode() {
 	if len(d.cfg.repos) == 0 {
 		return
 	}
-	rg, err := registryOf(d.cfg.repos)
+	scans, err := scanRepos(d.cfg.repos)
 	if err != nil {
 		d.repoErr = err
 		return
 	}
+	rg := newRegistryFrom(d.cfg.repos, scans)
 	src := drift.NewGitSource(d.cfg.repos, filepath.Join(d.root, ".forge"))
 	d.findings = drift.Check(driftNotes(d.notes), rg, src, nil, drift.Opts{Deep: true})
-	d.code, d.codeErr = d.codebases(rg, src)
+	d.code, d.codeErr = d.codebases(rg, src, scans)
 }
 
 // codebases builds one section per repository. It is the only collector that needs
 // pkg/codeindex, and therefore cgo: a binary built with CGO_ENABLED=0 renders every other
 // report and reports this one as skipped, rather than writing a map that claims the
 // codebase is fully documented because nothing could parse it.
-func (d *checkData) codebases(rg *coderef.Registry, src symbolFinder) ([]report.CodebaseInput, error) {
+func (d *checkData) codebases(rg *coderef.Registry, src symbolFinder,
+	scans map[string]coderef.Repo) ([]report.CodebaseInput, error) {
 	if !codeindex.Available() {
 		return nil, codeindex.ErrUnavailable
 	}
 	cited := d.citedPaths(rg, src)
 	out := make([]report.CodebaseInput, 0, len(d.cfg.repos))
 	for _, r := range d.cfg.repos {
-		in, err := d.oneCodebase(r.Name, r.Root, cited[r.Name])
+		in, err := d.oneCodebase(r.Name, r.Root, cited[r.Name], scans[r.Name].Files, src)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", r.Name, err)
 		}
@@ -56,22 +60,19 @@ func (d *checkData) codebases(rg *coderef.Registry, src symbolFinder) ([]report.
 	return out, nil
 }
 
-func (d *checkData) oneCodebase(name, root string, cited map[string][]string) (report.CodebaseInput, error) {
+// oneCodebase reads the symbol table through src rather than calling codeindex.Build
+// itself: driftAndCode's GitSource already built (or cache-patched) the same index to
+// answer drift's own symbol lookups, and re-parsing the tree here would throw that away.
+func (d *checkData) oneCodebase(name, root string, cited map[string][]string,
+	files []string, src symbolFinder) (report.CodebaseInput, error) {
 	commits, err := gitsig.Log(root, d.now.AddDate(0, 0, -d.cfg.days))
 	if err != nil {
 		return report.CodebaseInput{}, err
 	}
-	scanned, err := coderef.ScanRepo(name, root, "HEAD")
-	if err != nil {
-		return report.CodebaseInput{}, err
-	}
-	ix, err := codeindex.Build(name, root, "HEAD", scanned.Files)
-	if err != nil {
-		return report.CodebaseInput{}, err
-	}
 	st := gitsig.Analyze(commits)
+	ix := src.Index(name, "HEAD")
 	return report.CodebaseInput{Repo: name, Days: d.cfg.days, Now: d.now,
-		Groups: groupsOf(scanned.Files, st, cited), Uncovered: uncoveredOf(ix, st, cited)}, nil
+		Groups: groupsOf(files, st, cited), Uncovered: uncoveredOf(ix, st, cited)}, nil
 }
 
 // symbolFinder is the single question coverage asks of drift's symbol table. Naming it
@@ -79,6 +80,7 @@ func (d *checkData) oneCodebase(name, root string, cited map[string][]string) (r
 // keeps the fake in the test to one method.
 type symbolFinder interface {
 	Find(name, asOf string) (repo, path string, sym codeindex.Symbol, ok bool)
+	Index(repo, rev string) codeindex.Index
 }
 
 // citedPaths resolves every note's code citations to repo-relative paths, keyed by what
@@ -153,7 +155,7 @@ func groupOf(dir string, files []string, st *gitsig.Stats, cited map[string][]st
 			slugs[s] = true
 		}
 	}
-	g.Owners, g.Notes = topKeys(owners), sortedSet(slugs)
+	g.Owners, g.Notes = topKeys(owners), slices.Sorted(maps.Keys(slugs))
 	return g
 }
 
@@ -198,14 +200,5 @@ func topKeys(counts map[string]int) []string {
 		}
 		return out[i] < out[j]
 	})
-	return out
-}
-
-func sortedSet(set map[string]bool) []string {
-	out := make([]string, 0, len(set))
-	for k := range set {
-		out = append(out, k)
-	}
-	sort.Strings(out)
 	return out
 }
