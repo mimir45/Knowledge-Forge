@@ -3,7 +3,7 @@ package telemetry
 import "testing"
 
 func TestQHashDeterministic(t *testing.T) {
-	if QHash("kafka rebalancing") != QHash("kafka rebalancing") {
+	if QHash("kafka rebalancing") != QHash("kafka rebalancing") { //nolint:staticcheck // deliberate: two separate calls, checking determinism
 		t.Fatal("QHash should be deterministic for the same input")
 	}
 }

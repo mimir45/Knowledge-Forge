@@ -313,18 +313,33 @@ is why the ambiguity in B-018 exists at all. Phase 4's `forge-librarian` should 
 
 ## B-013 — the code-index cache has no format version
 
-**Owner: Phase 6 (release). Status: open, currently harmless.**
+**Owner: Phase 6 (release). Status: closed 2026-08-18 — mechanism predates this entry;
+one gap in its contract widened, no new field added.**
 
-`codeindex.Save`/`Load` persist `<vault>/.forge/code-index-<repo>.json` and `pkg/drift`
-patches it forward from the cached commit. Nothing in the file records the extractor's
-version. A future change to what counts as a symbol — the arrow-const fix in 2b was exactly
-such a change — leaves every existing cache silently mixed: old entries under the old rules,
-patched entries under the new. The symptom is a drift verdict that disagrees with a clean
-rebuild, which is the hardest kind of bug to see.
+Re-checking this at Phase 6 found the fix already in the tree: `pkg/codeindex/index.go`'s
+`Index.Extractor int` field, stamped at every construction site (`build.go`'s `Build`,
+`store.go`'s `Patch`), and `store.go`'s `Load` already rejects any stamp but the current
+`Extractor` constant as a cache miss — precisely the "stamp a constant, treat a mismatch
+as a cache miss" shape this entry asked for. Git history confirms `Extractor` was not
+added in response to this entry: commit `1ba62dc` (2026-08-09 14:09) introduced it, and
+commit `9d58a7a` (2026-08-09 14:39) — thirty minutes later — is what wrote this entry into
+BACKLOG.md. The entry's own "nothing in the file records the extractor's version" line was
+already stale the moment it was committed.
 
-Shape: stamp a `SchemaVersion` constant into the saved struct and treat a mismatch as a cache
-miss. Cheap now, and it must land before the first released binary, because that is the point
-at which caches start outliving the code that wrote them.
+What was a real, if narrow, gap: `Extractor`'s doc comment scoped the bump rule to
+"whenever `declKinds` or `kindOf` changes" — extraction-rule drift only. A future change to
+`Symbol` or `File`'s serialized *shape* (a renamed or added field) wouldn't move that
+number, and Go's `json.Unmarshal` silently ignores unknown/missing fields rather than
+erroring, so an old cache would keep loading successfully under a struct it was never
+written for — the same silently-mixed-cache symptom this entry warned about, just from a
+different trigger. Fixed by widening the comment's contract to cover both triggers
+explicitly; no new field, since a second version integer alongside `Extractor` would only
+create two numbers with overlapping jobs.
+
+Doesn't cover: nothing enforces the widened contract mechanically — a future shape change
+that forgets to bump `Extractor` is a code-review miss, not a compile or test failure. If
+that turns out to matter in practice, revisit with a struct-hash-based check instead of a
+hand-bumped constant.
 
 ---
 
@@ -790,3 +805,37 @@ just for this — both cut across `checkRef`'s separation of concerns (resolve, 
 verdict) for a gap `absentSymbol` already accepts for symbols. Revisit only if the
 hook-path latency gap (deletions caught up to a week late) turns out to matter in
 practice.
+
+---
+
+## B-029 — `errcheck` is disabled tree-wide in `.golangci.yml`
+
+**Owner: recorded during Phase 6's CI delta. Status: open, scoped deliberately.**
+
+Phase 6 added `golangci-lint` to `ci.yml` (`docs/CLAUDE-CODE-PROMPT.md`'s original Phase 6
+intent). Its default linter set (`errcheck`, `gosimple`, `govet`, `ineffassign`,
+`staticcheck`, `unused`) surfaced four `staticcheck`/`gosimple` findings, all confirmed
+false positives against code that already documents the intent inline — two determinism
+tests calling the same function twice and comparing the results (`Sign(noteA) !=
+Sign(noteA)` in `pkg/similarity/similarity_test.go`, `QHash(...) != QHash(...)` in
+`pkg/telemetry/qhash_test.go`), one deliberate nil-map panic under test
+(`cmd/forge/check_test.go`'s `TestOneBadRendererCostsOneFile`), and one struct literal
+that `pkg/engine/host.go` keeps explicit on purpose, per its own comment, so `Request`
+growing fields later can't silently leak into `instruction`'s JSON contract. All four are marked
+with a scoped `//nolint` at the specific line, not a blanket exclusion.
+
+`errcheck` was a different matter: ~20 findings spread across `cmd/forge` and `pkg/drift`,
+`pkg/report`, `pkg/store`, `pkg/engine`, `pkg/sentinel`, `pkg/telemetry`, `pkg/codeindex`.
+Some are already-documented deliberate ignores (`pkg/drift/demotions.go`'s `json.Unmarshal`
+next to the comment "a corrupt store loses restore targets, never verdicts"); others are
+test-setup fire-and-forget calls; a few — `cmd/forge/recall_load.go`'s `tx.Commit()`/
+`tx.Rollback()`, `pkg/drift/gitindex.go`'s `codeindex.Save` on the hook path — are the kind
+where silently swallowing the error deserves individual judgment, not a rushed sweep under
+a CI-delta task. Sorting all ~20 into "already-fine, needs a nolint" vs. "needs a real fix"
+is real work, out of scope for landing the lint step itself, so `.golangci.yml` disables
+`errcheck` tree-wide for now with a comment pointing here.
+
+Shape of the fix when someone owns it: go file by file, add `//nolint:errcheck` with a
+reason comment where ignoring is correct (matching this entry's four `staticcheck`
+precedents), fix the rest to actually check the error, then remove `errcheck` from
+`.golangci.yml`'s `disable` list.

@@ -1,0 +1,13 @@
+{
+  "name": "forge",
+  "displayName": "Knowledge Forge",
+  "version": "0.1.0",
+  "description": "Turns \"explain X\" moments into permanent, linked, verified markdown notes in an Obsidian vault. A zero-model-call Go static-analysis core (recall, drift, quality gates) with an optional four-tier LLM layer on top.",
+  "author": {
+    "name": "Samir"
+  },
+  "homepage": "https://github.com/mimir45/Knowledge-Forge/blob/main/docs/ROADMAP.md",
+  "repository": "https://github.com/mimir45/Knowledge-Forge",
+  "license": "MIT",
+  "keywords": ["knowledge-base", "obsidian", "notes", "static-analysis", "drift-detection"]
+}

@@ -28,6 +28,7 @@ var commands = map[string]func([]string) int{
 	"cache-source":    cmdCacheSource,
 	"stats":           cmdStats,
 	"logback":         cmdLogback,
+	"scrub":           cmdScrub,
 }
 
 const usage = `forge — Knowledge Forge static core (no model calls)
@@ -65,6 +66,8 @@ commands:
   logback          make the vault's knowledge discoverable from the code repo itself:
                    docs/knowledge-map.md, per-module CLAUDE.md fragments, opt-in inline
                    markers — see forge logback --help
+  scrub            redact secret/PII-shaped content from a vault copy, fails closed —
+                   see forge scrub --help
 
 run "forge <command> --help" for that command's flags.
 `

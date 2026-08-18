@@ -126,7 +126,11 @@ func TestOneBadRendererCostsOneFile(t *testing.T) {
 	ok := func() ([]byte, error) { return []byte("fine\n"), nil }
 	js := []job{
 		{"reports/a.md", ok},
-		{"reports/b.md", func() ([]byte, error) { var m map[string]int; m["x"] = 1; return nil, nil }},
+		{"reports/b.md", func() ([]byte, error) { // deliberate: this job must panic, see TestOneBadRendererCostsOneFile's doc comment
+			var m map[string]int
+			m["x"] = 1 //nolint:staticcheck // assignment to nil map is the panic under test
+			return nil, nil
+		}},
 		{"reports/c.md", ok},
 	}
 	if code := writeAll(root, js); code != 0 {

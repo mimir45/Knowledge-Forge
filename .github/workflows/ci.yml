@@ -15,8 +15,15 @@ jobs:
           go-version: "1.26"
           cache: true
 
+      # make lint is gofmt -l + go vet already; golangci-lint below adds staticcheck,
+      # gosimple, ineffassign, unused on top (errcheck disabled repo-wide — BACKLOG B-029).
       - name: lint
         run: make lint
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.64.8
 
       # Both lanes, because they are different programs. cgo on is what runs the
       # tree-sitter parser tests; cgo off is the invariant that every package except
@@ -31,6 +38,12 @@ jobs:
       # out, so the matrix is built on every push and thrown away.
       - name: cross-compile matrix
         run: make dist
+
+      # forge recall/check must be byte-identical on repeated runs against the same
+      # vault — this project's own measured invariant since Phase 2b, scripted here so
+      # it's checked on every push rather than by hand each phase. See evals/README.md.
+      - name: evals (determinism)
+        run: ./evals/run.sh
 
   shim:
     runs-on: ubuntu-latest

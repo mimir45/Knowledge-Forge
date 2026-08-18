@@ -1,0 +1,23 @@
+{
+  "name": "knowledge-forge",
+  "description": "Knowledge Forge — a zero-model-call Go static-analysis core for turning \"explain X\" moments into a verified Obsidian vault, with an optional four-tier LLM layer.",
+  "owner": {
+    "name": "Samir"
+  },
+  "plugins": [
+    {
+      "name": "forge",
+      "displayName": "Knowledge Forge",
+      "description": "Turns \"explain X\" moments into permanent, linked, verified markdown notes in an Obsidian vault. A zero-model-call Go static-analysis core (recall, drift, quality gates) with an optional four-tier LLM layer on top.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Samir"
+      },
+      "homepage": "https://github.com/mimir45/Knowledge-Forge/blob/main/docs/ROADMAP.md",
+      "repository": "https://github.com/mimir45/Knowledge-Forge",
+      "license": "MIT",
+      "keywords": ["knowledge-base", "obsidian", "notes", "static-analysis", "drift-detection"],
+      "source": "."
+    }
+  ]
+}

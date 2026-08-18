@@ -131,7 +131,7 @@ func TestEmptyDocumentsAreNotDuplicates(t *testing.T) {
 // Determinism is a T0 invariant: the same vault must produce the same report on every
 // machine, so nothing here may seed from a random source or map iteration order.
 func TestSignatureIsDeterministic(t *testing.T) {
-	if Sign(noteA) != Sign(noteA) {
+	if Sign(noteA) != Sign(noteA) { //nolint:staticcheck // deliberate: two separate calls, checking determinism
 		t.Error("two signings of the same text differed")
 	}
 }

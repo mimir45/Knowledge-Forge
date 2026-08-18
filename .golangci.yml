@@ -1,0 +1,11 @@
+run:
+  timeout: 5m
+
+linters:
+  # Default set minus errcheck. errcheck's ~20 findings across this tree are a mix of
+  # deliberately-ignored errors already explained by an inline comment (e.g.
+  # pkg/drift/demotions.go's "a corrupt store loses restore targets, never verdicts") and
+  # genuine test-setup fire-and-forget calls — sorting the two apart file-by-file is real
+  # work, not a Phase 6 CI-delta task. Tracked as BACKLOG B-029; re-enable there once done.
+  disable:
+    - errcheck

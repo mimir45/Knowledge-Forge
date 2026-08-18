@@ -1,0 +1,78 @@
+# Knowledge Forge
+
+Turns "explain X" moments into permanent, linked, verified markdown notes in an
+Obsidian vault — so the second time the question comes up, it's a vault read instead of
+a research run.
+
+The defensible core is a Go static-analysis engine (dedup recall, schema validation,
+drift detection, report generation) that runs with **zero model calls**. An optional
+four-tier LLM layer (`none` / `host` / `api` / `advisor`-critique) sits on top,
+configurable per pipeline stage — the static core works standalone with no API key and
+no network call.
+
+## Install
+
+As a Claude Code plugin:
+
+```
+claude plugin marketplace add mimir45/Knowledge-Forge
+```
+
+This pulls in the `forge` skills, agents, and hook bindings (`hooks/hooks.json`) —
+Claude Code discovers all of them from this repo's default component paths, no manual
+`settings.json` edits needed.
+
+## Requirements
+
+- `git` on `PATH`. `pkg/gitsig` (churn, ownership, co-change coupling) shells out to the
+  `git` CLI rather than a Go library — a deliberate, documented trade-off, not an
+  oversight (see BACKLOG B-009).
+- Nothing else, for the portable build. See "Build lanes" below for what the optional
+  code-index feature adds.
+
+## What it does
+
+- `forge recall` — deterministic, lexical scoring of a new question against every
+  existing note, before any research runs. See `docs/adr/0001-lexical-recall-vs-embeddings.md`
+  for why this is lexical, not embeddings.
+- `forge drift` — git-anchored: checks note code citations against a code repo's
+  history on `post-commit` / `post-merge` / `post-checkout`, never against the
+  uncommitted working tree.
+- `forge check` — the weekly pass: renders every static report into `<vault>/reports/`.
+- `forge gate` — the seven DESIGN §12 quality gates; a failing draft goes to `_inbox/`
+  with `confidence: low`, never a silent publish.
+- `forge logback` — makes the vault's knowledge discoverable from the code repo itself:
+  `docs/knowledge-map.md`, per-module `CLAUDE.md` fragments, opt-in inline markers.
+- `forge scrub` — redacts secret/PII-shaped content from a vault copy; fails closed —
+  see `pkg/scrub`.
+
+Run `forge --help`, or any subcommand with `--help`, for the full command reference.
+
+## Build lanes
+
+Two lanes, because `pkg/codeindex` (go-tree-sitter, Java + TypeScript) is the one
+package in this repo that needs cgo:
+
+- `make build` (or `CGO_ENABLED=0 go build ./...`) — the portable lane. Cross-compiles
+  to all six release targets from any host, no C toolchain required. **This is what
+  ships in releases.** A portable binary has no code index: `forge check` reports
+  `moc/codebase.md` as skipped rather than claiming an unparsed codebase is fully
+  documented, and `forge drift` skips symbol-only citations instead of calling them
+  resolved.
+- `make full` (or `CGO_ENABLED=1 go build ./cmd/forge`) — this host's binary with the
+  tree-sitter code index compiled in. Needs a C toolchain for the build host.
+
+`make test` runs both: the full suite under `CGO_ENABLED=1` (so the tree-sitter parser
+tests actually run), then `CGO_ENABLED=0 go build ./...` to confirm the portable
+invariant still holds.
+
+## Documentation
+
+Start at [`docs/ROADMAP.md`](docs/ROADMAP.md) — a condensed index over the full design.
+`docs/AUDIT.md` §8.4 is the binding decision record for anything the design docs
+disagree with each other on. `CLAUDE.md` has the phase-by-phase build history and the
+project's working invariants.
+
+## License
+
+MIT — see [`LICENSE`](LICENSE).

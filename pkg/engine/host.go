@@ -19,7 +19,7 @@ type instruction struct {
 }
 
 func (Host) Run(req Request) (Result, error) {
-	b, err := json.Marshal(instruction{
+	b, err := json.Marshal(instruction{ //nolint:gosimple // deliberate: see instruction's doc comment
 		Stage: req.Stage, Prompt: req.Prompt,
 		Context: req.Context, Constraints: req.Constraints,
 	})

@@ -21,11 +21,13 @@ note is good enough, you are what happens after that question is already settled
 
 ## Packaging note
 
-Nothing in this repo currently loads agents from a root-level `agents/` directory —
-Claude Code loads `.claude/agents/`, and there is no plugin manifest yet (Phase 0). This
-file is the correct *spec* for when that packaging exists; today it is dispatched, if at
-all, through the generic Agent tool with an explicit tool allowlist matching the list
-above, not through live agent auto-discovery.
+Phase 6 added `.claude-plugin/plugin.json`, so once this repo is installed as a plugin
+(`claude plugin marketplace add mimir45/Knowledge-Forge`), this file is auto-discovered
+from this root-level `agents/` directory — no manifest override needed, since
+`agents/` is Claude Code's default component path. Before that, or when this repo is
+just checked out locally rather than installed as a plugin, it is still dispatched, if
+at all, through the generic Agent tool with an explicit tool allowlist matching the
+list above, not through live agent auto-discovery.
 
 ## Scope
 

@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"knowledge-forge/pkg/config"
 	"knowledge-forge/pkg/coderef"
+	"knowledge-forge/pkg/config"
 	"knowledge-forge/pkg/drift"
 )
 

@@ -40,10 +40,13 @@ type File struct {
 	Symbols []Symbol `json:"symbols"`
 }
 
-// Extractor is the version of the declaration rules in parse_cgo.go. A cached index
-// built by an older extractor holds fewer symbols than the current one would find, and
-// a missing symbol is exactly what drift reads as BROKEN — so Load rejects a cache
-// stamped with anything but this. Bump it whenever declKinds or kindOf changes.
+// Extractor doubles as this cache's format version (BACKLOG B-013): Load rejects any
+// stamp but this, treating a mismatch as a cache miss rather than a bad parse. Bump it
+// whenever declKinds or kindOf changes (an older extractor holds fewer symbols, and a
+// missing symbol is exactly what drift reads as BROKEN) — but also whenever Symbol or
+// File's serialized shape changes, even if extraction logic itself doesn't. Go's
+// json.Unmarshal is lenient about missing/added fields, so a shape change alone would
+// otherwise unmarshal an old cache "successfully" into a struct it was never written for.
 const Extractor = 2
 
 // Index is the serialized form written to .forge/code-index.json.
