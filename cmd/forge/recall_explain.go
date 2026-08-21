@@ -46,7 +46,7 @@ func explainOne(w io.Writer, c recall.Candidate) {
 		// Since B-008 the terms in a hit list no longer count equally, so the list alone
 		// no longer explains the value. Print the weights that produced it.
 		if len(ch.Terms) > 0 {
-			fmt.Fprintf(w, "         idf %s\n", weightList(ch.Terms))
+			fmt.Fprintf(w, "         idf %s\n", weightList(ch.Terms, ch.DF))
 		}
 	}
 	fmt.Fprintf(w, "  sum   %.3f / %.3f = %.3f\n", num, den, c.Score)
@@ -59,8 +59,12 @@ func staleMark(stale bool) string {
 	return ""
 }
 
-// weightList renders a channel's per-term IDF, sorted so the line is byte-stable.
-func weightList(terms map[string]float64) string {
+// weightList renders a channel's per-term IDF and the document frequency behind it,
+// sorted so the line is byte-stable. df is printed because a weight is ambiguous at zero:
+// a term every note carries and a term no note carries both weigh nothing, and only the
+// second is evidence about the vault. B-008's second pass had to count df by hand to see
+// that, which is the whole reason this column exists.
+func weightList(terms map[string]float64, df map[string]int) string {
 	keys := make([]string, 0, len(terms))
 	for t := range terms {
 		keys = append(keys, t)
@@ -68,7 +72,7 @@ func weightList(terms map[string]float64) string {
 	sort.Strings(keys)
 	parts := make([]string, len(keys))
 	for i, t := range keys {
-		parts[i] = fmt.Sprintf("%s %.2f", t, terms[t])
+		parts[i] = fmt.Sprintf("%s %.2f (df %d)", t, terms[t], df[t])
 	}
 	return strings.Join(parts, ", ")
 }

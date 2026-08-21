@@ -23,6 +23,8 @@ type scope struct {
 	stackTerms []string // --stack values plus query terms in the stack vocabulary
 	tagIDF     map[string]float64
 	stackIDF   map[string]float64
+	tagDF      map[string]int // raw counts behind the weights, carried for --explain
+	stackDF    map[string]int
 }
 
 func newScope(q Query, docs []Doc) scope {
@@ -33,6 +35,7 @@ func newScope(q Query, docs []Doc) scope {
 		inVocab(terms, stackDF)...))
 	s.tagIDF = idfOver(s.tagTerms, tagDF, len(docs))
 	s.stackIDF = idfOver(s.stackTerms, stackDF, len(docs))
+	s.tagDF, s.stackDF = dfOver(s.tagTerms, tagDF), dfOver(s.stackTerms, stackDF)
 	return s
 }
 
@@ -60,6 +63,17 @@ func inVocab(terms []string, df map[string]int) []string {
 		if df[t] > 0 {
 			out = append(out, t)
 		}
+	}
+	return out
+}
+
+// dfOver narrows the vault-wide counts to the query's own terms, mirroring idfOver. The
+// full maps are not kept: nothing reads a count for a term nobody asked about, and a
+// query-scope map is shared read-only by every candidate.
+func dfOver(terms []string, df map[string]int) map[string]int {
+	out := make(map[string]int, len(terms))
+	for _, t := range terms {
+		out[t] = df[t]
 	}
 	return out
 }
@@ -154,7 +168,7 @@ func f2(hits, queryTerms, titleTokens int) float64 {
 func (s scope) tagsChannel(d Doc) Channel {
 	tags := setOf(d.Tags)
 	hits := intersect(s.tagTerms, tags)
-	c := Channel{Name: "tags", Weight: wTags, Hits: hits, Terms: s.tagIDF}
+	c := Channel{Name: "tags", Weight: wTags, Hits: hits, Terms: s.tagIDF, DF: s.tagDF}
 	value, ok := weighted(s.tagTerms, hits, s.tagIDF)
 	if c.Active = ok && len(tags) > 0; c.Active {
 		c.Value = value
@@ -167,7 +181,7 @@ func (s scope) tagsChannel(d Doc) Channel {
 func (s scope) stackChannel(d Doc) Channel {
 	stack := setOf(d.Stack)
 	hits := intersect(s.stackTerms, stack)
-	c := Channel{Name: "stack", Weight: wStack, Hits: hits, Terms: s.stackIDF}
+	c := Channel{Name: "stack", Weight: wStack, Hits: hits, Terms: s.stackIDF, DF: s.stackDF}
 	value, ok := weighted(s.stackTerms, hits, s.stackIDF)
 	if c.Active = ok && len(stack) > 0; c.Active {
 		c.Value = value
