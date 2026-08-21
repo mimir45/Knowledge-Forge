@@ -91,7 +91,8 @@ temp git repo confirming byte-identical reruns (`diff`, no output) and a byte-fo
 must key off `coderef.Ref.Symbol != ""`, not `Ref.Kind == KindSymbol` — the canonical
 `code_refs:` citation form (`repo:path#Symbol`) parses to `KindPath` with `Symbol` set,
 so filtering on `Kind` alone would silently skip nearly every real citation. New backlog
-item recorded rather than fixed this phase: **B-027** (`pkg/drift/gitindex.go` caches
+item recorded rather than fixed this phase: **B-027** (half-closed 2026-08-21;
+`pkg/drift/gitindex.go` caches
 per-repo as `.forge/code-index-<repo>.json`, while ADDENDUM/DESIGN both describe the
 singular `.forge/code-index.json` — correct behavior, since one shared name would
 collide across repos, but undocumented; found during Phase 5b's explore pass,
@@ -143,17 +144,43 @@ download-and-checksum path and `claude plugin marketplace add mimir45/Knowledge-
 from a genuinely clean machine — both need the tagged release this phase's remote-push
 step produces, which is the phase's actual "done when" condition.
 Everything else below is still design spec; **Phase 6b is next.**
+
+**A defect-cleanup pass ran 2026-08-21 on `simplify/codebase-cleanup` — out-of-phase work,
+not a phase, and it does not reorder the roadmap.** It took the doc-sync and one-line tier
+of the open backlog and deliberately left the two items that need their own session.
+Closed: **B-024** (`D2Tag` renamed `"d2_advisor"` → `"d2"`; the reason it shipped green was
+that no test asserted config and code agree, so `pkg/dataset/capture_gate_test.go` now pins
+the packaged layer against both live tags — verified to fail when the old spelling is
+restored; **not** verified end to end, since both `captureD2` call sites sit behind a live
+metered advisor call) and **B-009** (it was already satisfied by `README.md:25-31` in Phase
+6; only the status line was stale). Half-closed: **B-023** (the four doc sites now say
+`stop`, matching the code; the behavior question — `stop` halts nothing and `degrade` is
+not a distinct path from the default fallthrough — is untouched and still open, kept out of
+a doc commit on purpose) and **B-027** (`agents/forge-codebase-scout.md` was telling that
+agent to seed from a path that never exists on disk, which was the one operational
+consequence, plus two `pkg/codeindex` doc comments; ADDENDUM §B.6 / DESIGN §15 still say
+the singular name, deliberately). Re-triaged: **B-025** is blocked on observing a live
+`PostToolUse`/WebFetch payload, not open work — **do not re-attempt the WebFetch**. New:
+**B-030** (`dataset.capture` accepts five tiers but only `d2`/`d4` gate anything; `d3` is
+implemented and never reads the list, so removing `d3` silently does not stop capture).
+Two items were re-sized rather than fixed, so the next session does not start on a wrong
+estimate: **B-029** is roughly double its recorded scope (measured **95** raw errcheck
+findings, not "~20"; ~37 after default exclusions, 10 of them production) and its most
+valuable finding is a correctness bug, not lint — `cmd/forge/recall_load.go`'s `refresh()`
+returns `nil` on every error path, so a failed commit reports success, and the helper it
+should use already exists at `cmd/forge/index.go:217`. **B-008's** hidden prerequisite is
+that **no harness producing the §3.1 table exists** (the nine queries are prose only;
+`evals/run.sh` measures determinism, not scores) and the vault has drifted since, so the
+*before* column needs re-deriving too — and the fix is two changes, not one, the open
+design decision being what weight an absent term should carry. See BACKLOG for all of it.
+
 One item Phase 3 explicitly did not touch: **B-008's §3.1 recalibration** — see BACKLOG, it
 needs its own session because honest verification means re-deriving the whole calibration
-table, not re-running two queries. **B-023** is still open, recorded rather than fixed:
-code's `on_exhausted: stop` vs. every doc's `fail`, and `stop`/`degrade` are behaviorally
-identical to each other today — nothing reads either value. **B-022 closed in Phase 4**
+table, not re-running two queries. **B-022 closed in Phase 4**
 (the schema pattern now covers all nine `cfg.Pipeline` stages minus `critique`); **B-007
 closed in Phase 4** (`agents/forge-librarian.md`'s prompt stamps `Forge-Write: true` on
 every commit it authors, and `pkg/dataset/d3_forge_write_test.go` pins the guard both
-ways). One new item Phase 4 found and recorded rather than fixed: **B-024**
-(`pkg/dataset/d2.go`'s `D2Tag = "d2_advisor"` never matches the packaged config's `"d2"`
-list entry, so D2 capture is silently inert under the shipped config).
+ways).
 **Packaging gap, recorded rather than implied fixed:** nothing in this repo loads agents
 from a root-level `agents/` directory — Claude Code loads `.claude/agents/`, and no
 plugin manifest exists yet (Phase 0's finding, still true). The four `agents/*.md` files
@@ -262,11 +289,14 @@ project, not a phase gated inside this one; see BACKLOG B-021. One phase per ses
 time runs out the cut order is `6b → 5b → advisor tier`. If work comes up outside the
 current phase's scope, write it to `docs/BACKLOG.md` rather than building it.
 
-**Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004, **B-007**, **B-008**,
-**B-009** and the twelve findings 2b recorded are open; B-001 (doc coherence), B-005
-(seven note types) and B-006 (link rewrite) closed on 2026-08-09. B-007 is Phase 4's:
-`forge-librarian` must stamp `Forge-Write: true` on every commit it authors, or
-`pkg/dataset` records its output as human corrections. **B-008 is now Phase 3's** and its
+**Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004, **B-008**, **B-029**,
+**B-030** and most of the twelve findings 2b recorded are open; **B-025 is blocked**, not
+open. B-001 (doc coherence), B-005 (seven note types) and B-006 (link rewrite) closed on
+2026-08-09; B-007 and B-022 in Phase 4; B-009 and B-024 on 2026-08-21, when B-023 and
+B-027 were also half-closed (docs synced, the behavior/design-doc halves still open).
+**The two that need their own session are B-008 and B-029** — both were re-sized on
+2026-08-21 rather than attempted, and each entry's closing section says what the estimate
+actually is. **B-008 is now Phase 3's** and its
 entry has a second half worth reading before touching `pkg/recall`: the weighting the first
 half prescribes is already implemented and did not fix either case, because the terms that
 carry a question's meaning are filtered out of the denominator when no note carries them.

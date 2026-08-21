@@ -336,7 +336,7 @@ Read KNOWLEDGE-FORGE-ADDENDUM.md sections A and E.
    Log the critique verbatim — it's dataset D2.
 
 5. Budget accounting: per-day USD caps per tier, persisted in SQLite.
-   on_exhausted: degrade | queue | fail. `queue` writes pending_advisor:true to
+   on_exhausted: degrade | queue | stop. `queue` writes pending_advisor:true to
    the note and the weekly checker drains it.
 
 6. Add engine_trail: [host, advisor] to note frontmatter (already in the schema

@@ -14,7 +14,7 @@ import (
 const (
 	D2Kind = "d2-advisor-critique"
 	D2Path = ".forge/datasets/d2.jsonl"
-	D2Tag  = "d2_advisor" // the cfg.Dataset.Capture entry that gates this
+	D2Tag  = "d2" // the cfg.Dataset.Capture entry that gates this
 )
 
 // D2Pair is one JSONL record: the draft sent to the advisor and its critique, verbatim.

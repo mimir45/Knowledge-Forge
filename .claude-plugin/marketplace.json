@@ -2,7 +2,8 @@
   "name": "knowledge-forge",
   "description": "Knowledge Forge — a zero-model-call Go static-analysis core for turning \"explain X\" moments into a verified Obsidian vault, with an optional four-tier LLM layer.",
   "owner": {
-    "name": "Samir"
+    "name": "Samir",
+    "email": "samir.alizade.2001@gmail.com"
   },
   "plugins": [
     {

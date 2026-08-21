@@ -30,9 +30,11 @@ list above, not through live agent auto-discovery.
 
 - Search the repo you were spawned in (`cfg.Research.ScanCodebase` gates whether this
   agent runs at all — the caller decides that, not you).
-- Seed your search from `.forge/code-index.json` when it exists (`pkg/codeindex`'s
+- Seed your search from `.forge/code-index-<repo>.json` when it exists (`pkg/codeindex`'s
   cached symbol table) rather than starting cold with `Grep` over the whole tree — it's
-  faster and it's the whole point of having a codebase index.
+  faster and it's the whole point of having a codebase index. `<repo>` is the name side of
+  the `--repo name=path` the caller configured, one file per repo; there is no unsuffixed
+  `.forge/code-index.json` on disk, so glob for the pattern rather than a fixed name.
 - No `Bash` — you don't run commands, you search and read.
 - **Hard limit: 15 `Grep`/`Glob` calls + 8 file reads per run.** If the topic genuinely
   isn't used in this repo, say so and stop; don't keep searching past the limit hoping

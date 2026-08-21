@@ -242,11 +242,58 @@ distinguishable from tuning, which this entry forbids by name.
 **Still open. The thresholds still do not move.** The next attempt owns the §3.1
 recalibration as part of its scope.
 
+### Sized 2026-08-21. Read this before scheduling a session for it.
+
+Not attempted this pass. Three facts that change what "own the §3.1 recalibration" costs,
+none of them stated above:
+
+**1. There is no harness that produces the §3.1 table, and there never was.** The nine
+queries exist only as prose in `references/recall-spec.md:271-318`. Checked: `evals/run.sh`
+is a *determinism* check — it builds `forge`, runs one query twice against the two-note
+`evals/fixtures/vault/`, and diffs for byte-identity; it prints no score and never touches
+the real vault. The `Makefile`'s `bench` target does not include `pkg/recall`. There is one
+bench file in the repo and it is `pkg/vault/bench_test.go`. Nothing under `scripts/` runs
+recall. So re-deriving the table today means nine hand-run `forge recall --explain`
+invocations and manual transcription. **The first deliverable of that session is the
+harness, not the fix.**
+
+**2. The "before" column is stale too.** §3.1 says 91 notes; the vault has drifted since.
+An "after" column compared against numbers measured on a different corpus proves nothing,
+so the before column has to be re-derived on the same run — which is another argument for
+building the harness first rather than reproducing nine numbers by hand twice.
+
+**3. The candidate fix is two changes, not one, and the second is the actual open
+decision.** Admitting df-0 terms requires relaxing `inVocab` (`pkg/recall/score.go:60`,
+`if df[t] > 0`) **and** giving absent terms a non-zero weight — because `idf` returns 0 for
+`df <= 0` (`score.go:94-96`), and a 0 weight adds nothing to `weighted`'s denominator
+(`score.go:189-202`), which deactivates the channel anyway. Relaxing only `inVocab` moves
+no number at all. **What that weight should be is unresolved**; this entry's "≈0.373"
+estimate presumes some unstated choice, and the choice directly sets how far the false
+positive falls. Note also that `score_test.go:202-204` (`idf(0, 91) != 0` — *"a term no
+note carries must weigh nothing"*) has to be **inverted**, not re-pinned: it is the
+assertion that defines today's behavior.
+
+Blast radius, measured rather than guessed: **9 assertions across 6 tests** in
+`pkg/recall/score_test.go`. `rank_test.go` and `result_test.go` are unaffected — their
+fixture docs carry no `tags:`/`stack:`, so both channels are note-side inactive regardless
+of the denominator rule. Splitting the `--stack` hint from question-derived terms
+(`score.go:32-33`) changes the `scope` struct (`:20-26`) and `stackChannel` (`:167-176`)
+but **not** `newScope`'s signature, and its only non-test caller is `pkg/recall/rank.go:21`.
+
+One thing the session will want that does not exist yet: `--explain` prints IDF *weights*
+but not document frequency, and `scope` discards `docFreq`'s counts after building the
+weight map. Raw df is exactly the table this entry's second half needed, so plumbing it
+through is additional work. While there, `references/recall-spec.md:372-385`'s sample
+`--explain` output is stale — it predates the `idf ...` line the code has printed since 2b.
+
+**Do not respond to any of this by moving the thresholds.**
+
 ---
 
 ## B-009 — `pkg/gitsig` shells out to `git`; STACK specifies go-git
 
-**Owner: Phase 6 (packaging). Status: deviation taken knowingly in 2b.**
+**Owner: Phase 6 (packaging). Status: closed 2026-08-21 — Phase 6 made the call and wrote
+it down; nobody had updated this entry.**
 
 STACK names `go-git` for history analysis. `pkg/gitsig` runs the `git` CLI instead: go-git's
 log walk over these repos was slower than the subprocess and its rename detection is weaker,
@@ -255,6 +302,13 @@ and the CLI gives `--follow` and `--numstat` for free. The cost is a runtime dep
 will fail on a machine that has none. `gitsig.withStderr` already turns `exit status 128`
 into a message naming the repo, so the failure is legible; Phase 6 should decide whether it
 is *acceptable* and say so in the README's requirements.
+
+**Closure note.** That is exactly what `README.md:25-31` does — a "Requirements" section
+whose first bullet names `git` on `PATH`, attributes it to `pkg/gitsig`, calls it "a
+deliberate, documented trade-off, not an oversight," and links back here. The deviation is
+therefore *accepted*, not merely tolerated, and no code change follows: `pkg/gitsig` keeps
+shelling out. Found still marked open during the 2026-08-21 defect sweep — the work landed
+in Phase 6 and the status line was never updated, which is the only thing this note fixes.
 
 ---
 
@@ -548,8 +602,9 @@ and validate stage names against the config chain instead of a fixed regex.
 
 ## B-023 — code's `on_exhausted` value is `stop`; every doc still says `fail`
 
-**Owner: whoever next edits `KNOWLEDGE-FORGE-ADDENDUM.md` or `CLAUDE-CODE-PROMPT.md`.
-Status: recorded, doc unedited, per the standing "record, don't fix" rule.**
+**Owner: whoever decides whether `stop` and `degrade` should diverge. Status: half done,
+2026-08-21 — the four doc lines now say `stop`; the behavior question below is untouched
+and still open. Do not close this entry on the doc edit alone.**
 
 `pkg/config/validate.go` accepts `on_exhausted: queue | degrade | stop`, and that is what
 `config/forge.config.example.md`'s comment and every preset's comment say too — `stop` is
@@ -570,21 +625,47 @@ not halt anything, and `degrade` is not a distinct code path from the default si
 fallthrough. Left for whoever next touches those two files to reconcile the wording *and*
 decide whether `stop`/`degrade` should diverge in behavior before renaming either one.
 
+### Doc half resolved, 2026-08-21. Behavior half deliberately not.
+
+All four doc sites now read `degrade | queue | stop`, matching `pkg/config/validate.go:89`
+and `config/forge.config.example.md:82`: `ADDENDUM.md:117`, `:485`, `:671` and
+`CLAUDE-CODE-PROMPT.md:339`. The `docs/tr/` mirror needed nothing — it never carried the
+enum line, only the resolved `queue` value.
+
+Re-confirmed while editing, so the next owner does not have to re-grep: `pkg/engine`
+contains **zero** reads of `OnExhausted`; the degrade at `pkg/engine/select.go:30` is
+unconditional. The three read sites are `cmd/forge/engine_run.go:77` and
+`cmd/forge/check_drain.go:22` (both branch only on `"queue"`) and
+`cmd/forge/check_collect.go:181` (passthrough into `cost.md`). No test exercises `degrade`
+or `stop`.
+
+**Why the behavior question was not settled here.** Making `stop` actually halt is a
+behavior change to a budget-exhaustion path, and this was a documentation-sync pass; a
+change that can start failing commands belongs in a session that owns it and can write
+tests for it. Three options for that session, none chosen: give `stop` a real non-zero-exit
+path and leave `degrade` as today's silent fallthrough; collapse to `queue | degrade` and
+drop `stop` (backward-incompatible for any config that already sets it); or keep all three
+and document explicitly that `stop` and `degrade` are synonyms today. The doc now names the
+value the code accepts, which was the strictly-wrong part; the value's *meaning* is still
+unimplemented.
+
 ---
 
 ## B-024 — `D2Tag` is spelled `"d2_advisor"`; the packaged config says `"d2"`
 
 **Owner: whoever next touches `pkg/dataset/d2.go` or `config/forge.config.example.md`.
-Status: recorded, not fixed — found while building Phase 4's D4 dataset, out of that
-task's owned scope (only B-007 and B-022 were).**
+Status: closed 2026-08-21 — `D2Tag` renamed to `"d2"`, with a regression test that pins
+the packaged config against the code. Originally found while building Phase 4's D4
+dataset, out of that task's owned scope (only B-007 and B-022 were).**
 
 `pkg/dataset/d2.go:17` defines `D2Tag = "d2_advisor"`, and `Enabled(capture []string)`
-does an exact-string match against it. `config/forge.config.example.md:169` ships
+does an exact-string match against it. `config/forge.config.example.md:170` ships
 `dataset.capture: [d1, d2, d3, d4, d5]` — the packaged config says `"d2"`, the code checks
 for `"d2_advisor"`. They never match, so `dataset.Enabled` returns `false` and
 `captureD2` (`cmd/forge/engine_run.go`) never writes a `d2.jsonl` line under the packaged
 config, silently, today — confirmed by reading both files directly, not by running
 anything (D2 capture requires a live advisor call this session didn't make).
+(This entry originally cited `:169`; the line is `:170`.)
 
 Two equally defensible fixes, not chosen here: rename `D2Tag` to `"d2"` to match the
 config, or change the packaged config's list entry to `"d2_advisor"` to match the code.
@@ -597,13 +678,56 @@ config exactly, so it does not repeat this mismatch — D4 fires under
 `dataset.capture: [d1, d2, d3, d4, d5]` today where D2 silently does not. See that file's
 doc comment.
 
+### Closure note, 2026-08-21
+
+Took the first fix: **`D2Tag` is now `"d2"`**, matching `d1`/`d3`/`d4`/`d5` and the
+packaged list. `d4.go`'s doc comment recorded the asymmetry as "intentional, not a bug to
+fix here," which is a marker for resolving in this direction; both it and
+`cmd/forge/check_drain.go:79`'s "inert under the shipped config" comment were rewritten.
+`D2Kind`/`D2Path` untouched, per the entry's own instruction.
+
+**The reason this shipped green is that no test asserted config and code agree** — the tag
+tests used hand-written lists, and `pkg/config`'s tests only checked that the packaged
+layer parses. New guard: `TestPackagedCaptureListGates`
+(`pkg/dataset/capture_gate_test.go`) loads the packaged base layer with no optional layers
+and asserts both `Enabled` and `D4Enabled` return true against it. Verified to actually
+bite — restoring `"d2_advisor"` fails it with `packaged dataset.capture [d1 d2 d3 d4 d5]
+does not enable D2`. `pkg/dataset/d2_test.go` also gained a negative case pinning that the
+old spelling no longer works, so the mismatch cannot return by a partial revert.
+
+It lives in `pkg/dataset`, not `pkg/config`, because `pkg/config` cannot import
+`pkg/dataset`: `dataset → vault → config` is a real edge (`pkg/vault/validate.go`), so the
+reverse is a cycle.
+
+**Two limits on what this closes, stated so nobody over-reads it:**
+
+1. **Not verified end to end.** Both `captureD2` call sites (`cmd/forge/engine_run.go:117`,
+   `cmd/forge/check_drain.go:95`) sit behind a live, metered advisor call — the second only
+   runs after `buildEngine(cfg,"advisor").Run(req)` and `st.Spend(...)` both succeed. No
+   advisor call was made, so no `d2.jsonl` line was observed. The claim is "the packaged
+   config now matches the code, and a test pins it," not "D2 capture was seen working."
+2. **Six presets still ship no `dataset.capture` key at all** and inherit the embedded
+   `Example` layer, so they are fixed by this too; `config/presets/minimal.md:30` ships
+   `[]` on purpose and stays inert, correctly.
+
+A third thing surfaced while scoping this and is filed separately as **B-030**: three of
+the five entries in that `capture:` list are read by no code at all.
+
 ---
 
 ## B-025 — `forge cache-source`'s `PostToolUse`/WebFetch `tool_response` JSON shape is unconfirmed
 
-**Owner: whoever next touches `cmd/forge/cache_source.go`. Status: recorded, not fixed —
-found while building Phase 5's five hook subcommands; out of that task's scope to chase
-further.**
+**Owner: whoever next touches `cmd/forge/cache_source.go`. Status: BLOCKED on external
+confirmation, not open work — re-triaged 2026-08-21. Originally found while building
+Phase 5's five hook subcommands.**
+
+**Do not re-attempt the WebFetch.** Three tries against two official doc pages already
+failed (below); a fourth is not new evidence. The trigger that unblocks this is
+*observational*: a live `PostToolUse` hook firing on a real `WebFetch` call, whose payload
+can be captured and read. Until someone has that payload in hand there is no work to do —
+`cacheBody` already handles both shapes and both branches are tested
+(`cache_source_test.go:12,34,49,59`), so the current code is the correct response to not
+knowing, not a placeholder.
 
 Three separate `WebFetch` calls this phase, against both
 `https://code.claude.com/docs/en/hooks` and `https://code.claude.com/docs/en/tools-
@@ -718,10 +842,12 @@ only a citation proven to have once resolved verdicts `Broken`.
 
 ## B-027 — `.forge/code-index-<repo>.json` is plural-per-repo; ADDENDUM/DESIGN say the singular `.forge/code-index.json`
 
-**Owner: whoever next touches `pkg/drift/gitindex.go` or the ADDENDUM/DESIGN text.
-Status: recorded, not fixed — found during Phase 5b's explore pass while confirming
-`forge logback`'s requirement 3 ("keep the code index fresh") was already satisfied by
-existing machinery; the naming predates Phase 5b, live since Phase 2b's `pkg/drift`.**
+**Owner: whoever next edits ADDENDUM §B.6 or DESIGN §15. Status: half done, 2026-08-21 —
+the code side and one wrong agent instruction are fixed; the design docs still say the
+singular name, deliberately. Originally found during Phase 5b's explore pass while
+confirming `forge logback`'s requirement 3 ("keep the code index fresh") was already
+satisfied by existing machinery; the naming predates Phase 5b, live since Phase 2b's
+`pkg/drift`.**
 
 `pkg/drift/gitindex.go`'s `GitSource.build` caches each repo's symbol table at
 `.forge/code-index-<repo>.json` — one file per configured `--repo name=path`, keyed by
@@ -735,6 +861,31 @@ exists under that name. Fix is documentation, not code: update ADDENDUM §B.6 an
 §15 to show the `-<repo>` suffix, or update `gitindex.go`'s doc comment for `build` to
 say explicitly why it deviates, whichever the next phase touching either file finds it
 easier to keep in sync.
+
+### Took the second option, 2026-08-21 — plus one site this entry missed
+
+Chose the doc-comment route: `pkg/drift/gitindex.go`'s `persist` now states the filename,
+says the suffix is required rather than cosmetic (repeatable `--repo` means a shared name
+would let repo two overwrite repo one), and points here. ADDENDUM §B.6 and DESIGN §15 are
+**deliberately left saying the singular name**, per the standing "record, don't fix" rule —
+which is exactly why the code comment had to carry the explanation instead.
+
+**This entry scoped the problem as docs-only, and that was wrong in one place.** Three
+sites inside the tree also claimed the singular name:
+
+- `agents/forge-codebase-scout.md:33` told that agent to *"seed your search from
+  `.forge/code-index.json` when it exists."* That path never exists on disk, so the
+  instruction was not stale prose but a wrong instruction to a live component — the only
+  site here with operational consequence. Now names the `-<repo>` pattern and says to glob
+  for it.
+- `pkg/codeindex/index.go:52` and `store.go:9` both asserted the singular path in doc
+  comments. Fixed the honest way rather than by substituting a different hardcoded name:
+  `pkg/codeindex` does not choose the filename — its caller does — so the comments now say
+  that. `cachePath` in `pkg/drift` remains the single place a name is constructed.
+
+Still open: ADDENDUM §B.6 (`:247`, `:318`) and DESIGN §15 (`:714`, `:954`), plus
+`CLAUDE-CODE-PROMPT.md:208,365,458` and `ROADMAP.md:53`. `examples/vault/` is out of scope
+by construction — it is scrubbed vault content, a historical artifact, not documentation.
 
 ---
 
@@ -839,3 +990,102 @@ Shape of the fix when someone owns it: go file by file, add `//nolint:errcheck` 
 reason comment where ignoring is correct (matching this entry's four `staticcheck`
 precedents), fix the rest to actually check the error, then remove `errcheck` from
 `.golangci.yml`'s `disable` list.
+
+### Re-measured 2026-08-21. The "~20" above is an undercount and the package list is short.
+
+Not fixed this pass — deliberately, it needs its own session — but sized honestly so that
+session does not start on a wrong estimate. Three numbers, provenance kept separate
+because they are not equally trustworthy:
+
+| Count | Provenance |
+|---|---|
+| **95** | **Measured.** `errcheck v1.9.0 ./...`, byte-identical under `CGO_ENABLED=0` and `=1` |
+| **~37** | **Derived, not measured.** Hand-application of golangci-lint's default `EXC0001` exclusion (`.*Close`, `.*Flush`, `os.Remove(All)?`, `.*print(f\|ln)?`, `os.(Un)?Setenv`) to the 95. golangci-lint itself was never run |
+| ~20 | This entry's original claim, above |
+
+Even taking the conservative ~37, the estimate was low by roughly half. `.golangci.yml` has
+no `issues:` block, so `exclude-use-default: true` applies under v1.64.8 — that is
+reasoning about the tool's defaults, not an observation, hence the middle row's caveat.
+
+**Three packages this entry never named have findings:** `pkg/dataset` (10),
+`pkg/qualitygate` (2), `pkg/linkcheck` (1).
+
+One scope worry can be closed: the two build lanes produce identical output. The only
+tag-gated files are `pkg/codeindex/parse_cgo.go` / `parse_nocgo.go` and neither has a
+finding, so there is no CI blind spot hiding behind `CGO_ENABLED`.
+
+**Of the ~37, only 10 are production code; the other 27 are `_test.go` fire-and-forget.**
+Three of the ten are not lint compliance at all and should be triaged before the sweep:
+
+1. **`cmd/forge/recall_load.go`'s `refresh()` is a correctness bug that errcheck only
+   partly sees.** errcheck flags `tx.Rollback()` (`:108`) and `tx.Commit()` (`:112`), but
+   `:104` swallows `st.DB.Begin()`'s error on a line errcheck cannot flag, and *every*
+   path in the function returns `nil` — so a failed commit is reported as success and the
+   caller (`:58`, which does propagate) is told nothing went wrong. There is already an
+   exemplar 100 lines away: `cmd/forge/index.go:217` is
+   `func commit(tx *sql.Tx) error { return tx.Commit() }`, checked at `:211`. The fix is
+   "use the helper that exists," not "add an error check." **Highest-value item in B-029;
+   arguably worth pulling out ahead of the lint work.**
+2. **`pkg/drift/apply.go:109` and `pkg/drift/gitindex.go:48` need signature changes, not
+   `//nolint`s.** `stamp()` returns nothing and both callers (`apply.go:74`, `:91`) ignore
+   it; `persist()` returns nothing and its caller (`gitindex.go:38`) ignores it. Checking
+   those errors means changing signatures and call sites. Size accordingly.
+3. **`pkg/codeindex/catfile.go:47`** ignores `cmd.Wait()`, so a `git cat-file` that exits
+   non-zero after partial output reads as success. `:55`/`:57` compound it — the write and
+   its flush are both unchecked, making a write error unrecoverable regardless.
+
+Two smaller notes for that session: `cmd/forge/index.go:207` is a *different* class from
+`recall_load.go:108` — it does `tx.Rollback(); return err`, so the caller does learn of the
+failure and Rollback's own error is genuinely secondary; that one is a `//nolint`. And
+there is currently **no `//nolint:errcheck` anywhere in the tree**, so this introduces the
+first; match the four existing precedents' style exactly — `//nolint:<linter> // <lowercase
+reason>`, no trailing period, on the offending line (`pkg/engine/host.go:22`,
+`cmd/forge/check_test.go:131`, `pkg/similarity/similarity_test.go:134`,
+`pkg/telemetry/qhash_test.go:6`).
+
+Closing it is a one-file edit: delete `.golangci.yml`'s `disable:` block. No Makefile or
+workflow change — `make lint` is gofmt + `go vet` only and never ran errcheck.
+
+---
+
+## B-030 — `dataset.capture` accepts five tiers; only two of them gate anything
+
+**Owner: whoever next touches `pkg/dataset` or `config/forge.config.example.md`. Status:
+recorded, not fixed — found 2026-08-21 while scoping B-024, out of that fix's scope.**
+
+`config/forge.config.example.md:170` ships `dataset.capture: [d1, d2, d3, d4, d5]`, and
+`pkg/config/types.go:210-216`'s doc comment explains the list form as future-proofing:
+*"Capture names the tiers d1…d5, not booleans, so a new tier is a list entry rather than a
+schema change."* Reasonable. But `cfg.Dataset.Capture` has exactly **two** readers in the
+whole tree:
+
+- `cmd/forge/engine_run.go:127` → `dataset.Enabled` → `D2Tag`
+- `cmd/forge/gate.go:157` → `dataset.D4Enabled` → `D4Tag`
+
+There is no `D1Tag`, no `D3Tag`, no `D5Tag`. So:
+
+- **`d1` and `d5` are inert because nothing implements them.** Harmless — the list is
+  ahead of the code, which is what the type's doc comment describes.
+- **`d3` is the misleading one.** D3 *is* implemented (`pkg/dataset/d3.go`, driven by the
+  vault's post-commit hook via `cmd/forge/capture.go:48`) and it never consults
+  `cfg.Dataset.Capture` at all. So removing `d3` from the list **does not stop D3 capture**
+  — the hook keeps writing. A user who edits the list to opt out of human-edit capture
+  gets no error, no warning, and no change in behavior.
+
+That last case is the reason this is filed rather than shrugged off: an opt-out control
+that silently does nothing is worse than an absent one, and D3 is the tier that records
+human edits to notes, i.e. the one a privacy-minded user is most likely to try to turn off.
+
+Not a naming bug and **not the same class as B-024**, which was a real string mismatch on a
+gate that did exist. Do not "fix" this by renaming anything.
+
+Three shapes, none chosen: make `cmd/forge/capture.go` honour the list (a behavior change
+to the hook path — it would need to stay silent-and-never-fail like the rest of that path);
+or document in `config/forge.config.example.md` and `pkg/config/types.go` exactly which
+entries are live today; or drop the unimplemented entries from the packaged list and let
+them return when their tiers land. The middle option is the smallest honest one; the first
+is the only one that makes the control real.
+
+`pkg/dataset/capture_gate_test.go`'s `TestPackagedCaptureListGates` is deliberately scoped
+to D2 and D4 with a comment pointing here, so it pins the gates that exist rather than
+inventing assertions about three that do not.

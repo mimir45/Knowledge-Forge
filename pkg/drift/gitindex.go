@@ -41,6 +41,12 @@ func (g *GitSource) full(repo, root, rev string) codeindex.Index {
 
 // persist caches HEAD only. A historical revision is resolved once per run by forge check
 // and never asked for again; caching it would trade disk for nothing.
+//
+// The file is .forge/code-index-<repo>.json, one per configured --repo name=path, not the
+// singular .forge/code-index.json ADDENDUM §B.6 and DESIGN §15 describe. The suffix is
+// required, not cosmetic: forge drift/check/logback all take --repo repeatably, so a
+// single shared name would let the second repo's index overwrite the first's on the very
+// next run. See BACKLOG B-027 — the docs are the stale side, deliberately unedited.
 func (g *GitSource) persist(repo, rev string, ix codeindex.Index) {
 	if g.cache == "" || rev != g.Head(repo) || len(ix.Files) == 0 {
 		return

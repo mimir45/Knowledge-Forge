@@ -9,10 +9,10 @@ import (
 )
 
 func TestD4EnabledRequiresTheD4Tag(t *testing.T) {
-	if D4Enabled([]string{"d2_advisor"}) {
+	if D4Enabled([]string{"d2"}) {
 		t.Error("D4Enabled() = true without d4 in the list")
 	}
-	if !D4Enabled([]string{"d2_advisor", "d4"}) {
+	if !D4Enabled([]string{"d2", "d4"}) {
 		t.Error("D4Enabled() = false with d4 present")
 	}
 }

@@ -9,11 +9,15 @@ import (
 )
 
 func TestEnabledRequiresTheD2Tag(t *testing.T) {
-	if Enabled([]string{"d3_human_edit"}) {
-		t.Error("Enabled() = true without d2_advisor in the list")
+	if Enabled([]string{"d1", "d3"}) {
+		t.Error("Enabled() = true without d2 in the list")
 	}
-	if !Enabled([]string{"d3_human_edit", "d2_advisor"}) {
-		t.Error("Enabled() = false with d2_advisor present")
+	if !Enabled([]string{"d1", "d2"}) {
+		t.Error("Enabled() = false with d2 present")
+	}
+	// The pre-B-024 spelling must not keep working, or the mismatch could silently return.
+	if Enabled([]string{"d2_advisor"}) {
+		t.Error("Enabled() = true for the old d2_advisor spelling")
 	}
 }
 

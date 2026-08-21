@@ -114,7 +114,7 @@ engines:
   budget:
     advisor_usd_per_day: 2.00
     api_usd_per_day: 1.00
-    on_exhausted: degrade        # degrade | queue | fail
+    on_exhausted: degrade        # degrade | queue | stop
   routing:
     advisor_when:                # when T3 is worth it
       - type: [decision, api, incident]      # high-stakes note types
@@ -482,7 +482,7 @@ engines:
   budget:
     advisor_usd_per_day: 2.00
     api_usd_per_day: 1.00
-    on_exhausted: queue      # degrade | queue | fail
+    on_exhausted: queue      # degrade | queue | stop
   routing:
     advisor_when:
       - type: [decision, api, incident]
@@ -668,7 +668,7 @@ Read KNOWLEDGE-FORGE-ADDENDUM.md sections A and E.
    Log the critique verbatim — it's dataset D2.
 
 5. Budget accounting: per-day USD caps per tier, persisted in .forge/state.json.
-   on_exhausted: degrade | queue | fail. `queue` writes pending_advisor:true to the
+   on_exhausted: degrade | queue | stop. `queue` writes pending_advisor:true to the
    note and the weekly checker drains it.
 
 6. Add engine_trail: [host, advisor] to note frontmatter (update the schema and the

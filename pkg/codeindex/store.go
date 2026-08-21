@@ -6,8 +6,9 @@ import (
 	"path/filepath"
 )
 
-// Save writes the index to .forge/code-index.json. Like every other file under .forge/
-// it is a derived cache: deleting it costs a rebuild and nothing else.
+// Save writes the index to path. The caller owns the filename — pkg/drift writes one file
+// per configured repo — so this package names no path of its own. Like every other file
+// under .forge/ it is a derived cache: deleting it costs a rebuild and nothing else.
 func Save(path string, ix Index) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err

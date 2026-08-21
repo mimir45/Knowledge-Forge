@@ -76,8 +76,8 @@ func advisorExhausted(cfg *config.Config, st *store.Store) bool {
 // than reusing the in-memory copy, sends its body to the real advisor tier, books the
 // spend, and clears the flag only once both the call and the spend succeed — a note
 // must never come off the queue with nothing recorded for it. The critique is captured
-// via D2 (B-024: inert under the shipped config's D2Tag mismatch, captured anyway for
-// correctness) and printed for approval, matching aiPass's own no-auto-apply posture —
+// via D2 — live under the shipped config since B-024 fixed the D2Tag mismatch that made
+// it inert — and printed for approval, matching aiPass's own no-auto-apply posture —
 // a T3 pass whose output is silently dropped is not the pass ADDENDUM §A.4 describes.
 func drainOne(root, rel string, cfg *config.Config, st *store.Store) error {
 	n, s, err := loadNoteAndSchema(root, rel)

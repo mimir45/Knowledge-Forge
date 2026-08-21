@@ -49,7 +49,8 @@ type File struct {
 // otherwise unmarshal an old cache "successfully" into a struct it was never written for.
 const Extractor = 2
 
-// Index is the serialized form written to .forge/code-index.json.
+// Index is the serialized form Save writes. One Index describes one repo at one commit;
+// the file it lands in is the caller's choice, not this package's (see Save).
 type Index struct {
 	Repo      string            `json:"repo"`
 	Commit    string            `json:"commit"`
