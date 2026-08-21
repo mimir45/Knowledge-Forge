@@ -6,3 +6,6 @@ __pycache__/
 # binary, and an unanchored `forge` would swallow it.
 /forge
 /dist/
+
+# macOS Finder metadata.
+.DS_Store
