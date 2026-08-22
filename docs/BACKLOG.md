@@ -1271,6 +1271,13 @@ queries used to validate B-008 is circular — the number would be chosen to mak
 produce links. An honest re-derivation needs its own query set, and specifically one where
 the right neighbour set is known independently of what the scorer says.
 
+**A second instance, same root cause, found while closing B-008.** `cmd/forge/intent.go`'s
+`printIntent` gates on a hardcoded `0.7` — chosen when the false positive it guards against
+read 0.740. That note now reads 0.415, so the gate is stricter in effect than it was written
+to be, and a legitimate hit like "how does keyset pagination work" clears it at 0.729 with
+little room. Its doc comment now says so. Re-derive both numbers in the same session; they
+are one question, not two.
+
 The harness is the reason this is cheap now: `cmd/forge/calibration_test.go` and its golden
 already stage the corpus and diff a table, and the neighbour column is an addition to
 `calibrationRow`, not new machinery. **The answer/update thresholds still do not move** —

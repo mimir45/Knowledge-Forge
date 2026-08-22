@@ -45,10 +45,13 @@ func readPrompt(r io.Reader) (string, error) {
 	return p.UserPrompt, nil
 }
 
-// printIntent surfaces the top vault hit only above 0.7. BACKLOG B-008: this threshold
-// can false-positive near 0.740 because the tags/stack channel weighting the fix
-// prescribed didn't fix either calibration case — a known, un-fixed risk left for the
-// §3.1 recalibration, not this hook.
+// printIntent surfaces the top vault hit only above 0.7. That literal was calibrated
+// against the pre-B-008 scale, where the false positive it guarded against read 0.740.
+// Admitting absent question terms moved that note to 0.415, so the gate is now stricter
+// in effect than it was written to be: "how does keyset pagination work" clears it at
+// 0.729, with little room. Not re-derived here — it is the same class as BACKLOG B-033's
+// neighbour floor and belongs in that session, measured against the calibration harness,
+// rather than nudged inside a hook.
 func printIntent(root, prompt string) {
 	docs, err := loadDocs(root)
 	if err != nil || len(docs) == 0 {
