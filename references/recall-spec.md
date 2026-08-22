@@ -119,36 +119,93 @@ The two named cases, measured end to end after the blend: keyset **0.786 → 0.9
 ### 2.3 Tags channel (0.3)
 
 ```
-tags = |Q ∩ noteTags| / |Q ∩ tagVocab|
+tags = Σ w(t) over t ∈ Q ∩ noteTags  /  Σ w(t) over t ∈ Q
 ```
 
-where `tagVocab` is the union of every tag in the vault. The denominator is the number
-of query terms that *could* have matched some note's tags — not `|Q|`, and not
-`|noteTags|`.
+`w(t)` is the term weight of §2.3.1. The denominator is **every** query term — not
+`|noteTags|`, and, since B-008, no longer the query terms the vault's tag vocabulary
+happens to carry.
 
-Both alternatives are wrong in a way worth recording:
+Two alternatives are wrong in ways worth recording, and the second is what this spec
+prescribed until B-008:
 
-- **`|Q ∩ noteTags| / |noteTags|` punishes good tagging.** A note tagged
-  `[goroutines]` scores 1.0; a note tagged `[goroutines, concurrency, runtime,
-  scheduler, go, parallelism]` scores 0.17 on the same match. The better-curated note
-  ranks lower. That is backwards.
-- **`|Q ∩ noteTags| / |Q|` caps the channel at the question's verbosity.** A two-term
-  question that matches one tag exactly can never exceed 0.5, for reasons that have
-  nothing to do with the note.
+- **Dividing by `|noteTags|` punishes good tagging.** A note tagged `[goroutines]`
+  scores 1.0; a note tagged `[goroutines, concurrency, runtime, scheduler, go,
+  parallelism]` scores 0.17 on the same match. The better-curated note ranks lower.
+  That is backwards, and it is why the note side is not the denominator.
+- **Dividing by `|Q ∩ tagVocab|` collapses when the vocabulary carries one query term.**
+  It was chosen so a verbose question could not cap the channel, and it does that. But
+  "Redis caching in Spring Boot" against a Spring CLI note left `spring` as the only
+  surviving term, and one-of-one reads 1.000 however it is weighted — so half the blend
+  fired for "this note is in the Spring ecosystem", which in this vault is nearly no
+  information. Worse, it made the channel structurally unable to say the thing the caller
+  most needs to hear: *the vault has no Redis note*. Measured, that scored the wrong note
+  0.740 and put it in the UPDATE(extend) band, where extending **writes**.
 
-Dividing by `|Q ∩ tagVocab|` makes both notes above score 1.0 and keeps the channel
-comparable across questions of different lengths.
+Dividing by all of `Q` does cap the channel at the question's verbosity, and that is now
+deliberate: a five-term question a note answers on one tag *should* read about 0.2 there.
+Two things keep the cap from being crude — §2.3.1's weights, so the terms are not a flat
+count, and §2.5's two-sided activation, which drops an untagged note out of the
+comparison instead of scoring it zero.
+
+#### 2.3.1 Term weights
+
+Both frontmatter channels weigh their terms by smoothed inverse document frequency,
+`log(1 + N/df)`, capped at 3.5 and counted over the vault's own notes in the pass that
+already walks every one of them. Unweighted, a tag half the vault carries counted for
+exactly as much as the one carrying the question's meaning.
+
+The cap is a guard, not the mechanism: because a universal term always weighs `log(2)`,
+capping fixes the widest spread between the rarest and the commonest term at about 5:1
+whatever the vault's size, so a hapax tag cannot decide a verdict alone. The smoothed
+form is used rather than `log(N/df)` because the unsmoothed one is exactly zero for a
+term on every note, which would empty the denominator of an active channel.
+
+**A term no note carries weighs the mean of the terms that do.** This is the half of
+B-008 that took two attempts. The weighting above shipped first and moved neither case it
+was meant to fix, because the terms carrying a question's meaning were being filtered out
+before any weight was computed — `redis` and `caching` were not weighted lightly, they
+were absent. Admitting them is the fix; giving them a weight is what makes admitting them
+do anything, since a raw IDF of 0 adds nothing to the denominator and would simply
+deactivate the channel.
+
+The mean is chosen over the alternatives for reasons that are not tuning:
+
+- It is **parameterless**. It calibrates against whatever the query's present terms
+  weigh, so there is no constant to fit — and fitting a constant against these nine
+  queries is exactly what §3.1 forbids.
+- It preserves the ratio's meaning. A query whose `m` channel terms the vault carries
+  `k` of scores about `k/m` when the present weights are equal.
+- It stays capped, being a mean of capped values. Flooring document frequency at 1 —
+  the obvious alternative — hands an absent term the **maximum** weight and inverts the
+  cap's purpose: absence would outweigh presence.
+- The degenerate case falls out instead of being special-cased. With no present term
+  there is no mean, every weight stays 0, the denominator is empty, and §2.5 leaves the
+  channel inactive — which is the correct reading of a query the vault's controlled
+  vocabulary cannot speak to at all.
+
+`--explain` prints each term's weight and its raw `df`, because a weight of 0.00 alone
+cannot distinguish a term on every note from a term on none, and those two now have
+opposite consequences.
 
 ### 2.4 Stack channel (0.2)
 
 ```
-stack = |S ∩ noteStack| / |S|
+stack = Σ w(t) over t ∈ S ∩ noteStack  /  Σ w(t) over t ∈ S
 ```
 
-`S` is the query's stack hints: the `--stack` values, plus any query term that appears
-in the vault's stack vocabulary. Containment over `S` — a note whose `stack:` is a
-superset of the hints is a full match, because listing extra technologies is not
-evidence against relevance.
+`S` is every query term, plus the `--stack` values **the vault's stack vocabulary
+carries**. Containment over `S` — a note whose `stack:` is a superset is still a full
+match on the terms it covers, because listing extra technologies is not evidence against
+relevance.
+
+The vocabulary filter applies to the hints and not to the question, which is the reverse
+of what it did before B-008, and the asymmetry is the point. **A hint is a user filter; a
+question term is evidence.** Narrowing a search by `--stack kotlin` in a vault that has
+never seen Kotlin must not thereby make every note match less well — harmless while
+unknown terms weighed nothing, a real regression the moment absent terms carry weight.
+The vault holding no note about `redis`, by contrast, is exactly what the caller needs
+the score to reflect.
 
 ### 2.5 Active channels and renormalization
 
@@ -168,6 +225,25 @@ active channel; tag *absence* is no evidence either way and deactivates it. The
 distinction is not academic — 31 of this vault's 91 notes have no `tags:` or `stack:`
 after the Phase 1 migration, and zeroing them ranked a correct but under-curated note
 below a well-tagged irrelevant one.
+
+**B-008's absent-term admission does not weaken this.** The two rules answer different
+questions and are easy to confuse. Admission is about the *query* side: a term the vault
+tags nowhere still counts in the denominator, because the vault having no such note is
+information. Activation is about the *note* side: a note with no `tags:` at all is not
+thereby a worse answer, so it leaves the comparison rather than losing it. The query-side
+rule cannot resurrect a channel the note-side rule switched off — with no query term in
+the vocabulary there is no weight to take a mean of, every weight stays zero, and the
+channel deactivates exactly as it did before.
+
+**One asymmetry the two rules produce together, recorded rather than corrected.** An
+untagged note escapes the absent-term penalty entirely — its tags channel is inactive and
+drops out of the denominator — while a tagged note pays it in full. Measured on
+`examples/vault`: "Redis caching in Spring Boot" is now topped by a note carrying
+`tags: []`, at 0.500 against the tagged note's 0.415, and 9 of 91 notes are untagged.
+This is the effect §2.5 was written to prevent, running the other way round. It does not
+change the verdict here — 0.500 is CREATE, and the note that had to stop winning did stop
+winning — but it is a live consequence of curating tags at all, and it is on file as
+**BACKLOG B-032**.
 
 ```
 score = Σ(w_c · v_c) / Σ(w_c)   over active c
@@ -270,52 +346,92 @@ go stale, they get superseded"*).
 
 ### 3.1 Are 0.85 / 0.55 right for this vault?
 
-Measured, nine adjacent-topic queries against the real 91-note vault — topics where a
-closely related note exists and extending it is the right move:
+**Yes, and they have not moved.** What moved is the scale underneath them, which is why
+this section is now generated rather than transcribed.
 
-| Query | Top score | Verdict |
+Nine adjacent-topic queries — topics where a closely related note exists and extending it
+is the plausible move, deliberately the hardest band for the decision tree. Regenerate
+with:
+
+```
+go test ./cmd/forge -run TestCalibration -update   # rewrites the golden
+git diff cmd/forge/testdata/calibration.golden     # before -> after, reviewable
+```
+
+The corpus is `examples/vault` (92 scored docs), staged into a temp dir per run so the
+SQLite cache cannot warm one column and not the other. It is git-tracked on purpose: the
+first version of this table was measured against a live vault that then drifted, so the
+"before" column became unreproducible and any "after" compared with it proved nothing.
+
+| Query | Top-1 before → after | Score | Verdict |
+|---|---|---|---|
+| Redis caching in Spring Boot | `spring-cli-and-maven…` → `meterreadingsservice-spring-boot-4-x-project` | 0.740 → **0.500** | UPDATE(extend) → CREATE |
+| Spring Boot 4 configuration properties binding | `spring-cli-and-maven…` → `meterreadingsservice-spring-boot-4-x-project` | 0.700 → **0.410** | UPDATE(extend) → CREATE |
+| Storybook interaction testing with play functions | `storybook-isolated-component-development…` (unchanged) | 0.617 → **0.217** | UPDATE(extend) → CREATE |
+| Java virtual threads with Spring Boot | `meterreadingsservice-spring-boot-4-x-project` (unchanged) | 0.600 → **0.486** | UPDATE(extend) → CREATE |
+| Keycloak token exchange between clients | `til-demoing-keycloak-plus-google-login…` (unchanged) | 0.529 → **0.315** | CREATE |
+| Kafka consumers with Testcontainers | `testcontainers-docker-based-integration-testing` (unchanged) | 0.501 → **0.311** | CREATE |
+| React Server Components data fetching | `loader-component-pattern-react-frontend-conventions` (unchanged) | 0.472 → **0.300** | CREATE |
+| Docker multi-stage build cache optimization | `docker-compose-init-container-pattern…` (unchanged) | 0.429 → **0.163** | CREATE |
+| JPA entity graph to avoid N+1 | `creationtimestamp-and-updatetimestamp…` (unchanged) | 0.333 → **0.119** | CREATE |
+
+Seven of nine winners are unchanged. The two that moved are the same note —
+`spring-cli-and-maven-commands-for-spring-boot`, B-008's original false positive — losing
+the same two inflated channels in two different queries.
+
+**What the fix removed.** Every UPDATE verdict in the "before" column came from the same
+artifact: a frontmatter channel reading 1.000 off a denominator of one surviving term.
+Case 1's `tags` denominator was `{spring}` alone, at the 3.5 cap, because `setOf` folds
+the tag `spring-cli` into `{spring, cli}` and exactly one note in the vault is tagged
+that way. One-of-one is 1.000 whatever it weighs, so half the blend fired for ecosystem
+membership. `redis` and `caching` — the terms carrying the question — were not in the
+arithmetic at all.
+
+**The artifact was sometimes right, and that cost is real.** The Storybook row is the
+honest case against this change. `storybook-isolated-component-development-and-visual-
+documentation` genuinely is the note to extend, and it fell 0.617 → 0.217. But its 0.617
+was the same artifact: `tags` 1.000 off `{testing}` alone, `stack` 1.000 off `{storybook}`
+alone, while `play`, `interaction` and `functions` sat outside both vocabularies. The
+fix cannot keep the artifact where it happened to be right and drop it where it was
+wrong — that distinction does not exist in the data. Four narrower admission rules were
+measured against this row and none restores it (0.242 tags-only-with-vault-wide-absence,
+0.377 tags-only, 0.392, 0.217 as shipped); the only knob that would is the threshold,
+which is what this section refuses to move.
+
+**Why nine-of-nine CREATE is not a dead decision tree.** These queries are adjacent-topic
+by construction — the note is a neighbour, not an answer. Measured on the same corpus,
+queries that name a note's actual subject still clear the bands:
+
+| Query | before | after |
 |---|---|---|
-| Redis caching in Spring Boot | 0.740 | UPDATE(extend) |
-| Spring Boot 4 configuration properties binding | 0.700 | UPDATE(extend) |
-| Storybook interaction testing with play functions | 0.617 | UPDATE(extend) |
-| Java virtual threads with Spring Boot | 0.600 | UPDATE(extend) |
-| Keycloak token exchange between clients | 0.529 | CREATE |
-| React Server Components data fetching | 0.472 | CREATE |
-| Kafka consumers with Testcontainers | 0.469 | CREATE |
-| Docker multi-stage build cache optimization | 0.429 | CREATE |
-| JPA entity graph to avoid N+1 | 0.333 | CREATE |
+| what is the transactional outbox pattern | 1.000 ANSWER_FROM_VAULT | 1.000 ANSWER_FROM_VAULT |
+| hexagonal architecture ports and adapters | 1.000 ANSWER_FROM_VAULT | 1.000 ANSWER_FROM_VAULT |
+| how does keyset pagination work | 0.917 ANSWER_FROM_VAULT | 0.729 UPDATE(extend) |
+| Storybook decorator pattern for Redux providers | 0.823 UPDATE(extend) | 0.652 UPDATE(extend) |
+| Testcontainers Docker based integration testing | 0.814 UPDATE(extend) | 0.626 UPDATE(extend) |
 
-**Recommendation: leave both thresholds where they are.** The distribution has no gap
-to cut at, and the miss and the false positive have the same cause, which moving a
-threshold makes worse rather than better.
+So the tree still answers and still extends; it stopped extending into notes that merely
+share an ecosystem. The keyset row is a demotion from ANSWER to UPDATE against a note
+narrower than the question (`keyset-pagination-compound-or-predicate`), which is arguably
+the better reading of it — but it is a demotion, and it is recorded here rather than
+argued away.
 
-Look at the two ends side by side. Redis caching scored 0.740 against
-`spring-cli-and-maven-commands-for-spring-boot` — a note about CLI invocations, not
-caching:
+**The residual cost, on file rather than fixed.** Adjacent-topic queries now lose their
+neighbour links as well as their UPDATE verdict. The Storybook query verdicts CREATE with
+**zero** neighbours: both Storybook notes land at 0.217 and 0.201, under §3.2's 0.30
+floor, so the new note would be written unlinked to the two notes obviously related to
+it. The neighbour floor was calibrated against the old scale and this change moved the
+scale; re-deriving it against the same nine queries used to validate the fix would be
+circular, so it is **BACKLOG B-033** and its own session. Two further consequences are
+**B-031** (the Kafka/Testcontainers miss is a coverage defect, not a precision one, and
+was split out of B-008) and **B-032** (§2.5's untagged-note asymmetry).
 
-```
-title  0.476 x 0.4 = 0.190   boot, spring      <- the only discriminating channel
-tags   1.000 x 0.3 = 0.300   spring
-stack  1.000 x 0.2 = 0.200   boot, spring
-```
-
-Half the weight fired for "this note is in the Spring ecosystem" — which is nearly no
-information in a vault where most notes are. Kafka/Testcontainers scored 0.469 against
-the genuinely correct `testcontainers-docker-based-integration-testing`, because the
-discriminating terms (`kafka`, `consumers`) are not in that note's title and its tags
-did not overlap at all.
-
-So the ranking error is not calibration. **The `tags` and `stack` channels have no
-inverse-document-frequency weighting**: a term carried by every note scores identically
-to one carried by three. Dropping `update_threshold` to 0.45 would admit
-Kafka/Testcontainers and React Server Components, but it would also admit
-`docker-compose-init-container-pattern` at 0.429 for a question about build caching,
-and it would do nothing about the 0.740 false positive — which is the more damaging
-error, because UPDATE(extend) writes into the wrong note.
-
-Fixing the cause rather than the symptom is **BACKLOG B-008**, scoped to Phase 2b where
-the nine reports re-measure these numbers anyway. Until then the thresholds stay at
-DESIGN §5.3's values and the failure mode is documented rather than tuned around.
+**The thresholds stay at DESIGN §5.3's 0.85 / 0.55.** Lowering `update_threshold` to 0.45
+was the tempting move when this section was first written, and it remains wrong: on the
+"before" column it admitted `docker-compose-init-container-pattern…` at 0.429 for a
+question about build caching and did nothing about the 0.740 false positive. Fixing the
+cause moved that note to 0.163 — the argument against the threshold change is now a
+measurement rather than a projection.
 
 ### 3.2 Neighbour band
 
@@ -374,18 +490,24 @@ Prints the per-candidate breakdown to **stderr**, so stdout stays parseable JSON
 ```
 query terms: keyset, pagination
 
-keyset-pagination-compound-or-predicate              0.917
+keyset-pagination-compound-or-predicate              0.729
   title  0.833 x 0.4 = 0.333   keyset, pagination
-  tags   1.000 x 0.3 = 0.300   pagination
+  tags   0.500 x 0.3 = 0.150   pagination
+         idf keyset 3.46 (df 0), pagination 3.46 (df 3)
   stack    inactive — the query supplied no stack input
   body   1.000 x 0.1 = 0.100   keyset, pagination
-  sum   0.733 / 0.800 = 0.917
+  sum   0.583 / 0.800 = 0.729
 
-verdict: ANSWER_FROM_VAULT
+verdict: UPDATE(extend)
 ```
 
 The `sum` line prints the renormalizing denominator explicitly, because that is the
-number a surprising verdict usually turns on. The `verdict:` line is printed on **every**
+number a surprising verdict usually turns on. The `idf` line under a frontmatter channel
+prints §2.3.1's per-term weight and the raw document frequency behind it, because since
+B-008 the hit list alone no longer explains the value — here the channel reads 0.500
+rather than 1.000 because `keyset` is tagged by no note in the vault (`df 0`) and still
+counts, at the mean of the present weights. Reading a weight without its `df` cannot
+distinguish a term on every note from a term on none. The `verdict:` line is printed on **every**
 path including the empty one — a caller reading stderr must not get silence on exactly
 the case the verdict matters most. On a `CREATE` verdict the neighbour links follow it.
 

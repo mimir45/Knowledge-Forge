@@ -163,8 +163,10 @@ that has to live in `agents/forge-librarian.md`'s prompt, not in Go.
 
 ## B-008 — `tags` and `stack` recall channels have no IDF weighting
 
-**Owner: Phase 3. Status: open — the prescribed weighting shipped in 2b and neither case
-moved past its threshold; the cause stated below is wrong, see the measurement at the end.**
+**Owner: Phase 3. Status: closed 2026-08-22 — absent-term admission shipped on top of 2b's
+weighting, and §3.1 is now generated rather than transcribed. Read the closure note at the
+end first if you only read one part: the two earlier passes below diagnosed correctly and
+fixed nothing, and their reasoning is kept in place rather than rewritten.**
 
 `forge recall`'s tag and stack channels score a term carried by every note exactly like a
 term carried by three. In a vault that is mostly Spring notes, `spring` and `boot` are
@@ -287,6 +289,91 @@ through is additional work. While there, `references/recall-spec.md:372-385`'s s
 `--explain` output is stale — it predates the `idf ...` line the code has printed since 2b.
 
 **Do not respond to any of this by moving the thresholds.**
+
+### Closed 2026-08-22. What shipped, what it cost, and what was split out.
+
+The harness came first, as the sizing note demanded. `cmd/forge/calibration_test.go` runs
+§3.1's nine queries against `examples/vault` (92 scored docs, git-tracked) and diffs a
+golden table; `-update` re-records it. The corpus is staged into a temp dir per run,
+because `loadDocs` opens a SQLite cache under `<root>/.forge` and writes rows back —
+scoring in place would have mutated a tracked directory and made the golden depend on
+whether the cache happened to be warm. The "before" column was measured against the
+unmodified scorer and committed before a line of the fix was written.
+
+**Two of this entry's own sizing-pass findings were wrong, corrected by that measurement:**
+`docker-compose-init-container-pattern` *is* in `examples/vault` — the file is
+`…-with-health-gated-sequencing.md` and the entry's shorthand slug is simply shorter — so
+the argument against lowering the threshold could be held against the note it actually
+names. "Java virtual threads" likewise returns a candidate. And the worry that the corpus
+had drifted too far to compare does not bite: eight of the nine "before" scores reproduce
+§3.1's original numbers exactly, the ninth being the 0.501 this entry itself re-measured.
+
+**The fix is two changes, as predicted, and the open decision was the weight.**
+
+1. The vocabulary filter changed sides: it applied to question terms and not to `--stack`
+   hints, and now applies to hints and not to questions. A hint is a user filter — `--stack
+   kotlin` against a Kotlin-less vault must not dilute every note — and was harmless
+   unfiltered only while unknown terms weighed zero. A question term is evidence.
+2. An absent term weighs **the mean of the present ones**, assigned in the weight-map
+   builder rather than inside `idf()`. That placement is why `score_test.go`'s
+   `idf(0, 91) == 0` assertion was **preserved rather than inverted**, contrary to what
+   this entry predicted: inverse document frequency is defined inside the corpus and is
+   honestly zero outside it; what an absent term is worth as *evidence* is a policy one
+   layer up. The mean is parameterless, keeps the k-of-m reading of the ratio, and stays
+   under `idfCap` by construction. Flooring `df` at 1 — the alternative sketched above —
+   would hand an absent term the maximum weight and invert the cap's purpose.
+
+**Measured, same run, `examples/vault`:**
+
+| | before | after |
+|---|---|---|
+| `spring-cli-and-maven-commands-for-spring-boot` ← "Redis caching in Spring Boot" | 0.740, UPDATE(extend), 1st | **0.415, CREATE, 2nd** |
+| `docker-compose-init-container-pattern…` ← "Docker multi-stage build cache optimization" | 0.429 | **0.163** |
+| `storybook-isolated-component-development…` ← "Storybook interaction testing with play functions" | 0.617, UPDATE(extend) | **0.217, CREATE** |
+
+Seven of nine top-1 winners are unchanged. The two that moved are the same note losing the
+same inflated channels in two queries.
+
+**The pre-registered criteria, and the one that failed.** Criterion 1 ("top-1 unchanged for
+eight of nine, case 1 excepted") **failed as written** — two winners moved. Read from
+`--explain`, the second was case 1's note losing tags 1.000→0.200 and stack 1.000→0.400 in
+a second query, letting the note already sitting second at 0.581 through. That is the
+fix's own subject appearing twice, not the ranking scramble the criterion was written to
+catch, and the reinterpretation is recorded here rather than made silently. Criteria 2–5
+passed; the thresholds did not move.
+
+**The cost, stated plainly.** Every UPDATE verdict in the "before" column came from one
+artifact: a frontmatter channel reading 1.000 off a denominator of a single surviving
+term. The Storybook row is the case against the fix — that note genuinely is the one to
+extend — but its 0.617 was the same artifact (`tags` 1.000 off `{testing}` alone, `stack`
+1.000 off `{storybook}` alone). The distinction between "artifact that was wrong" and
+"artifact that was right by luck" does not exist in the data. Four narrower admission
+rules were measured against that row: 0.217 as shipped, 0.242, 0.377, 0.392. None restores
+it; only a threshold change would, and this entry forbids that by name three times. A
+term-level distinction is not available either — `redis` and `play` each appear in exactly
+one note corpus-wide.
+
+**Nine-of-nine CREATE is not a dead decision tree**, which was the other thing worth
+checking before shipping. Those queries are adjacent-topic by construction. Queries naming
+a note's actual subject still clear the bands: "what is the transactional outbox pattern"
+and "hexagonal architecture ports and adapters" hold at 1.000 ANSWER_FROM_VAULT,
+"Storybook decorator pattern for Redux providers" 0.823→0.652 UPDATE, "Testcontainers
+Docker based integration testing" 0.814→0.626 UPDATE. One demotion: "how does keyset
+pagination work" 0.917 ANSWER → 0.729 UPDATE(extend), against a note narrower than the
+question — arguably the better reading, but recorded as a demotion rather than argued away.
+
+**Shipped on the user's decision**, taken with the above on the table: the damaging
+direction is UPDATE(extend), because extending **writes** into an existing note, while a
+miss produces a new one. Three items were opened rather than folded in — **B-031** (the
+Kafka/Testcontainers miss is a coverage defect and is split out of this entry), **B-032**
+(an untagged note escapes the absent-term penalty entirely, §2.5's asymmetry running the
+other way), **B-033** (adjacent-topic queries now fall under the 0.30 neighbour floor and
+get linked to nothing).
+
+Spec updated in the same pass: §2.3 and §2.4's formulas were stale by *two* changes, since
+2b's IDF weighting was never documented at all; there is now a §2.3.1 covering weights and
+admission, a §2.5 note distinguishing query-side admission from note-side activation, a
+generated §3.1, and a §4.1 example that matches what the binary prints.
 
 ---
 
@@ -1089,3 +1176,103 @@ is the only one that makes the control real.
 `pkg/dataset/capture_gate_test.go`'s `TestPackagedCaptureListGates` is deliberately scoped
 to D2 and D4 with a comment pointing here, so it pins the gates that exist rather than
 inventing assertions about three that do not.
+
+---
+
+## B-031 — the Kafka/Testcontainers miss is a coverage defect, not a precision one
+
+**Owner: unassigned. Status: open — split out of B-008 on 2026-08-22, deliberately.**
+
+B-008 carried two cases in one item: a false positive that had to fall, and a miss that had
+to rise. Absent-term admission is **strictly decreasing** for every positive weight, so one
+knob cannot move them in opposite directions. Measured on `examples/vault`:
+
+| | before | after |
+|---|---|---|
+| "Kafka consumers with Testcontainers" → `testcontainers-docker-based-integration-testing` | 0.501, CREATE | **0.311, CREATE** |
+
+The note is the right one. Its frontmatter is `stack: [testcontainers, spring-boot, docker,
+java]`, `tags: [testing]` — and `kafka`, the term carrying the question, appears in its
+title, tags and stack **not at all**. There is nothing for a scoring change to find. Pushing
+this case up with the same knob that pushes case 1 down would be tuning, which B-008 forbids
+by name, which is why it was split rather than solved.
+
+Two shapes, neither chosen. **Fix the corpus:** the note is under-curated and a `kafka` tag
+would be honest — but a fix that edits the vault to make a query score is not a recall fix,
+and it does not generalise. **Fix the coverage signal:** the body channel is the only one
+that sees `kafka` here, and it carries 0.1 of the blend and only runs for the top 20
+candidates (`recall.BodyPassSize`). Whether a term the body carries strongly and the
+frontmatter carries nowhere should lift a candidate is a real open question and the more
+interesting one — but it re-opens DESIGN §8's weight ratios, so it needs its own session and
+its own argument, not a coefficient nudged until this row passes.
+
+Do not respond to this by moving the thresholds either. The same argument B-008 makes
+applies: 0.311 and 0.315 sit next to notes that should not be admitted.
+
+---
+
+## B-032 — an untagged note escapes B-008's absent-term penalty entirely
+
+**Owner: unassigned. Status: open — recorded 2026-08-22 while closing B-008.**
+
+Two rules interact in a way neither anticipates alone. §2.5's activation is two-sided: a
+note with no `tags:` leaves the tags channel *inactive*, dropping out of the blend's
+denominator rather than scoring zero — decided from measurement, because zeroing untagged
+notes ranked a correct under-curated note below a well-tagged irrelevant one. B-008's
+admission then charges the tags channel for query terms the vault tags nowhere. A **tagged**
+note pays that charge in full; an **untagged** note never sees it.
+
+Measured, `examples/vault`, "Redis caching in Spring Boot":
+
+```
+meterreadingsservice-spring-boot-4-x-project   0.500   tags: []        <- tags inactive
+spring-cli-and-maven-commands-for-spring-boot  0.415   tags: [spring-cli]
+```
+
+So the note that wins the row that motivated B-008 wins it partly by carrying no tags. That
+is §2.5's own effect running in the opposite direction from the one it was written to
+prevent. 9 of `examples/vault`'s 91 notes are untagged; CLAUDE.md records 31 of 91 in the
+live vault as missing `tags:` or `stack:` after the Phase 1 migration, so the exposure is
+larger there than the example corpus suggests.
+
+**It did not change B-008's verdict** — 0.500 is CREATE, and the note that had to stop
+winning did stop winning — which is why this is filed rather than treated as a regression.
+
+The tension is genuine and both halves are argued from measurement, so do not "fix" it by
+deleting either rule. The shape worth exploring: activation currently asks whether the note
+carries the field at all; it could instead ask whether the note carries the field *and* the
+query has something the field could answer, so that an untagged note is neither penalised
+nor advantaged. That changes `blend`'s denominator for a large fraction of the vault and
+must be measured against `cmd/forge/testdata/calibration.golden`, which now exists.
+
+---
+
+## B-033 — the 0.30 neighbour floor was calibrated against the pre-B-008 scale
+
+**Owner: unassigned. Status: open — recorded 2026-08-22 while closing B-008.**
+
+B-008 changed the scale of two of the four channels; the neighbour band's floor did not
+move with it. DESIGN §5.3's band exists to answer "what should this new note link to" on a
+CREATE verdict, and on adjacent-topic queries it now answers "nothing".
+
+Measured, `examples/vault`, "Storybook interaction testing with play functions":
+
+| | verdict | top-3 | neighbours |
+|---|---|---|---|
+| before | UPDATE(extend) 0.617 | 0.617 / 0.601 / 0.540 | 0 (none emitted on UPDATE, by design) |
+| after | CREATE 0.217 | 0.217 / 0.201 / 0.160 | **0 — both Storybook notes are under 0.30** |
+
+So the new note would be written unlinked to the two Storybook notes obviously related to
+it. That is an orphan-creation path in a vault whose own graph report already tracks 21
+orphans of 94, and it is the concrete residual cost of B-008's fix.
+
+**Why it was not fixed in the same pass.** Re-deriving the floor against the same nine
+queries used to validate B-008 is circular — the number would be chosen to make those rows
+produce links. An honest re-derivation needs its own query set, and specifically one where
+the right neighbour set is known independently of what the scorer says.
+
+The harness is the reason this is cheap now: `cmd/forge/calibration_test.go` and its golden
+already stage the corpus and diff a table, and the neighbour column is an addition to
+`calibrationRow`, not new machinery. **The answer/update thresholds still do not move** —
+B-008 forbids that and this entry does not reopen it. `neighbour_min_score` is a different
+knob, named nowhere in that prohibition, and it is the only one in scope here.
