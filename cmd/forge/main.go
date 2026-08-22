@@ -29,6 +29,8 @@ var commands = map[string]func([]string) int{
 	"stats":           cmdStats,
 	"logback":         cmdLogback,
 	"scrub":           cmdScrub,
+	"export-dataset":  cmdExportDataset,
+	"dataset-stats":   cmdDatasetStats,
 }
 
 const usage = `forge — Knowledge Forge static core (no model calls)
@@ -68,6 +70,10 @@ commands:
                    markers — see forge logback --help
   scrub            redact secret/PII-shaped content from a vault copy, fails closed —
                    see forge scrub --help
+  export-dataset   export one capture tier as a training corpus with a datasheet;
+                   anonymized by default, local-only — see forge export-dataset --help
+  dataset-stats    how much training data each of the five tiers has accumulated, and
+                   what that volume is honestly enough for
 
 run "forge <command> --help" for that command's flags.
 `

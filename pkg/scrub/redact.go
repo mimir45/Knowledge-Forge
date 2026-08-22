@@ -29,6 +29,17 @@ var (
 	reLongToken   = regexp.MustCompile(`\b[A-Za-z0-9]{32,}\b`)
 )
 
+// Redact applies the vault's redaction patterns to one string and reports how many
+// replacements it made. It is the package's only exported entry point besides Scrub, and
+// it exists for Phase 6b's dataset export, which redacts JSONL fields rather than notes
+// and so cannot reuse Scrub's note-shaped walk.
+//
+// Behaviour is identical to what the vault path uses — the same patterns, the same
+// measured false-positive tuning (see the var block above). Export-specific extra
+// strictness deliberately does not live here: pkg/dataset/anonymize.go adds it, because
+// the content there is different and can afford a stricter rule than a note body can.
+func Redact(s string) (string, int) { return redact(s) }
+
 // redact applies every pattern in turn and reports how many replacements were made.
 func redact(s string) (string, int) {
 	count := 0
