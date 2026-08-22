@@ -128,6 +128,7 @@ func reportAndQuarantine(root string, cfg *config.Config, draft *vault.Note, s *
 	fmt.Println(string(b))
 	if !rep.Quarantine {
 		captureRepairIfRetry(cfg, root, draft, a.previousDraft)
+		captureAccepted(cfg, root, draft)
 		return 0
 	}
 	if err := qualitygate.Quarantine(root, draft, s, rep, m, a.targetSlug); err != nil {
@@ -154,7 +155,7 @@ func captureRepairIfRetry(cfg *config.Config, root string, draft *vault.Note, pr
 		fmt.Fprintf(os.Stderr, "forge gate: d4 capture: %v\n", err)
 		return
 	}
-	if !dataset.D4Enabled(cfg.Dataset.Capture) {
+	if !dataset.D4.Enabled(cfg.Dataset) {
 		return
 	}
 	p := dataset.D4Pair{Kind: dataset.D4Kind, Stage: "gate", FailingDraft: string(failing),

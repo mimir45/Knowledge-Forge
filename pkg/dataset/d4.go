@@ -1,11 +1,6 @@
 package dataset
 
-import (
-	"encoding/json"
-	"os"
-	"path/filepath"
-	"time"
-)
+import "time"
 
 // D4 is ADDENDUM §D.1's gate-repair dataset: (failing draft, gate error, fixed draft)
 // triples, captured when `forge gate --previous-draft` sees a retry that now passes.
@@ -31,35 +26,7 @@ type D4Pair struct {
 	CapturedAt   time.Time `json:"captured_at"`
 }
 
-// D4Enabled reports whether the config chain turned D4 capture on. A second function
-// rather than a parameter on Enabled: Enabled already hardcodes D2Tag (see d2.go) and is
-// exercised by an existing call site, so it stays as-is.
-func D4Enabled(capture []string) bool {
-	for _, c := range capture {
-		if c == D4Tag {
-			return true
-		}
-	}
-	return false
-}
-
-// AppendD4 writes one triple as a JSONL line, mirroring AppendD2 exactly.
-func AppendD4(vaultRoot string, p D4Pair) error {
-	path := filepath.Join(vaultRoot, D4Path)
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
-	}
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	b, err := json.Marshal(p)
-	if err != nil {
-		return err
-	}
-	if _, err := f.Write(append(b, '\n')); err != nil {
-		return err
-	}
-	return f.Sync()
-}
+// AppendD4 writes one triple as a JSONL line. D4Enabled is gone: it only ever existed
+// because Enabled() had already claimed the general name for D2, and tier.go's
+// D4.Enabled removes the reason for a per-tier gate function at all.
+func AppendD4(vaultRoot string, p D4Pair) error { return D4.Append(vaultRoot, p) }

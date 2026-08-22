@@ -1,11 +1,6 @@
 package dataset
 
-import (
-	"encoding/json"
-	"os"
-	"path/filepath"
-	"time"
-)
+import "time"
 
 // D2 is ADDENDUM §D.1's advisor-distillation dataset: (draft, critique) pairs. Where D3
 // dedupes on a git commit a hook can legitimately re-fire on, D2's trigger is one CLI call
@@ -28,33 +23,8 @@ type D2Pair struct {
 	CapturedAt time.Time `json:"captured_at"`
 }
 
-// Enabled reports whether the config chain turned D2 capture on.
-func Enabled(capture []string) bool {
-	for _, c := range capture {
-		if c == D2Tag {
-			return true
-		}
-	}
-	return false
-}
-
 // AppendD2 writes one pair as a JSONL line, creating .forge/datasets/ on first use.
-func AppendD2(vaultRoot string, p D2Pair) error {
-	path := filepath.Join(vaultRoot, D2Path)
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
-	}
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	b, err := json.Marshal(p)
-	if err != nil {
-		return err
-	}
-	if _, err := f.Write(append(b, '\n')); err != nil {
-		return err
-	}
-	return f.Sync()
-}
+// The gate that used to live here as Enabled() is now D2.Enabled (tier.go): it read as
+// general but hardcoded D2Tag, which is exactly the trap a third tier would have fallen
+// into.
+func AppendD2(vaultRoot string, p D2Pair) error { return D2.Append(vaultRoot, p) }

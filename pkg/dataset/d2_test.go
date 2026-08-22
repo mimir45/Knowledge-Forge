@@ -6,18 +6,35 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"knowledge-forge/pkg/config"
 )
 
 func TestEnabledRequiresTheD2Tag(t *testing.T) {
-	if Enabled([]string{"d1", "d3"}) {
-		t.Error("Enabled() = true without d2 in the list")
+	on := func(tags ...string) config.Dataset {
+		return config.Dataset{Enabled: true, Capture: tags}
 	}
-	if !Enabled([]string{"d1", "d2"}) {
-		t.Error("Enabled() = false with d2 present")
+	if D2.Enabled(on("d1", "d3")) {
+		t.Error("D2.Enabled() = true without d2 in the list")
+	}
+	if !D2.Enabled(on("d1", "d2")) {
+		t.Error("D2.Enabled() = false with d2 present")
 	}
 	// The pre-B-024 spelling must not keep working, or the mismatch could silently return.
-	if Enabled([]string{"d2_advisor"}) {
-		t.Error("Enabled() = true for the old d2_advisor spelling")
+	if D2.Enabled(on("d2_advisor")) {
+		t.Error("D2.Enabled() = true for the old d2_advisor spelling")
+	}
+}
+
+// TestEnabledHonoursTheMasterSwitch pins the gate this phase added. Through Phase 6 both
+// call sites read cfg.Dataset.Capture alone, so dataset.enabled: false captured anyway —
+// a master switch that switched nothing.
+func TestEnabledHonoursTheMasterSwitch(t *testing.T) {
+	off := config.Dataset{Enabled: false, Capture: []string{"d1", "d2", "d3", "d4", "d5"}}
+	for _, tier := range Tiers() {
+		if tier.Enabled(off) {
+			t.Errorf("%s.Enabled() = true with dataset.enabled false", tier.Tag)
+		}
 	}
 }
 

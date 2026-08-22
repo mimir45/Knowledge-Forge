@@ -26,7 +26,35 @@ func cmdCapture(args []string) int {
 	if code != 0 {
 		return code
 	}
+	if !captureConsented(*quiet) {
+		return 0
+	}
 	return runCapture(root, *commit, *out, *days, *dry, *quiet)
+}
+
+// captureConsented closes BACKLOG B-030: the packaged dataset.capture list names "d3" but
+// nothing here ever read it, so deleting the entry did not stop capture. Every branch
+// returns without an error code and speaks only on stderr, because hooks/vault-post-commit
+// binds this command to two rules — never fail a commit, never print to the terminal — and
+// its own redirect is what turns stderr into .forge/capture.log.
+//
+// A config that will not load skips capture rather than proceeding. Fail-open is the wrong
+// default for a consent check: the capture list is how a user says no, and an unreadable
+// config is not a yes.
+func captureConsented(quiet bool) bool {
+	cfg, err := loadConfig()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "forge capture: config: %v — capture skipped\n", err)
+		return false
+	}
+	if !dataset.D3.Enabled(cfg.Dataset) {
+		if !quiet {
+			fmt.Fprintln(os.Stderr,
+				"forge capture: d3 capture is off (dataset.enabled / dataset.capture)")
+		}
+		return false
+	}
+	return true
 }
 
 const captureUsage = `usage: forge capture [--vault DIR] [--commit REV] [--window-days N]

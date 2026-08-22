@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"knowledge-forge/pkg/config"
+	"knowledge-forge/pkg/dataset"
 	"knowledge-forge/pkg/recall"
 	"knowledge-forge/pkg/telemetry"
 	"knowledge-forge/pkg/vault"
@@ -84,21 +85,49 @@ func runRecall(vaultDir, question, stack string, explain bool, th recall.Thresho
 	if explain {
 		printExplain(os.Stderr, q, res)
 	}
-	logAsk(root, cfg, question, res)
+	logAsk(root, cfg, q, res)
+	captureD1(root, cfg, q, res)
 	return emit(res)
 }
 
 // logAsk records DESIGN §14's ask event when telemetry is enabled. Sources and
 // DurationMS stay zero: forge recall has no research-time or citation-count signal to
 // report — a known limitation, not an omission, until a caller upstream supplies one.
-func logAsk(root string, cfg *config.Config, question string, res recall.Result) {
+//
+// It takes the whole Query rather than the question string so Stack gets filled. That
+// field has existed on Event since Phase 5 and production never wrote it, which quietly
+// starved two real readers: pkg/report/index.go:67 and coverage.go:43 both fan out over
+// e.Stack. DESIGN §14's own example line carries a stack.
+func logAsk(root string, cfg *config.Config, q recall.Query, res recall.Result) {
 	if cfg == nil || !cfg.Telemetry.Enabled {
 		return
 	}
-	ev := telemetry.Event{TS: time.Now().UTC(), Event: "ask", QHash: telemetry.QHash(question),
-		Topic: vault.Slug(question), Decision: string(res.Verdict), RecallTopScore: res.TopScore}
+	ev := telemetry.Event{TS: time.Now().UTC(), Event: "ask", QHash: telemetry.QHash(q.Question),
+		Topic: vault.Slug(q.Question), Stack: q.Stack, Decision: string(res.Verdict),
+		RecallTopScore: res.TopScore}
 	if err := telemetry.Append(root, ev); err != nil {
 		fmt.Fprintf(os.Stderr, "forge recall: telemetry: %v\n", err)
+	}
+}
+
+// captureD1 records the routing pair (see pkg/dataset/d1.go). Its gate is deliberately
+// not logAsk's: telemetry.enabled consents to a local ask log, dataset.capture consents to
+// building a corpus meant to be exported, and one is not the other. Everything written
+// here is already in the telemetry event — hash and slug, never the question — plus the
+// candidate count, which is the one routing feature the log has no field for.
+//
+// A capture error only reaches stderr. Recall has already scored the vault correctly at
+// this point and the caller is waiting on that answer; a side-channel write must not cost
+// it. Same posture as captureD2 (engine_run.go) and captureRepairIfRetry (gate.go).
+func captureD1(root string, cfg *config.Config, q recall.Query, res recall.Result) {
+	if cfg == nil || !dataset.D1.Enabled(cfg.Dataset) {
+		return
+	}
+	p := dataset.D1Pair{Kind: dataset.D1Kind, QHash: telemetry.QHash(q.Question),
+		Topic: vault.Slug(q.Question), Decision: string(res.Verdict), Stack: q.Stack,
+		RecallTopScore: res.TopScore, Candidates: len(res.Candidates), CapturedAt: time.Now()}
+	if err := dataset.AppendD1(root, p); err != nil {
+		fmt.Fprintf(os.Stderr, "forge recall: d1 capture: %v\n", err)
 	}
 }
 

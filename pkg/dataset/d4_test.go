@@ -6,14 +6,34 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"knowledge-forge/pkg/config"
 )
 
 func TestD4EnabledRequiresTheD4Tag(t *testing.T) {
-	if D4Enabled([]string{"d2"}) {
-		t.Error("D4Enabled() = true without d4 in the list")
+	if D4.Enabled(config.Dataset{Enabled: true, Capture: []string{"d2"}}) {
+		t.Error("D4.Enabled() = true without d4 in the list")
 	}
-	if !D4Enabled([]string{"d2", "d4"}) {
-		t.Error("D4Enabled() = false with d4 present")
+	if !D4.Enabled(config.Dataset{Enabled: true, Capture: []string{"d2", "d4"}}) {
+		t.Error("D4.Enabled() = false with d4 present")
+	}
+}
+
+// TestTiersAreDistinct guards the registry against the copy-paste it exists to prevent:
+// five entries, five tags, five paths, no two sharing either.
+func TestTiersAreDistinct(t *testing.T) {
+	tags, paths := map[string]bool{}, map[string]bool{}
+	for _, tier := range Tiers() {
+		if tags[tier.Tag] {
+			t.Errorf("duplicate tier tag %q", tier.Tag)
+		}
+		if paths[tier.Path] {
+			t.Errorf("duplicate tier path %q", tier.Path)
+		}
+		tags[tier.Tag], paths[tier.Path] = true, true
+	}
+	if len(tags) != 5 {
+		t.Errorf("Tiers() has %d distinct tags, want 5", len(tags))
 	}
 }
 

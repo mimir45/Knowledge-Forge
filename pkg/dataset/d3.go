@@ -14,8 +14,14 @@ import (
 // the reason it is built in Phase 1 rather than 6b is that the data only accumulates
 // forward — a hook installed later cannot recover the edits made before it.
 const (
-	D3Kind    = "d3-human-edit"
-	D3Path    = ".forge/datasets/d3.jsonl"
+	D3Kind = "d3-human-edit"
+	D3Path = ".forge/datasets/d3.jsonl"
+
+	// D3Tag is the cfg.Dataset.Capture entry that gates this tier. It gated nothing
+	// through Phase 6 — forge capture never read the list, so removing "d3" from a config
+	// did not stop capture. That was BACKLOG B-030; cmd/forge/capture.go now checks it.
+	D3Tag = "d3"
+
 	D3Window  = 7 * 24 * time.Hour
 	notesRoot = "notes/"
 

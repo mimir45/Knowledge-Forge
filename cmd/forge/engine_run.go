@@ -123,8 +123,12 @@ func callAndSpend(cfg *config.Config, st *store.Store, root, name, stage, prompt
 // captureD2 logs the critique verbatim (ADDENDUM §D.1's D2) when the config chain has
 // opted in. It never fails the run — a dataset write error is a side channel, not the
 // command's job, the same posture the D3 post-commit hook takes toward its own writes.
+//
+// D2.Enabled now checks dataset.enabled as well as the capture list, which this call site
+// never did: `{enabled: false, capture: [d2]}` used to capture anyway. The packaged layer
+// sets enabled: true, so no default behaviour changes.
 func captureD2(cfg *config.Config, root, stage, draft, critique string) {
-	if !dataset.Enabled(cfg.Dataset.Capture) {
+	if !dataset.D2.Enabled(cfg.Dataset) {
 		return
 	}
 	p := dataset.D2Pair{Kind: dataset.D2Kind, Stage: stage, Draft: draft,
