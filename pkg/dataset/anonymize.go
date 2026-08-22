@@ -44,22 +44,36 @@ func redactEach(fields ...*string) int {
 	return total
 }
 
-func redactList(ss []string) int {
-	total := 0
-	for i := range ss {
-		s, n := redactText(ss[i])
-		ss[i], total = s, total+n
+// redactList returns a redacted copy rather than editing in place. The copy is the point:
+// anonymizeRecord's type switch gives it a copy of the struct but not of the slice's
+// backing array, so an in-place version would reach back into the record read off disk.
+// Nothing depends on that today — anonymizeAll discards the originals — but the safety is
+// a call-ordering fact no test pins, and the first caller to want a before-and-after
+// comparison would get two identical tables with no clue why.
+func redactList(ss []string) ([]string, int) {
+	if ss == nil {
+		return nil, 0
 	}
-	return total
+	out, total := make([]string, len(ss)), 0
+	for i, v := range ss {
+		s, n := redactText(v)
+		out[i], total = s, total+n
+	}
+	return out, total
 }
 
-func redactMap(m map[string]string) int {
-	total := 0
+// redactMap copies for the same reason redactList does: a map value is shared, not copied,
+// when the struct holding it is.
+func redactMap(m map[string]string) (map[string]string, int) {
+	if m == nil {
+		return nil, 0
+	}
+	out, total := make(map[string]string, len(m)), 0
 	for k, v := range m {
 		s, n := redactText(v)
-		m[k], total = s, total+n
+		out[k], total = s, total+n
 	}
-	return total
+	return out, total
 }
 
 // hashRel replaces a vault-relative note path with notes/<type>/<hash>.md. The directory
@@ -77,16 +91,21 @@ func hashRel(rel string) string {
 // structural rules are per-tier and stated in each function: paths hash, commit SHAs
 // empty out, free text goes through redactText.
 //
-// Topic is redacted but not hashed, in every tier that has one. That is a deliberate,
-// stated limit rather than an oversight: a topic is the slug of the question and is the
-// only semantic feature D1 and D5 carry, so hashing it makes those two corpora
-// untrainable. redactText catches token- and address-shaped content inside it; it does
-// not catch a product name spelled in plain kebab-case. Every datasheet says so under
-// Limitations, and it is the one field to read before sharing an export.
+// Two field classes are redacted but not hashed, and this is a stated limit rather than
+// an oversight. Topic slugs, in every tier that has one, are the only semantic feature D1
+// and D5 carry — hashing them makes those corpora untrainable. Profile values are D5's
+// entire conditioning half, so the same argument applies. redactText catches token- and
+// address-shaped content inside both; it does not catch a product or employer name
+// spelled in plain kebab-case, which is exactly the shape a slug and a framework name
+// take. Every datasheet names both under Limitations, and they are the two things to read
+// before sharing an export.
 func anonymizeRecord(rec any) (any, int) {
 	switch p := rec.(type) {
 	case D1Pair:
-		return p, redactEach(&p.Topic) + redactList(p.Stack)
+		n := redactEach(&p.Topic)
+		stack, sn := redactList(p.Stack)
+		p.Stack = stack
+		return p, n + sn
 	case D2Pair:
 		return p, redactEach(&p.Draft, &p.Critique)
 	case Pair:
@@ -103,11 +122,18 @@ func anonymizeD3(p Pair) (Pair, int) {
 	p.Note = hashRel(p.Note)
 	p.GenCommit, p.EditCommit = "", "" // a SHA identifies a private repository's history
 	p.ContentHash = ""                 // derived from the pre-redaction text, so now a lie
-	return p, redactEach(&p.Topic, &p.Generated, &p.Preferred) + redactList(p.Stack)
+	n := redactEach(&p.Topic, &p.Generated, &p.Preferred)
+	stack, sn := redactList(p.Stack)
+	p.Stack = stack
+	return p, n + sn
 }
 
 func anonymizeD5(p D5Pair) (D5Pair, int) {
 	p.Rel = hashRel(p.Rel)
 	n := redactEach(&p.Topic, &p.Note)
-	return p, n + redactList(p.Stack) + redactList(p.Sources) + redactMap(p.Profile)
+	stack, sn := redactList(p.Stack)
+	src, cn := redactList(p.Sources)
+	prof, pn := redactMap(p.Profile)
+	p.Stack, p.Sources, p.Profile = stack, src, prof
+	return p, n + sn + cn + pn
 }

@@ -71,15 +71,17 @@ distribution, and the redaction count. Two lines are worth calling out directly:
 
 Then point the user at the datasheet written beside the export. Its **Limitations**
 section is the part that matters before the data is used or shared, and it names things
-the report's numbers cannot: that topic slugs survive redaction, that `d1` has no
-outcome label, that `d5` only sees notes that went through `forge gate`.
+the report's numbers cannot: that topic slugs and profile values survive redaction, that
+`d1` has no outcome label, that `d5` only sees notes that went through `forge gate`.
 
 ## Step 4 — Before the user shares an export
 
 Two checks, in this order. Confirm the run was anonymized. Then tell them to read the
-topic column: topic slugs are deliberately **not** hashed, because they are the only
-semantic feature `d1` and `d5` carry, so a topic named after a product or repository
-survives. That is the one gap the scrubber does not close.
+topic and profile fields: topic slugs and `d5`'s profile values are deliberately **not**
+hashed, because they are the semantic and conditioning features those tiers carry.
+Anything spelled as a plain kebab-case name gets through — a topic named after a product,
+a framework named after an in-house SDK. That is the gap the scrubber does not close, and
+no flag closes it.
 
 ---
 

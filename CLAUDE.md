@@ -191,10 +191,11 @@ table describes its pair as "draft → critique → accepted patch" but Phase 3b
 fabricate a preference. And an undefined `(set, format)` combination exits **2, not 3** —
 exit 3 promises "a real attempt was made, `--out` untouched", which misdescribes a request
 rejected before a record was read. **One limit is stated rather than solved, everywhere:
-topic slugs are kept.** They are the only semantic feature D1 and D5 carry and hashing them
-makes those corpora untrainable, so a topic named after a product survives redaction. Making
-that observable is also why rendered lines carry an `id` — without it, path hashing and SHA
-blanking reached no output format at all. Two items opened rather than built: **B-034** (D6,
+topic slugs and D5's profile values are kept.** They are the semantic and conditioning
+features those tiers carry and hashing them makes the corpora untrainable, so anything
+spelled as a plain kebab-case name — a topic named after a product, a framework named after
+an in-house SDK — survives redaction. Making that observable is also why rendered lines
+carry an `id`: without it, path hashing and SHA blanking reached no output format at all. Two items opened rather than built: **B-034** (D6,
 which is a derivation over `forge logback`'s map, not a capture tier — four of five sources
 say five datasets and AUDIT never flagged the disagreement) and **B-035** (D1's missing
 outcome label; the blocker is that no `run_id` correlates a recall call to the note write

@@ -93,9 +93,11 @@ func commonLimits(rep ExportReport) []string {
 	}
 	if rep.Anonymized {
 		out = append(out, "Anonymization redacts token-, address- and path-shaped content. "+
-			"**Topic slugs are kept**, because they are the only semantic feature the routing "+
-			"and style tiers carry and hashing them makes those corpora untrainable — a topic "+
-			"spelled as a plain product name survives. Read the topic column before sharing.")
+			"**Topic slugs and profile values are kept**, because they are the semantic and "+
+			"conditioning features the routing and style tiers carry and hashing them makes "+
+			"those corpora untrainable. Anything spelled as a plain kebab-case name — a topic "+
+			"named after a product, a framework named after an in-house SDK — survives. Read "+
+			"the topic and profile fields before sharing.")
 	}
 	return out
 }

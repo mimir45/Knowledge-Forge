@@ -81,12 +81,18 @@ Every export appends its report — counts and metadata, never record content �
 `<vault>/.forge/exports.jsonl`, before the files are written. An export that happened
 without being recorded is not a reachable state.
 
-### The one gap the scrubber does not close
+### The gap the scrubber does not close
 
-**Topic slugs are kept.** They are the only semantic feature `d1` and `d5` carry, and
-hashing them makes those two corpora untrainable. A topic named after a product or a
-repository — `acme-billing-outbox` — survives redaction unchanged. Every datasheet says
-this under Limitations. Read the topic column before sharing an export.
+**Topic slugs and profile values are kept.** Topics are the only semantic feature `d1`
+and `d5` carry; profile values are `d5`'s entire conditioning half. Hashing either makes
+those corpora untrainable, so both survive redaction — which means anything spelled as a
+plain kebab-case name gets through. A topic named after a product
+(`acme-billing-outbox`), a framework named after an in-house SDK
+(`frameworks: [acme-internal-sdk]`): neither is token-shaped, address-shaped or
+path-shaped, so no pattern catches them.
+
+Every datasheet says this under Limitations. Read the topic and profile fields before
+sharing an export.
 
 ## What the data is worth
 

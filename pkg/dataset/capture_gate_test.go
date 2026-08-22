@@ -39,3 +39,25 @@ func TestPackagedCaptureListGates(t *testing.T) {
 		}
 	}
 }
+
+// TestConsentResolvesWithNoHomeLayer is the git-hook environment, and it exists because
+// this phase moved a config read onto that path: cmd/forge/capture.go now calls loadConfig
+// before harvesting, and skips capture when it fails.
+//
+// That fail-closed choice is right for a consent check but it has a bad failure mode if
+// mere absence can trip it — a hook runs with a minimal environment, prints nothing, and
+// never fails a commit, so D3 capture would stop silently and only .forge/capture.log
+// would know. pkg/config/load.go:69 discards os.UserHomeDir()'s error deliberately ("an
+// unresolvable home skips that layer, not fails") and the base layer is embedded in the
+// binary, so an unreachable home resolves to the packaged config rather than an error.
+// This pins that: absence must never be mistaken for withheld consent.
+func TestConsentResolvesWithNoHomeLayer(t *testing.T) {
+	t.Setenv(config.EnvVar, "")
+	c, err := config.Load(config.Options{ProjectDir: t.TempDir(), HomeDir: "/nonexistent"})
+	if err != nil {
+		t.Fatalf("config.Load with an unreachable home: %v", err)
+	}
+	if !D3.Enabled(c.Dataset) {
+		t.Error("D3 capture is off under a hook-like environment; absence read as a no")
+	}
+}

@@ -229,6 +229,27 @@ func TestDPOChoosesThePreferredSide(t *testing.T) {
 	}
 }
 
+// TestAnonymizeDoesNotMutateItsInput pins the slice- and map-copying in anonymize.go. A
+// type switch copies the struct but not the arrays behind its slices, so an in-place
+// redaction would reach back into the record read off disk. Nothing depends on that
+// today — anonymizeAll discards the originals — which is exactly why it needs a test:
+// the first caller to compare a corpus before and after redaction would otherwise get
+// two identical tables and no clue why.
+func TestAnonymizeDoesNotMutateItsInput(t *testing.T) {
+	in := seeded
+	in.Stack = []string{"/Users/someone/sdk"}
+	in.Profile = map[string]string{"infra": "/Users/someone/k8s"}
+	if _, n := anonymizeRecord(in); n == 0 {
+		t.Fatal("fixture redacted nothing; the assertions below would be vacuous")
+	}
+	if in.Stack[0] != "/Users/someone/sdk" {
+		t.Errorf("the input's stack slice was rewritten in place: %q", in.Stack[0])
+	}
+	if in.Profile["infra"] != "/Users/someone/k8s" {
+		t.Errorf("the input's profile map was rewritten in place: %q", in.Profile["infra"])
+	}
+}
+
 func TestAnonymizeBlanksCommitSHAs(t *testing.T) {
 	p, _ := anonymizeRecord(sampleFor(D3))
 	got := p.(Pair)
