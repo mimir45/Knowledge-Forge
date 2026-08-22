@@ -1,0 +1,11 @@
+| Query | Top-1 slug | Top score | Verdict |
+|---|---|---|---|
+| Redis caching in Spring Boot | meterreadingsservice-spring-boot-4-x-project | 0.500 | CREATE |
+| Spring Boot 4 configuration properties binding | meterreadingsservice-spring-boot-4-x-project | 0.410 | CREATE |
+| Storybook interaction testing with play functions | storybook-isolated-component-development-and-visual-documentation | 0.217 | CREATE |
+| Java virtual threads with Spring Boot | meterreadingsservice-spring-boot-4-x-project | 0.486 | CREATE |
+| Keycloak token exchange between clients | til-demoing-keycloak-plus-google-login-in-a-presentation | 0.315 | CREATE |
+| React Server Components data fetching | loader-component-pattern-react-frontend-conventions | 0.300 | CREATE |
+| Kafka consumers with Testcontainers | testcontainers-docker-based-integration-testing | 0.311 | CREATE |
+| Docker multi-stage build cache optimization | docker-compose-init-container-pattern-with-health-gated-sequencing | 0.163 | CREATE |
+| JPA entity graph to avoid N+1 | creationtimestamp-and-updatetimestamp-require-a-database-flush | 0.119 | CREATE |

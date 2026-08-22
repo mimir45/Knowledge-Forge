@@ -63,6 +63,12 @@ func (t Thresholds) Decide(top *Candidate) Decision {
 // Without it the number is unauditable: after B-008 "tags 0.136, hits: [spring]" cannot
 // be re-derived from the hit list, because the terms no longer count equally. The map is
 // query-scope and shared by every candidate, so it is read-only and costs no allocation.
+//
+// DF carries the raw document frequency behind each of those weights. B-008's second pass
+// had to count it by hand to explain why the weighting had changed nothing, because a
+// printed weight of 0.00 reads identically whether a term is on every note or on none —
+// and after this fix those two cases have opposite consequences. Both maps stay out of
+// the §4 output contract.
 type Channel struct {
 	Name   string             `json:"name"`
 	Weight float64            `json:"weight"`
@@ -70,6 +76,7 @@ type Channel struct {
 	Active bool               `json:"active"`
 	Hits   []string           `json:"hits,omitempty"`
 	Terms  map[string]float64 `json:"-"`
+	DF     map[string]int     `json:"-"`
 }
 
 // Candidate is one scored note. The JSON tags are the output contract in

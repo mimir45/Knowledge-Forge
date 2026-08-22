@@ -168,15 +168,39 @@ estimate: **B-029** is roughly double its recorded scope (measured **95** raw er
 findings, not "~20"; ~37 after default exclusions, 10 of them production) and its most
 valuable finding is a correctness bug, not lint — `cmd/forge/recall_load.go`'s `refresh()`
 returns `nil` on every error path, so a failed commit reports success, and the helper it
-should use already exists at `cmd/forge/index.go:217`. **B-008's** hidden prerequisite is
-that **no harness producing the §3.1 table exists** (the nine queries are prose only;
-`evals/run.sh` measures determinism, not scores) and the vault has drifted since, so the
-*before* column needs re-deriving too — and the fix is two changes, not one, the open
-design decision being what weight an absent term should carry. See BACKLOG for all of it.
+should use already exists at `cmd/forge/index.go:217`. **B-008's** hidden prerequisite was
+that **no harness producing the §3.1 table existed** — closed since, see below. See BACKLOG
+for the rest.
 
-One item Phase 3 explicitly did not touch: **B-008's §3.1 recalibration** — see BACKLOG, it
-needs its own session because honest verification means re-deriving the whole calibration
-table, not re-running two queries. **B-022 closed in Phase 4**
+**B-008 closed 2026-08-22, on `worktree-b-008-recall-recalibration` — out-of-phase work,
+not a phase.** The harness came first: `cmd/forge/calibration_test.go` runs §3.1's nine
+queries against `examples/vault` (92 docs, staged into a temp dir per run, because
+`loadDocs` writes a SQLite cache under `<root>/.forge` and scoring in place would mutate a
+tracked directory) and diffs `cmd/forge/testdata/calibration.golden`; `-update` re-records
+it. The "before" column was measured against the unmodified scorer and committed before the
+fix was written. The fix is the two changes the entry predicted: the vocabulary filter
+changed sides (it now filters `--stack` hints, not question terms — a hint is a user filter,
+a question term is evidence), and an absent term weighs **the mean of the present ones**,
+assigned in the weight-map builder so `idf(0, n) == 0` stays true and its test was
+*preserved rather than inverted*, contrary to what the entry predicted. Measured: the
+0.740 false positive falls to **0.415** and out of first place. **Two of the entry's own
+sizing findings were wrong** and are corrected there: `docker-compose-init-container-pattern`
+*is* in `examples/vault` (the file name is longer than the backlog's shorthand), and the
+corpus had not drifted — eight of nine "before" scores reproduce §3.1's originals exactly.
+The cost is real and was shipped knowingly on the user's decision: every "before" UPDATE
+verdict came from one artifact (a channel reading 1.000 off a single surviving term), and
+removing it also costs the Storybook row, where that artifact happened to land on the right
+note. Four narrower admission rules were measured and none recovers it. Three items opened
+rather than folded in: **B-031** (Kafka/Testcontainers is a coverage defect, split out —
+admission is strictly decreasing, so one knob cannot move a false positive down and a miss
+up), **B-032** (an untagged note escapes the absent-term penalty entirely, §2.5's asymmetry
+running the other way), **B-033** (the 0.30 neighbour floor predates the scale change, so an
+adjacent-topic query now verdicts CREATE with *zero* neighbours). **The thresholds did not
+move and still must not.** `references/recall-spec.md` §2.3/§2.4 were stale by two changes,
+since 2b's IDF weighting was never documented at all; there is now a §2.3.1, a §2.5 note,
+a generated §3.1 and a §4.1 example matching real output.
+
+**B-022 closed in Phase 4**
 (the schema pattern now covers all nine `cfg.Pipeline` stages minus `critique`); **B-007
 closed in Phase 4** (`agents/forge-librarian.md`'s prompt stamps `Forge-Write: true` on
 every commit it authors, and `pkg/dataset/d3_forge_write_test.go` pins the guard both
@@ -195,9 +219,11 @@ Phase 2b's measured actuals, so no later phase re-derives them: `forge index` 0.
 md5-identical. Against the real vault: drift finds **9 notes referencing changed code**
 (2 broken, 7 suspect) over 140 citations; 21 of 94 orphans; 23 graph components; 3
 duplicate pairs ≥0.40; 39 of 41 stacks covered. Two knowing deviations: `pkg/gitsig`
-shells out to the `git` CLI rather than go-git (**B-009**), and **B-008 is still open** —
-the IDF weighting it prescribes shipped and fixed neither named case, for a reason the
-backlog entry now records. Do not respond to that by moving the thresholds.
+shells out to the `git` CLI rather than go-git (**B-009**), and **B-008's IDF weighting
+shipped here and fixed neither named case** — the terms carrying a question's meaning were
+filtered out of the denominator before any weight was computed. Closed 2026-08-22 by
+admitting them; see the Status note above. Do not respond to any of it by moving the
+thresholds.
 
 Two Phase 2 decisions that later phases must not undo without reading
 `references/recall-spec.md` first: the score is a weighted **mean over active
@@ -205,8 +231,10 @@ channels**, not DESIGN §8's literal weighted sum (§2.5), and the title measure
 not Dice** (§2.2). Both are argued from measured vault behaviour. The verdict ships
 inside `forge recall`'s JSON envelope so nothing downstream restates the threshold tree
 — AUDIT §8.4 D-7 moves those thresholds into Phase 3's config chain. Thresholds stay at
-DESIGN §5.3's 0.85 / 0.55; the calibration sweep is spec §3.1 and its one open defect is
-BACKLOG **B-008**.
+DESIGN §5.3's 0.85 / 0.55; the calibration sweep is spec §3.1, which since B-008's closure
+is **generated, not transcribed** — `go test ./cmd/forge -run TestCalibration -update`
+rewrites `cmd/forge/testdata/calibration.golden` and the diff is the review surface. Any
+change touching `pkg/recall`'s scoring must show that diff.
 
 The project ("Knowledge Forge") is a Claude Code plugin that turns "explain X" moments
 into permanent, linked, verified markdown notes in an Obsidian vault. Its defensible
@@ -289,18 +317,22 @@ project, not a phase gated inside this one; see BACKLOG B-021. One phase per ses
 time runs out the cut order is `6b → 5b → advisor tier`. If work comes up outside the
 current phase's scope, write it to `docs/BACKLOG.md` rather than building it.
 
-**Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004, **B-008**, **B-029**,
-**B-030** and most of the twelve findings 2b recorded are open; **B-025 is blocked**, not
-open. B-001 (doc coherence), B-005 (seven note types) and B-006 (link rewrite) closed on
-2026-08-09; B-007 and B-022 in Phase 4; B-009 and B-024 on 2026-08-21, when B-023 and
-B-027 were also half-closed (docs synced, the behavior/design-doc halves still open).
-**The two that need their own session are B-008 and B-029** — both were re-sized on
-2026-08-21 rather than attempted, and each entry's closing section says what the estimate
-actually is. **B-008 is now Phase 3's** and its
-entry has a second half worth reading before touching `pkg/recall`: the weighting the first
-half prescribes is already implemented and did not fix either case, because the terms that
-carry a question's meaning are filtered out of the denominator when no note carries them.
-The next attempt owns the §3.1 recalibration.
+**Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004, **B-029**, **B-030**,
+**B-031**, **B-032**, **B-033** and most of the twelve findings 2b recorded are open;
+**B-025 is blocked**, not open. B-001 (doc coherence), B-005 (seven note types) and B-006
+(link rewrite) closed on 2026-08-09; B-007 and B-022 in Phase 4; B-009 and B-024 on
+2026-08-21, when B-023 and B-027 were also half-closed (docs synced, the behavior/design-doc
+halves still open); **B-008 on 2026-08-22**, which opened B-031/B-032/B-033 in its place.
+**The one still needing its own session is B-029** — re-sized on 2026-08-21 rather than
+attempted, and its closing section says what the estimate actually is.
+
+Before touching `pkg/recall`'s scoring, read B-008's closure note and spec §2.3.1. Three
+things there are easy to undo by accident: the vocabulary filter applies to `--stack` hints
+and **not** to question terms (the reverse looks like the obvious reading and is the bug
+B-008 fixed); `idf(0, n) == 0` is correct and its test must not be inverted, because the
+absent-term policy lives one layer up in `weightsOver`; and §3.1's table is generated, so a
+scoring change that does not update `cmd/forge/testdata/calibration.golden` is unreviewed
+rather than harmless.
 
 **Then read `docs/AUDIT.md` §8.** It is the output of that pass: thirteen contradictions
 the docs do *not* self-flag, eight resolved by the precedence rule above. **§8.4 is a

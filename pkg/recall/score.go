@@ -19,20 +19,31 @@ const (
 // than per candidate, so renormalization sets the scale without reordering results.
 type scope struct {
 	terms      []string
-	tagTerms   []string // query terms that are a tag somewhere in the vault
-	stackTerms []string // --stack values plus query terms in the stack vocabulary
+	tagTerms   []string // every query term — a term no note tags is evidence too (B-008)
+	stackTerms []string // --stack values the vault knows, plus every query term
 	tagIDF     map[string]float64
 	stackIDF   map[string]float64
+	tagDF      map[string]int // raw counts behind the weights, carried for --explain
+	stackDF    map[string]int
 }
 
+// newScope decides, once per run, which terms each channel is answerable for.
+//
+// The vocabulary filter applies to --stack hints and not to question terms, which is the
+// reverse of what it did before B-008. The asymmetry is the point: a hint is a user
+// filter, and narrowing a search by "kotlin" in a vault that has never seen Kotlin should
+// not thereby make every note match less well. A question term is evidence — the vault
+// carrying no note about "redis" is exactly what the caller needs the score to reflect,
+// and filtering it out is what let a Spring CLI note answer a Redis question at 0.740.
 func newScope(q Query, docs []Doc) scope {
 	terms := Terms(q.Question)
 	tagDF, stackDF := docFreq(docs)
-	s := scope{terms: terms, tagTerms: inVocab(terms, tagDF)}
-	s.stackTerms = dedupe(append(Terms(strings.Join(q.Stack, " ")),
-		inVocab(terms, stackDF)...))
-	s.tagIDF = idfOver(s.tagTerms, tagDF, len(docs))
-	s.stackIDF = idfOver(s.stackTerms, stackDF, len(docs))
+	s := scope{terms: terms, tagTerms: terms}
+	s.stackTerms = dedupe(append(inVocab(Terms(strings.Join(q.Stack, " ")), stackDF),
+		terms...))
+	s.tagIDF = weightsOver(s.tagTerms, tagDF, len(docs))
+	s.stackIDF = weightsOver(s.stackTerms, stackDF, len(docs))
+	s.tagDF, s.stackDF = dfOver(s.tagTerms, tagDF), dfOver(s.stackTerms, stackDF)
 	return s
 }
 
@@ -53,7 +64,9 @@ func docFreq(docs []Doc) (tags, stack map[string]int) {
 	return tags, stack
 }
 
-// inVocab keeps the terms some note actually carries, in the order given.
+// inVocab keeps the terms some note actually carries, in the order given. Since B-008 it
+// is applied to --stack hints only; see newScope for why question terms no longer go
+// through it.
 func inVocab(terms []string, df map[string]int) []string {
 	var out []string
 	for _, t := range terms {
@@ -64,12 +77,52 @@ func inVocab(terms []string, df map[string]int) []string {
 	return out
 }
 
-// idfOver weighs only the query's own terms. The vault-wide vocabulary is never
-// materialised as weights, because nothing reads a weight for a term nobody asked about.
-func idfOver(terms []string, df map[string]int, n int) map[string]float64 {
-	w := make(map[string]float64, len(terms))
+// dfOver narrows the vault-wide counts to the query's own terms, mirroring idfOver. The
+// full maps are not kept: nothing reads a count for a term nobody asked about, and a
+// query-scope map is shared read-only by every candidate.
+func dfOver(terms []string, df map[string]int) map[string]int {
+	out := make(map[string]int, len(terms))
 	for _, t := range terms {
-		w[t] = idf(df[t], n)
+		out[t] = df[t]
+	}
+	return out
+}
+
+// weightsOver weighs only the query's own terms. The vault-wide vocabulary is never
+// materialised as weights, because nothing reads a weight for a term nobody asked about.
+//
+// A term some note carries weighs its IDF. A term no note carries weighs the mean of the
+// ones that do — the choice B-008's entry left explicitly open. The mean is parameterless
+// and calibrates itself against whatever the query's present terms happen to weigh, so it
+// introduces no constant to tune, which that entry forbids by name. It also preserves the
+// invariant the ratio is supposed to express: a query whose m channel terms the vault
+// carries k of scores about k/m, exactly when the present weights are equal. The
+// alternative the backlog sketched — flooring document frequency at 1 — hands an absent
+// term the *maximum* weight and inverts idfCap's purpose, letting absence outweigh
+// presence. A mean of capped values is capped, so the guard still holds here.
+//
+// With no present terms the mean is undefined and every weight stays 0, so weighted's
+// empty-denominator contract leaves the channel inactive. That falls out rather than
+// being special-cased, and it is the behaviour spec §2.5 argues for: a query the vault's
+// vocabulary cannot speak to at all must not activate a channel and score every note 0.0.
+//
+// Iterated over the terms slice, never over the map, so two runs agree bit for bit.
+func weightsOver(terms []string, df map[string]int, n int) map[string]float64 {
+	w := make(map[string]float64, len(terms))
+	sum, present := 0.0, 0
+	for _, t := range terms {
+		if w[t] = idf(df[t], n); df[t] > 0 {
+			sum, present = sum+w[t], present+1
+		}
+	}
+	if present == 0 {
+		return w
+	}
+	mean := sum / float64(present)
+	for _, t := range terms {
+		if df[t] <= 0 {
+			w[t] = mean
+		}
 	}
 	return w
 }
@@ -88,8 +141,11 @@ const idfCap = 3.5
 // log(1 + n/df) rather than log(n/df) for a mechanical reason: the unsmoothed form is
 // exactly zero when a term is on every note, so a query whose terms are all universal
 // would divide by a zero weight sum on an active channel. This form bottoms out at
-// log(2) and cannot vanish. A term no note carries weighs 0 — inside this vault it
-// separates nothing, so it neither helps nor penalises.
+// log(2) and cannot vanish. A term no note carries has a raw IDF of 0, which is the
+// honest measure of it: inverse document frequency is defined inside the corpus, and this
+// term is outside it. What such a term is worth as *evidence* is a separate question, and
+// it is answered a layer up in weightsOver — deliberately, so this function stays the
+// measure it claims to be.
 func idf(df, n int) float64 {
 	if df <= 0 || n <= 0 {
 		return 0
@@ -142,8 +198,11 @@ func f2(hits, queryTerms, titleTokens int) float64 {
 	return 5 * p * r / (4*p + r)
 }
 
-// tagsChannel divides by the query terms that could have matched *some* note's tags,
-// not by the note's tag count — each side weighted by IDF, see weighted below. Dividing by the note's count would score a note tagged
+// tagsChannel divides by all of the query's terms — each side weighted, see weightsOver
+// and weighted below — and not by the note's tag count. Since B-008 the denominator holds
+// terms no note tags at all: a question about Redis that the vault answers nowhere must
+// not read as a perfect tag match on the strength of the one term it shares with half the
+// vault. Dividing by the note's count would score a note tagged
 // [goroutines] at 1.0 and one tagged [goroutines, concurrency, runtime] at 0.33 on the
 // same match — ranking the better-curated note lower. See spec §2.3.
 // A note with no tags at all leaves the channel inactive rather than scoring zero. Tag
@@ -154,7 +213,7 @@ func f2(hits, queryTerms, titleTokens int) float64 {
 func (s scope) tagsChannel(d Doc) Channel {
 	tags := setOf(d.Tags)
 	hits := intersect(s.tagTerms, tags)
-	c := Channel{Name: "tags", Weight: wTags, Hits: hits, Terms: s.tagIDF}
+	c := Channel{Name: "tags", Weight: wTags, Hits: hits, Terms: s.tagIDF, DF: s.tagDF}
 	value, ok := weighted(s.tagTerms, hits, s.tagIDF)
 	if c.Active = ok && len(tags) > 0; c.Active {
 		c.Value = value
@@ -167,7 +226,7 @@ func (s scope) tagsChannel(d Doc) Channel {
 func (s scope) stackChannel(d Doc) Channel {
 	stack := setOf(d.Stack)
 	hits := intersect(s.stackTerms, stack)
-	c := Channel{Name: "stack", Weight: wStack, Hits: hits, Terms: s.stackIDF}
+	c := Channel{Name: "stack", Weight: wStack, Hits: hits, Terms: s.stackIDF, DF: s.stackDF}
 	value, ok := weighted(s.stackTerms, hits, s.stackIDF)
 	if c.Active = ok && len(stack) > 0; c.Active {
 		c.Value = value
@@ -180,9 +239,11 @@ func (s scope) stackChannel(d Doc) Channel {
 // counted the same and a note tagged [spring, boot] matched a Redis question perfectly.
 //
 // An empty denominator reports the channel as having nothing to say, and the caller
-// deactivates it. That is not a corner case: --stack accepts hints the vault has never
-// seen, and those terms weigh zero. Scoring them 0.0 on an *active* channel would drag
-// every note down uniformly — the same mistake spec §2.5 rejects for untagged notes.
+// deactivates it. That is not a corner case: since B-008 it is how a query lands whose
+// terms the vault's tag or stack vocabulary knows none of — weightsOver leaves every
+// weight at 0 because there is no present term to take a mean of. Scoring such a query
+// 0.0 on an *active* channel would drag every note down uniformly, the same mistake spec
+// §2.5 rejects for untagged notes.
 //
 // Both slices are iterated in order rather than ranged over a map, so the sums are
 // bit-identical between runs and --explain's hit list stays byte-stable.
