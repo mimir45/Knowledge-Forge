@@ -1048,7 +1048,8 @@ practice.
 
 ## B-029 — `errcheck` is disabled tree-wide in `.golangci.yml`
 
-**Owner: recorded during Phase 6's CI delta. Status: open, scoped deliberately.**
+**Owner: recorded during Phase 6's CI delta. Status: open — triage item 1 landed 2026-08-22
+(see the closing section); the sweep and the `disable:` block are untouched.**
 
 Phase 6 added `golangci-lint` to `ci.yml` (`docs/CLAUDE-CODE-PROMPT.md`'s original Phase 6
 intent). Its default linter set (`errcheck`, `gosimple`, `govet`, `ineffassign`,
@@ -1132,6 +1133,59 @@ reason>`, no trailing period, on the offending line (`pkg/engine/host.go:22`,
 
 Closing it is a one-file edit: delete `.golangci.yml`'s `disable:` block. No Makefile or
 workflow change — `make lint` is gofmt + `go vet` only and never ran errcheck.
+
+### Triage item 1 landed 2026-08-22. The prescribed fix was wrong; two claims corrected.
+
+Pulled out ahead of the sweep, as the section above suggested. **The entry's own
+prescription — "use the helper that exists", i.e. propagate through `commit` — does not
+survive a trace of the callers and was not followed.**
+
+`loadDocs`' error reaches `runRecall` (`cmd/forge/recall.go:77`), which prints it and
+returns 1 **without emitting the candidates it has already scored correctly**. A concurrent
+`forge intent` on the UserPromptSubmit hook holding the SQLite write lock is enough to
+produce that. So propagating would trade a stale cache — self-healing, since `rowFor`
+re-parses whatever the cache does not match — for a discarded correct answer, on the
+command whose entire job is to emit that answer. This entry was sized from errcheck output,
+not from `recall.go:77`.
+
+**What was actually wrong is the signature, and that is what changed.** Every path returned
+`nil`, so `return docs, refresh(...)` read as propagation while guaranteeing the opposite,
+and a later edit that started returning a real error would have turned a transient lock into
+an exit 1 with nothing in review to catch it. `refresh` no longer returns `error`, so the
+promise matches the behaviour; its body moved to `writeRows`, which checks all three errors
+the old one dropped — including `st.DB.Begin()`, on an assignment errcheck cannot flag, which
+is why this function's finding count was understated. The swallow is now a single
+`_ = writeRows(...)` with the reasoning above beside it. `commit` **is** reused, as the entry
+asked — just inside `writeRows` rather than as the propagation path.
+
+Two tests pin it (`cmd/forge/recall_load_test.go`): `writeRows` reports a failed write, and
+`refresh` survives one. The point of the split is that the error must exist before ignoring
+it can be a decision rather than an accident. A third, asserting the empty case opens no
+transaction, was written and then deleted: it could not fail, because a `refresh` that did
+open a transaction on a closed store would swallow the error and pass anyway. A comment
+promising a check the test does not make is the defect this item exists to fix.
+
+**No observable behaviour change**, and the commit says so. A failed cache write was
+swallowed before and is swallowed now.
+
+**Item 3's claim is weaker than stated and should be re-sized before that session.** This
+entry says `pkg/codeindex/catfile.go:47`'s unchecked `cmd.Wait()` means "a `git cat-file`
+that exits non-zero after partial output reads as success". Traced 2026-08-22: it does not.
+`drainBlobs` (`:62-78`) reads exactly one reply per requested file and returns the error
+from `ReadString`/`io.ReadFull`, so a `git` that dies after partial output surfaces as EOF
+and `Build` (`pkg/codeindex/build.go:22`) returns it. The same EOF covers a failed
+`w.Flush()` in `feedRequests`, since fewer requests means fewer replies. What `cmd.Wait()`
+actually hides is the narrow case of **all** replies delivered followed by a non-zero exit.
+So item 3 is not a bigger correctness risk than item 1 was, and it should not be scheduled
+as though it were.
+
+One genuinely unguarded path was noticed while tracing and is **not** an errcheck finding,
+so it belongs to whoever owns `catfile.go` rather than to the sweep: `blobSize` returns
+`!ok` for any header that is not three fields ending in a blob size, and `drainBlobs`
+treats every such line as the documented `"<name> missing"` case and `continue`s. Any other
+unexpected line — a `git` diagnostic, a truncated header — therefore desynchronises the
+request/reply stream, after which blob bodies are parsed as headers. Pre-existing, not
+introduced here, and worth its own look because the index feeds drift's verdicts.
 
 ---
 

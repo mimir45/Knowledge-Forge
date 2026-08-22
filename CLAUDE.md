@@ -165,10 +165,15 @@ the singular name, deliberately). Re-triaged: **B-025** is blocked on observing 
 implemented and never reads the list, so removing `d3` silently does not stop capture).
 Two items were re-sized rather than fixed, so the next session does not start on a wrong
 estimate: **B-029** is roughly double its recorded scope (measured **95** raw errcheck
-findings, not "~20"; ~37 after default exclusions, 10 of them production) and its most
-valuable finding is a correctness bug, not lint — `cmd/forge/recall_load.go`'s `refresh()`
-returns `nil` on every error path, so a failed commit reports success, and the helper it
-should use already exists at `cmd/forge/index.go:217`. **B-008's** hidden prerequisite was
+findings, not "~20"; ~37 after default exclusions, 10 of them production). Its triage item 1
+landed 2026-08-22 — `cmd/forge/recall_load.go`'s `refresh()` returned `nil` on every path —
+but **not the way the entry prescribed**: propagating reaches `runRecall`, which exits 1
+without emitting candidates it already scored correctly, so a transient SQLite lock held by
+a concurrent `forge intent` would cost the answer. The signature was the defect, not the
+missing propagation; `refresh` no longer returns `error` and `writeRows` checks all three
+errors the old body dropped. The entry's item 3 (`catfile.go`'s `cmd.Wait()`) was re-traced
+in the same pass and its claim is **weaker** than recorded — read B-029's closing section
+before scheduling the sweep. **B-008's** hidden prerequisite was
 that **no harness producing the §3.1 table existed** — closed since, see below. See BACKLOG
 for the rest.
 

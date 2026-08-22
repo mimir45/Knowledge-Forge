@@ -55,7 +55,8 @@ func collect(root string, rels []string, cached map[string]store.Row, st *store.
 		}
 		docs = append(docs, docOf(root, row, schema))
 	}
-	return docs, refresh(st, stale)
+	refresh(st, stale)
+	return docs, nil
 }
 
 // rowFor returns the cached row when the file on disk still matches it, and otherwise
@@ -93,22 +94,48 @@ func docOf(root string, r store.Row, s *vault.Schema) recall.Doc {
 	}
 }
 
-// refresh writes back the rows that were re-parsed. A failure here is not fatal: the
-// cache is derived, and a run that scored correctly off fresh markdown is still correct.
-func refresh(st *store.Store, rows []store.Row) error {
+// refresh writes back the rows that were re-parsed, and deliberately reports nothing.
+//
+// A failure here is not fatal: the cache is derived, and a run that scored correctly off
+// fresh markdown is still correct. rowFor re-parses whatever the cache does not match, so
+// a write that never lands costs a re-parse on the next run and nothing else.
+//
+// BACKLOG B-029 filed this as a correctness bug and prescribed propagating the error
+// through the `commit` helper. Tracing the callers says otherwise: loadDocs' error reaches
+// runRecall (recall.go:77), which prints it and returns 1 **without emitting the
+// candidates it has already scored correctly**. A concurrent `forge intent` on the
+// UserPromptSubmit hook holding the SQLite write lock is enough to produce that, so
+// propagating would trade a stale cache for a discarded correct answer. The entry was
+// sized from errcheck output rather than from that call trace.
+//
+// What was actually wrong is the signature. Every path returned nil, so
+// `return docs, refresh(...)` read as propagation while guaranteeing the opposite — and a
+// later edit that started returning a real error would have turned a transient lock into
+// an exit 1 with no reviewer noticing. The return is gone, so the promise matches the
+// behaviour, and writeRows checks the three errors the old body dropped.
+func refresh(st *store.Store, rows []store.Row) {
+	// The common run has every row fresh from the cache, and it must cost no transaction.
 	if len(rows) == 0 {
-		return nil
+		return
 	}
+	_ = writeRows(st, rows) // the one deliberate swallow; see above for why it is not fatal
+}
+
+// writeRows is refresh's checked body, split out so that ignoring the failure happens at
+// exactly one site instead of at three. It also closes the gap errcheck could not see: the
+// old body dropped st.DB.Begin()'s error on an assignment errcheck does not flag, which is
+// why the entry's finding count understated this function. commit is index.go's helper,
+// reused for the same reason persist uses it rather than a bare tx.Commit().
+func writeRows(st *store.Store, rows []store.Row) error {
 	tx, err := st.DB.Begin()
 	if err != nil {
-		return nil
+		return err
 	}
 	for _, r := range rows {
 		if err := store.Put(tx, r); err != nil {
 			tx.Rollback()
-			return nil
+			return err
 		}
 	}
-	tx.Commit()
-	return nil
+	return commit(tx)
 }
