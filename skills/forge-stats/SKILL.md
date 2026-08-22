@@ -1,6 +1,6 @@
 ---
 name: forge-stats
-description: Use when the user asks whether Knowledge Forge is paying off — "is the vault helping", "what am I asking about most", "show forge stats", "what gaps are there", "how's the hit rate", "am I saving time with this". Not for a single explanatory question (that's `forge`) and not for the weekly health rollup of drift/orphans/duplicates (that's `forge-check`).
+description: Use when the user asks whether Knowledge Forge is paying off — "is the vault helping", "what am I asking about most", "show forge stats", "what gaps are there", "how's the hit rate", "am I saving time with this". Not for a single explanatory question (that's `forge`), not for the weekly health rollup of drift/orphans/duplicates (that's `forge-check`), and not for how much training data has accumulated in the capture tiers (that's `forge-dataset-stats` — this skill reads `.forge/log.jsonl`, that one reads `.forge/datasets/`).
 ---
 
 # Forge Stats

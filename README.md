@@ -66,6 +66,26 @@ package in this repo that needs cgo:
 tests actually run), then `CGO_ENABLED=0 go build ./...` to confirm the portable
 invariant still holds.
 
+## Privacy
+
+**Nothing leaves your machine.** There is no upload path in this codebase — no
+telemetry endpoint, no sync, no phone-home. Every subcommand reads and writes local
+files, and the only network access anywhere is `pkg/linkcheck`'s HTTP HEAD against URLs
+your own notes cite, plus the optional LLM tiers you configure yourself.
+
+Two things are recorded as you work, both under `<vault>/.forge/` and both switchable
+off in config:
+
+- **The ask log** (`telemetry.enabled`) stores a topic label and a sha256 hash of each
+  question — never the question text, your code, or file contents.
+- **The capture tiers** (`dataset.enabled`, `dataset.capture`) accumulate training pairs
+  as a byproduct of normal use. Same rule: hashes and topic slugs, never raw questions.
+
+Exporting that data is a manual command, never scheduled, and anonymized by default —
+it fails closed rather than emitting anything it could not redact. The full account,
+including the one thing redaction deliberately does not hide, is in
+[`docs/datasets.md`](docs/datasets.md).
+
 ## Documentation
 
 Start at [`docs/ROADMAP.md`](docs/ROADMAP.md) — a condensed index over the full design.

@@ -166,8 +166,12 @@ garden:
 
 # ── dataset ──────────────────────────────────────────────────────────────────
 dataset:
-  enabled: true
+  enabled: true               # the master switch; false stops all five tiers
   capture: [d1, d2, d3, d4, d5]
+                              # every tag here gates a real write path — remove one and
+                              # that tier stops capturing. d1 routing (forge recall),
+                              # d2 advisor critiques, d3 human edits (the vault's
+                              # post-commit hook), d4 gate repairs, d5 accepted notes.
   anonymize_on_export: true   # --anonymize fails closed; it never exports raw
                               # when the scrubber errors
 

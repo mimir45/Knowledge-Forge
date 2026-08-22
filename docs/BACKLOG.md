@@ -1191,8 +1191,10 @@ introduced here, and worth its own look because the index feeds drift's verdicts
 
 ## B-030 — `dataset.capture` accepts five tiers; only two of them gate anything
 
-**Owner: whoever next touches `pkg/dataset` or `config/forge.config.example.md`. Status:
-recorded, not fixed — found 2026-08-21 while scoping B-024, out of that fix's scope.**
+**Owner: Phase 6b. Status: closed 2026-08-22.** Found 2026-08-21 while scoping B-024, out
+of that fix's scope. Closed with the *first* of the three shapes below — the only one that
+makes the control real — plus a fourth gap the entry did not know about. See the closure
+note at the end of this item. The original brief follows.
 
 `config/forge.config.example.md:170` ships `dataset.capture: [d1, d2, d3, d4, d5]`, and
 `pkg/config/types.go:210-216`'s doc comment explains the list form as future-proofing:
@@ -1230,6 +1232,38 @@ is the only one that makes the control real.
 `pkg/dataset/capture_gate_test.go`'s `TestPackagedCaptureListGates` is deliberately scoped
 to D2 and D4 with a comment pointing here, so it pins the gates that exist rather than
 inventing assertions about three that do not.
+
+### Closure note — 2026-08-22, Phase 6b
+
+Closed by making the control real, not by documenting it. `cmd/forge/capture.go` now calls
+`captureConsented` before harvesting, so removing `d3` from `dataset.capture` stops D3
+capture. The hook contract shaped every branch of that function rather than the other way
+round: `hooks/vault-post-commit` binds this command to *never fail a commit* and *never
+print to the terminal*, so the gate returns exit 0 on every path and speaks only on stderr,
+which the hook's own redirect turns into `.forge/capture.log`.
+
+One decision inside it is worth naming. **An unreadable config skips capture rather than
+proceeding.** Fail-open is the wrong default for a consent check — the capture list is how
+a user says no, and a config that will not parse is not a yes. The commit still succeeds.
+
+D1 and D5 stopped being inert in the same phase, so all five tags now gate a real write
+path and the entry's "the list is ahead of the code" framing no longer applies to any of
+them. `TestPackagedCaptureListGates` widened from two tiers to five accordingly, and still
+asserts against the packaged config layer rather than a hand-written list — that pairing is
+the whole reason B-024's guard exists and widening it must not quietly drop it.
+
+**The entry missed a fourth gap, and it was the same defect one level up.** Neither reader
+it names checked `dataset.enabled` at all, so `{enabled: false, capture: [d2]}` captured
+anyway: a master switch that switched nothing. The fix moved the gate into
+`Tier.Enabled(config.Dataset)`, which takes the whole struct rather than the bare list
+precisely so a call site cannot forget the outer switch. Packaged config sets
+`enabled: true`, so no default behaviour changed.
+
+The entry's "do not fix this by renaming anything" instruction was honoured. `Enabled` and
+`D4Enabled` were removed, but what replaced them is a per-tier gate mechanism
+(`pkg/dataset/tier.go`), not a rename: `Enabled` read as general while hardcoding `D2Tag`,
+which is the trap a third tier would have fallen into, and `d4.go`'s own comment said
+`D4Enabled` existed only because of that.
 
 ---
 
@@ -1337,3 +1371,83 @@ already stage the corpus and diff a table, and the neighbour column is an additi
 `calibrationRow`, not new machinery. **The answer/update thresholds still do not move** —
 B-008 forbids that and this entry does not reopen it. `neighbour_min_score` is a different
 knob, named nowhere in that prohibition, and it is the only one in scope here.
+
+---
+
+## B-034 — D6 (code↔knowledge) is specified but not built
+
+**Owner: unassigned. Status: open — opened 2026-08-22 by Phase 6b, deliberately not built.**
+
+`ADDENDUM §D.1`'s table lists **six** datasets. Phase 6b built five. The sixth, D6
+"Code↔knowledge" — pairs of (repo symbol or module → the note explaining it), volume
+"= note count", intended use "retrieval / RAG eval" — was scoped out by explicit decision
+and this entry is the record of that decision, not an oversight.
+
+**Why five and not six.** Every other source agrees on five: `docs/ROADMAP.md` says five,
+and both phase prompts in `docs/CLAUDE-CODE-PROMPT.md` say five. Only §D.1's own table says
+six, and `docs/AUDIT.md` never flagged the disagreement — it is not among the thirteen
+contradictions §8.1 catalogues, so precedence gives no ruling and there is no §8.4 decision
+to follow. Five was chosen because it is what four of the five sources say.
+
+**Why it is genuinely different from the other five.** D1–D5 are *capture* tiers: each has
+a write path on a live command, and the data only accumulates forward, which is the whole
+argument for building capture early. D6 has no capture path and needs none. It is a
+**derivation** over state that already exists — `forge logback` (Phase 5b) already builds
+`docs/knowledge-map.md` from `pkg/coderef`'s citations plus `.forge/code-index-<repo>.json`,
+which is exactly the (symbol → note) mapping D6 wants. Nothing is lost by deriving it later;
+nothing accumulates in the meantime that a late start would miss.
+
+**Shape when someone picks it up.** An export *view* over `pkg/logback`'s map, not a sixth
+`.forge/datasets/d6.jsonl`. Concretely: a `--set d6` case in `pkg/dataset/export.go` whose
+`loadTier` reads the code index and citation registry instead of a JSONL file. That means
+`Tier` gains a tier with no `Path`, which the current struct does not model — the one real
+design question in the item.
+
+Two consequences to keep in view. `--since` has no meaning for a derived set (there is no
+per-record timestamp), so it should be refused rather than silently ignored. And anonymizing
+a D6 pair is a harder problem than anonymizing any of D1–D5: the *symbol and module names
+are the feature*, and they are also the most employer-identifying strings in the whole
+system. `pkg/dataset/anonymize.go`'s current answer for note paths — hash the slug, keep the
+type — has no equivalent that leaves D6 useful. Do not assume the existing scrubber covers
+it.
+
+---
+
+## B-035 — D1 has no outcome label, because nothing correlates a recall call to what followed
+
+**Owner: unassigned. Status: open — opened 2026-08-22 by Phase 6b.**
+
+`ADDENDUM §D.1` describes D1's pair as "question → `ANSWER`/`UPDATE`/`CREATE` + topic +
+stack", sourced from "every run, **auto-labelled by recall + outcome**". Phase 6b built the
+first half. There is no outcome.
+
+What ships is `(question features → the routing decision)`: `pkg/dataset/d1.go`'s `D1Pair`
+carries the hash, topic, stack, top score, candidate count and the verdict `forge recall`
+returned. Nothing records whether that verdict turned out to be right — whether the
+`ANSWER_FROM_VAULT` the user got was actually the note they wanted, whether the `CREATE_NEW`
+produced a note that duplicated an existing one.
+
+**The blocker is structural, not effort.** There is no correlation key anywhere in the
+system. `forge recall` prints JSON and exits; the note write that may follow happens minutes
+later through `forge gate` and `forge-librarian`, in a different process, with nothing
+linking the two. `telemetry.Event` has no run id either, so the ask log cannot be joined
+back to a note write for the same purpose. Adding an outcome field to `D1Pair` without a key
+would just be a column nothing can ever populate.
+
+**The consequence, stated plainly in every D1 datasheet:** the corpus is supervision on the
+router's own output. A model trained on it learns to reproduce `pkg/recall`'s decisions,
+including its mistakes — which is a legitimate distillation target (a 20ms local classifier
+replacing a scoring pass) and is *not* evidence the routing rule is correct. Anyone using D1
+to evaluate recall quality is measuring agreement with the thing being evaluated.
+
+**Shape when someone picks it up.** A `run_id` minted in `runRecall`, emitted in the JSON
+envelope, carried on both the telemetry event and the D1 pair, and accepted by `forge gate`
+as an optional flag so the write path can stamp it. That last hop is the one that decides
+the item's real size: `forge gate` is invoked by `skills/forge/SKILL.md`, so the id has to
+survive a skill hand-off, and a skill that forgets to pass it degrades to today's behaviour
+rather than failing — which is the right degradation, but means the join will be partial and
+the datasheet will have to say so.
+
+Related: **B-032** is the other place D1's features are thinner than they look (an untagged
+note escapes the absent-term penalty), and **B-031** is the coverage side of the same
+scoring surface.

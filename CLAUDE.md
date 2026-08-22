@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Status
 
-**Phases 0, 1, 2, 2b, 3, 3b, 4, 5, 5b and 6 are done** (2026-08-09 through 2026-08-18;
+**Phases 0, 1, 2, 2b, 3, 3b, 4, 5, 5b, 6 and 6b are done** (2026-08-09 through 2026-08-22;
 Phase 1 merged as `1c9df95`, Phase 2 as `3619b72`, Phase 2b committed straight to `main`,
 `cb12a08`…`15a795f`; Phase 3 committed straight to `main` in one commit; Phase 3b
 likewise, on top of `847098a`; Phase 4 likewise, on top of `884e42e`; Phase 5 likewise,
@@ -27,8 +27,10 @@ recall`), `pkg/sentinel` (new in Phase 5b — the id-based begin/end managed-blo
 primitive `forge logback` uses for CLAUDE.md fragments and inline markers; `Upsert`/
 `UpsertBefore`/`Remove`, idempotent, position-independent), plus seven note templates in
 `templates/`, `skills/forge/SKILL.md`,
-`skills/forge-init/SKILL.md`, `skills/forge-check/SKILL.md` and `skills/forge-stats/
-SKILL.md`, `references/recall-spec.md`, `references/writing-rules.md`,
+`skills/forge-init/SKILL.md`, `skills/forge-check/SKILL.md`, `skills/forge-stats/
+SKILL.md` and (new in 6b) `skills/forge-export-dataset/SKILL.md` +
+`skills/forge-dataset-stats/SKILL.md`, `references/recall-spec.md`,
+`references/writing-rules.md`,
 eight packaged presets in `config/presets/`, a Makefile with a six-target cross-compile
 matrix, a hash-verifying `bin/forge` shim, a `hooks/` + `scripts/` pair that now installs
 both the vault's D3 capture hook (`vault-post-commit`) and four Claude
@@ -143,7 +145,63 @@ the new `pkg/scrub`. **Not yet verified, and not claimed**: the shim's real
 download-and-checksum path and `claude plugin marketplace add mimir45/Knowledge-Forge`
 from a genuinely clean machine — both need the tagged release this phase's remote-push
 step produces, which is the phase's actual "done when" condition.
-Everything else below is still design spec; **Phase 6b is next.**
+Phase 6b (2026-08-22, "Dataset capture & export") closed the roadmap. Its first step was
+implementation, not the verification the phase prompt asked for: `pkg/dataset` held
+`d2.go`/`d3.go`/`d4.go` and **no `d1.go` or `d5.go`**, while
+`config/forge.config.example.md` shipped `capture: [d1, d2, d3, d4, d5]`. New
+`pkg/dataset/tier.go` is the five-tier registry that removed the trap behind that gap —
+`Enabled()` read as general but hardcoded `D2Tag`, and `D4Enabled()` existed only because
+of it, so a third tier added by reaching for the general-sounding name would silently have
+taken D2's gate. `Tier.Enabled` takes `config.Dataset` rather than the bare capture list,
+which also closed a quieter hole neither call site had: `dataset.enabled` was checked
+nowhere, so `{enabled: false, capture: [d2]}` captured anyway. **B-030 closed here** —
+`forge capture` now honours the list, keeping `hooks/vault-post-commit`'s two rules (exit 0
+always, stderr only), and an unreadable config **skips** capture rather than proceeding,
+because fail-open is the wrong default for a consent check.
+D1 captures in `runRecall` beside `logAsk` and is deliberately scoped to `forge recall`:
+`forge intent` also ranks the vault on every `UserPromptSubmit` but carries a 50ms budget
+and a never-disturb-the-session contract, and `intent.go` builds its own `recall.Query`
+rather than calling `runRecall`, so the limit is structural. **ADDENDUM's "every run" is
+wrong on this point and every D1 datasheet says so.** D5 captures in `forge gate`'s
+non-quarantine branch — the only acceptance signal in the tree — carrying seven fixed-shape
+`profiles/me.md` fields and deliberately *not* the four free-text ones (`assume_known`,
+`never_assume`, `code_style`, `avoid`), which the template invites employer-specific prose
+into. Nothing in Go enforces that gate runs; it is an invariant of `skills/forge/SKILL.md`,
+so **D5 is a subset of accepted notes, not a census**, and that too is in the datasheet.
+Alongside: `logAsk` now fills `telemetry.Event.Stack`, which existed since Phase 5 and
+production never wrote, starving two real readers (`pkg/report/index.go:67`,
+`coverage.go:43`).
+The export path needed a reader that inverts every reader already in the tree: `jsonl.go`,
+`check_asklog.go` and `session_capture.go` all skip an unparseable line on purpose ("a
+truncated tail must not wedge every future commit"), but on the export path a line nobody
+can parse is a line nobody could redact, so `pkg/dataset/read.go` refuses it and drops the
+run — naming file and line so the failure is a hand-edit rather than a bug report, and
+separating `bufio.ErrTooLong` from EOF, which a default Scanner silently conflates.
+Fail-closed is two layers proving two different things: buffer-then-commit (pkg/scrub's
+shape) means nothing reaches `--out` until the whole run succeeded; the per-record re-decode
+proves redaction did not corrupt a record's *shape*. **Neither proves no secret escaped** —
+only `TestAnonymizeRemovesEverySeededSecret` does, which is why that test is D-6's
+regression guard. `pkg/scrub` gained exactly one exported wrapper (`Redact`, zero behaviour
+change); export-only strictness (internal-URL patterns) lives in `pkg/dataset/anonymize.go`,
+because a note body legitimately cites `http://localhost:8080` and a corpus meant to leave
+the machine does not.
+**Two corrections to the phase plan, both load-bearing.** D2 is *not* a DPO tier: §D.1's
+table describes its pair as "draft → critique → accepted patch" but Phase 3b captures
+`D2Pair{Draft, Critique}`, so the chosen side does not exist and emitting DPO would
+fabricate a preference. And an undefined `(set, format)` combination exits **2, not 3** —
+exit 3 promises "a real attempt was made, `--out` untouched", which misdescribes a request
+rejected before a record was read. **One limit is stated rather than solved, everywhere:
+topic slugs are kept.** They are the only semantic feature D1 and D5 carry and hashing them
+makes those corpora untrainable, so a topic named after a product survives redaction. Making
+that observable is also why rendered lines carry an `id` — without it, path hashing and SHA
+blanking reached no output format at all. Two items opened rather than built: **B-034** (D6,
+which is a derivation over `forge logback`'s map, not a capture tier — four of five sources
+say five datasets and AUDIT never flagged the disagreement) and **B-035** (D1's missing
+outcome label; the blocker is that no `run_id` correlates a recall call to the note write
+that follows). Verified: both build lanes green, `go vet` clean, smoke-tested against a temp
+fixture vault only.
+
+Everything else below is still design spec; **the roadmap is complete.**
 
 **A defect-cleanup pass ran 2026-08-21 on `simplify/codebase-cleanup` — out-of-phase work,
 not a phase, and it does not reorder the roadmap.** It took the doc-sync and one-line tier
@@ -162,7 +220,8 @@ consequence, plus two `pkg/codeindex` doc comments; ADDENDUM §B.6 / DESIGN §15
 the singular name, deliberately). Re-triaged: **B-025** is blocked on observing a live
 `PostToolUse`/WebFetch payload, not open work — **do not re-attempt the WebFetch**. New:
 **B-030** (`dataset.capture` accepts five tiers but only `d2`/`d4` gate anything; `d3` is
-implemented and never reads the list, so removing `d3` silently does not stop capture).
+implemented and never reads the list, so removing `d3` silently does not stop capture —
+**closed in Phase 6b, 2026-08-22**, by making the control real rather than documenting it).
 Two items were re-sized rather than fixed, so the next session does not start on a wrong
 estimate: **B-029** is roughly double its recorded scope (measured **95** raw errcheck
 findings, not "~20"; ~37 after default exclusions, 10 of them production). Its triage item 1
@@ -322,12 +381,13 @@ project, not a phase gated inside this one; see BACKLOG B-021. One phase per ses
 time runs out the cut order is `6b → 5b → advisor tier`. If work comes up outside the
 current phase's scope, write it to `docs/BACKLOG.md` rather than building it.
 
-**Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004, **B-029**, **B-030**,
-**B-031**, **B-032**, **B-033** and most of the twelve findings 2b recorded are open;
-**B-025 is blocked**, not open. B-001 (doc coherence), B-005 (seven note types) and B-006
-(link rewrite) closed on 2026-08-09; B-007 and B-022 in Phase 4; B-009 and B-024 on
+**Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004, **B-029**, **B-031**,
+**B-032**, **B-033**, **B-034**, **B-035** and most of the twelve findings 2b recorded are
+open; **B-025 is blocked**, not open. B-001 (doc coherence), B-005 (seven note types) and
+B-006 (link rewrite) closed on 2026-08-09; B-007 and B-022 in Phase 4; B-009 and B-024 on
 2026-08-21, when B-023 and B-027 were also half-closed (docs synced, the behavior/design-doc
-halves still open); **B-008 on 2026-08-22**, which opened B-031/B-032/B-033 in its place.
+halves still open); **B-008 on 2026-08-22**, which opened B-031/B-032/B-033 in its place;
+**B-030 in Phase 6b the same day**, which opened B-034/B-035.
 **The one still needing its own session is B-029** — re-sized on 2026-08-21 rather than
 attempted, and its closing section says what the estimate actually is.
 
@@ -461,7 +521,7 @@ pure Go and cross-compiles; the codeindex lane needs cgo and a host toolchain. P
 | `forge session-context`, `forge intent`, `forge session-capture`, `forge cache-source`, `forge stats`, `/forge-check`, `/forge-stats`, git-anchored drift hooks (`scripts/install_drift_hook.sh`) | 5 — **built** |
 | `forge logback` (`docs/knowledge-map.md`, per-module `CLAUDE.md` fragments, opt-in inline markers, `--remove-markers`, `--dry-run`) | 5b — **built** |
 | `forge scrub <src> <dst>` (redacts secret/PII-shaped content, fails closed) | 6 — **built** |
-| `/forge-export-dataset`, `/forge-dataset-stats` | 6b |
+| `forge export-dataset` (one tier, format matrix, `--since`, anonymized by default, datasheet), `forge dataset-stats`, `/forge-export-dataset`, `/forge-dataset-stats` | 6b — **built** |
 
 ## Known discrepancies (record, don't fix)
 
