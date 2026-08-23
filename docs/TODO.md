@@ -21,8 +21,8 @@ up in BACKLOG.
 Not every open backlog item can take a plan, and the absence of steps below is a decision,
 not an oversight:
 
-- **PLANNED** — workable, has a full six-field section in this file. Five now: B-015,
-  B-023, B-031, B-034, B-035. B-029, B-027, B-033 and B-032 closed 2026-08-23; B-033's
+- **PLANNED** — workable, has a full six-field section in this file. Four now: B-015,
+  B-031, B-034, B-035. B-029, B-027, B-033, B-032 and B-023 closed 2026-08-23/24; B-033's
   closure opened B-036 and B-032's opened B-037, both NO STEPS by their own argument —
   each names a measurement to run before any design is chosen, not a fix to apply.
 - **NO STEPS** — open but not actionable by an implementation session: blocked on external
@@ -32,20 +32,21 @@ not an oversight:
 ## Execution order
 
 ```
-B-029  →  B-033  →  B-032  →  B-031  →  B-015  →  B-023  →  B-035  →  B-034  →  B-027
- done     done      done      head     imports   engine    run_id    D6       done
+B-029  →  B-033  →  B-032  →  B-023  →  B-031  →  B-015  →  B-035  →  B-034  →  B-027
+ done     done      done      done      head     imports   run_id    D6       done
 ```
 
-**B-029, B-027, B-033 and B-032 all closed 2026-08-23.** **B-031 is now the head** — its
-own prerequisite ("B-033 and B-032 should land first") is satisfied; see its section below
-for the note that measurements there must use the post-B-032 `calibration.golden`.
+**B-029, B-027, B-033, B-032 and B-023 all closed** (the first four 2026-08-23, B-023
+2026-08-24). **B-031 is now the head** — its own prerequisite ("B-033 and B-032 should
+land first") is satisfied; see its section below for the note that measurements there must
+use the post-B-032 `calibration.golden`.
 
 B-029 was first because it is independent of everything else and was the largest single item.
 B-027 was last because it is documentation with no code consequence left.
 
 ---
 
-## Index — 11 open items (26 closed/recorded IDs live in BACKLOG only)
+## Index — 10 open items (27 closed/recorded IDs live in BACKLOG only)
 
 | ID | Subject | Class | Section |
 |---|---|---|---|
@@ -53,7 +54,6 @@ B-027 was last because it is documentation with no code consequence left.
 | B-004 | Module path has no VCS host prefix | NO STEPS — deferred by decision | [below](#no-steps) |
 | B-012 | `code_refs` has no live producer | NO STEPS — blocked on packaging | [below](#no-steps) |
 | B-015 | `CodeGroup.DependsOn` never populated | **PLANNED** | [§B-015](#b-015--populate-codegroupdependson) |
-| B-023 | `on_exhausted`: `stop` halts nothing | **PLANNED** (behaviour half) | [§B-023](#b-023--make-on_exhausted-mean-something) |
 | B-025 | `PostToolUse`/WebFetch payload shape | NO STEPS — **BLOCKED** | [below](#no-steps) |
 | B-031 | Kafka/Testcontainers coverage miss | **PLANNED** | [§B-031](#b-031--the-coverage-side-of-the-scoring-surface) |
 | B-034 | D6 (code↔knowledge) not built | **PLANNED** | [§B-034](#b-034--build-d6-as-an-export-view) |
@@ -181,63 +181,6 @@ the Extractor bump is in the same commit as the shape change.
 **Do not.** Do not introduce Maven/Go module awareness. Do not let the extractor change
 land without the version bump — a stale cache silently missing symbols is exactly what
 drift reads as BROKEN.
-
----
-
-# B-023 — make `on_exhausted` mean something
-
-**Why it's open.** The doc half closed 2026-08-21 (four sites now say `stop`). The
-behaviour half is untouched: `stop` halts nothing and `degrade` is not a distinct code
-path from the default silent fallthrough, so two of the three configured values produce
-byte-identical behaviour.
-
-**Anchors.**
-
-- `pkg/config/validate.go:89` — accepts `queue | degrade | stop`.
-- `config/forge.config.example.md:82` — the packaged comment.
-- `pkg/engine/select.go:30` — the degrade to `"none"`, **unconditional**; `pkg/engine`
-  contains zero reads of `OnExhausted`.
-- `cmd/forge/engine_run.go:77` — branches on `"queue"` only, to stamp `pending_advisor: true`.
-- `cmd/forge/check_drain.go:22` — branches on `"queue"` only.
-- `cmd/forge/check_collect.go:181` — passthrough into `cost.md`'s summary line.
-- No test exercises `degrade` or `stop`.
-
-**Prerequisites.**
-
-- This is a behaviour change to a **budget-exhaustion path** — it can start failing
-  commands that today succeed. It needs a session that owns it and can write the tests.
-- AUDIT §8.4 D-5 settled the *default* (`queue`). This item does not reopen that.
-
-**Steps.**
-
-1. Choose one of three, and record the choice in B-023 before coding:
-   - **(a)** Give `stop` a real non-zero-exit path; leave `degrade` as today's silent
-     fallthrough. Most faithful to the names.
-   - **(b)** Collapse to `queue | degrade`, drop `stop`. Backward-incompatible for any
-     config that already sets it — needs a validator error message that says what to
-     change to, not just "invalid".
-   - **(c)** Keep all three and document explicitly that `stop` and `degrade` are synonyms
-     today. Cheapest, and honest, but leaves the entry half-open forever — if chosen, say
-     so and close the item rather than leaving it to be rediscovered.
-2. Implement in `pkg/engine` if the value should influence resolution
-   (`select.go:30`'s degrade becomes conditional), or in `cmd/forge` if it should only
-   influence the exit path. **Not both** — one read site per meaning.
-3. Write the tests. All three values, both the exhausted and non-exhausted branch. The
-   absence of any test today is why this drifted.
-4. Sync the four doc sites again if any wording changes: `ADDENDUM.md:117`, `:485`, `:671`;
-   `CLAUDE-CODE-PROMPT.md:339`.
-
-**Verification.**
-
-- `go test ./pkg/engine/... ./cmd/forge/...` → green, with the new cases present.
-- Manual: a config with `on_exhausted: stop` and an exhausted budget behaves as chosen, and
-  `cost.md` still renders the configured value verbatim.
-
-**Done when** each accepted value has a distinct, tested behaviour — or the doc states
-plainly that two of them do not, and the entry is closed on that statement.
-
-**Do not.** Do not close this on a documentation edit. The entry says so in its own status
-line, because that is exactly how the first half was closed.
 
 ---
 

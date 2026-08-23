@@ -368,6 +368,22 @@ everywhere the way B-033's derivation described. **Do not respond to B-037 by mo
 gate** — nothing is failing today, and a margin going negative in a slice the gate doesn't
 sit inside is a reason to gather more labelled prompts, not to re-derive a number.
 
+**B-023 closed 2026-08-24, same worktree, out-of-phase — the behaviour half, after the doc
+half half-closed it 2026-08-21.** Chosen from the three options TODO.md recorded: `stop`
+now gets a real non-zero exit; `degrade` stays today's silent fallthrough, unchanged,
+because that already is the honest reading of the word. `cmd/forge/engine_run.go`'s
+exhaustion check now runs whenever `engine.Resolve` degrades a stage to `"none"` for lack
+of budget (previously gated on `rel != "" && OnExhausted == "queue"` alone) and dispatches
+in a new `onExhausted` helper: `"queue"` keeps its existing `--rel`-gated
+`pending_advisor: true` stamp and falls through to `none`; `"stop"` prints to stderr and
+returns exit 1 without calling the tier; any other accepted value is the unmodified
+fallthrough. `pkg/engine/select.go:30`'s unconditional degrade is untouched —
+`on_exhausted` is still read only one layer up, in `cmd/forge`. New tests
+(`TestOnExhaustedBehaviorDiverges`, `TestOnExhaustedStopDoesNotFireWhenBudgetAvailable`)
+cover all three values against both the exhausted and non-exhausted branch. The four doc
+sites were not touched — they only ever named the three values, never claimed a behaviour
+for `stop`, so there was nothing wrong to fix. See BACKLOG.md's B-023 closure note.
+
 **B-022 closed in Phase 4**
 (the schema pattern now covers all nine `cfg.Pipeline` stages minus `critique`); **B-007
 closed in Phase 4** (`agents/forge-librarian.md`'s prompt stamps `Forge-Write: true` on
@@ -493,7 +509,7 @@ B-006 (link rewrite) closed on 2026-08-09; B-007 and B-022 in Phase 4; B-009 and
 halves still open); **B-008 on 2026-08-22**, which opened B-031/B-032/B-033 in its place;
 **B-030 in Phase 6b the same day**, which opened B-034/B-035; **B-029, B-027, B-033 and
 B-032 all on 2026-08-23** (see the notes below), B-033 opening **B-036** and B-032 opening
-**B-037** in their place.
+**B-037** in their place; **B-023's behaviour half on 2026-08-24**, closing it fully.
 **The head of the queue is now B-031**, and `docs/TODO.md` fixes the order from there.
 
 **`docs/TODO.md` is the execution half of that file** (written 2026-08-23). BACKLOG records

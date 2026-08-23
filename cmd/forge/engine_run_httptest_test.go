@@ -27,6 +27,22 @@ func TestEngineRunHitsRealHTTPAndBooksSpend(t *testing.T) {
 	assertSpent(t, root, 0.05)
 }
 
+// TestOnExhaustedStopDoesNotFireWhenBudgetAvailable guards the exhaustion check itself:
+// "stop" must never halt a stage that can actually run, only one that has degraded to
+// none for lack of budget.
+func TestOnExhaustedStopDoesNotFireWhenBudgetAvailable(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(costingHandler))
+	defer srv.Close()
+
+	root := fixtureCopy(t)
+	cfg := researchConfig(srv.URL)
+	cfg.Engines.Budget.OnExhausted = "stop"
+	if code := runEngineRun(root, cfg, "research", "hello", ""); code != 0 {
+		t.Fatalf("runEngineRun exit %d, want 0 — budget was available", code)
+	}
+	assertSpent(t, root, 0.05)
+}
+
 // costingHandler is the fake provider: the uniform envelope api.go's do() reads,
 // regardless of which provider payload shape hit it.
 func costingHandler(w http.ResponseWriter, r *http.Request) {
