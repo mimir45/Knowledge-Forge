@@ -65,13 +65,20 @@ and do not "clean up" the fixture's defects — they are the test surface.
 
 ## B-003 — Repo directory is still named `TIL`
 
-**Owner: whenever, low cost. Status: open.**
+**Owner: whenever, low cost. Status: open — user confirmed keep-as-is, 2026-08-24.**
 
 The Go module was renamed to `knowledge-forge` on 2026-08-08, but the directory is still
 `/Users/mimir45/TIL`, and the docs call the artifact `knowledge-forge/`. Purely cosmetic
 now; it becomes mildly annoying once tooling, README paths, and the goreleaser config in
 Phase 6 assume the artifact name. Renaming the directory is a user decision (it breaks
 any shell aliases, IDE projects, and `.idea/` state pointing at the old path).
+
+**Asked directly, 2026-08-24.** The user asked to "change repository name from TIL"; on
+finding both the GitHub remote (`Knowledge-Forge`) and `go.mod`'s module path
+(`knowledge-forge`) already renamed, and the local directory being the only thing left
+answering to `TIL`, they were asked whether to rename the directory too and chose not to
+— "leave this as TIL" — as long as it stays cosmetic. Reaffirms this entry's existing
+"do not rename unasked" answer rather than changing it; nothing renamed.
 
 ---
 
