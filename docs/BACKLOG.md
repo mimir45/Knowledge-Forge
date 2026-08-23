@@ -65,13 +65,20 @@ and do not "clean up" the fixture's defects — they are the test surface.
 
 ## B-003 — Repo directory is still named `TIL`
 
-**Owner: whenever, low cost. Status: open.**
+**Owner: whenever, low cost. Status: open — user confirmed keep-as-is, 2026-08-24.**
 
 The Go module was renamed to `knowledge-forge` on 2026-08-08, but the directory is still
 `/Users/mimir45/TIL`, and the docs call the artifact `knowledge-forge/`. Purely cosmetic
 now; it becomes mildly annoying once tooling, README paths, and the goreleaser config in
 Phase 6 assume the artifact name. Renaming the directory is a user decision (it breaks
 any shell aliases, IDE projects, and `.idea/` state pointing at the old path).
+
+**Asked directly, 2026-08-24.** The user asked to "change repository name from TIL"; on
+finding both the GitHub remote (`Knowledge-Forge`) and `go.mod`'s module path
+(`knowledge-forge`) already renamed, and the local directory being the only thing left
+answering to `TIL`, they were asked whether to rename the directory too and chose not to
+— "leave this as TIL" — as long as it stays cosmetic. Reaffirms this entry's existing
+"do not rename unasked" answer rather than changing it; nothing renamed.
 
 ---
 
@@ -694,9 +701,9 @@ and validate stage names against the config chain instead of a fixed regex.
 
 ## B-023 — code's `on_exhausted` value is `stop`; every doc still says `fail`
 
-**Owner: whoever decides whether `stop` and `degrade` should diverge. Status: half done,
-2026-08-21 — the four doc lines now say `stop`; the behavior question below is untouched
-and still open. Do not close this entry on the doc edit alone.**
+**Owner: whoever decides whether `stop` and `degrade` should diverge. Status: closed
+2026-08-24 — see the closure note below. Doc half was 2026-08-21; behavior half is this
+close.**
 
 `pkg/config/validate.go` accepts `on_exhausted: queue | degrade | stop`, and that is what
 `config/forge.config.example.md`'s comment and every preset's comment say too — `stop` is
@@ -740,6 +747,38 @@ drop `stop` (backward-incompatible for any config that already sets it); or keep
 and document explicitly that `stop` and `degrade` are synonyms today. The doc now names the
 value the code accepts, which was the strictly-wrong part; the value's *meaning* is still
 unimplemented.
+
+### Behavior half closed 2026-08-24 — option (a): `stop` gets a real exit, `degrade` unchanged.
+
+Chosen over the other two named above: `degrade` staying today's silent fallthrough is
+already the honest reading of the word, so nothing there needed to change; `stop` gets a
+distinct, tested non-zero exit instead. Collapsing to `queue | degrade` (dropping `stop`)
+was rejected as backward-incompatible for no real gain, and documenting `stop`/`degrade`
+as synonyms was rejected because TODO.md's own entry called that the option that "leaves
+the entry half-open forever."
+
+`cmd/forge/engine_run.go`'s exhaustion check (previously gated on `rel != "" &&
+OnExhausted == "queue"` alone) now runs whenever `engine.Resolve` has degraded the stage
+to `"none"` for lack of budget, and dispatches on `OnExhausted` in a new `onExhausted`
+helper: `"queue"` keeps its existing `--rel`-gated `pending_advisor: true` stamp and falls
+through to `none` exactly as before; `"stop"` prints to stderr and returns exit 1 without
+ever calling the tier; `"degrade"` (or any other validator-accepted value) is the
+unmodified silent fallthrough. `pkg/engine/select.go:30`'s unconditional degrade is
+untouched — `on_exhausted` is still read only in `cmd/forge`, one layer up, which is where
+Exhausted() already lived for exactly this reason.
+
+New tests: `TestOnExhaustedBehaviorDiverges` (`cmd/forge/engine_run_test.go`) forces the
+exhausted path (api capped at $0.00, no fallback) for all three values and asserts both
+the exit code and whether `pending_advisor` got stamped — `stop` exits 1 and stamps
+nothing, `queue` exits 0 and stamps, `degrade` exits 0 and stamps nothing.
+`TestOnExhaustedStopDoesNotFireWhenBudgetAvailable`
+(`cmd/forge/engine_run_httptest_test.go`) is the other direction: with budget available,
+`on_exhausted: stop` must not fire — the real HTTP call still runs and spend is still
+booked. Verified: `go test ./pkg/engine/... ./cmd/forge/...` and the full `go test ./...`
+green under both `CGO_ENABLED=0` and `CGO_ENABLED=1`; `go vet ./...` clean. The four doc
+sites (`ADDENDUM.md:117`, `:485`, `:671`; `CLAUDE-CODE-PROMPT.md:339`) were not touched —
+they only ever enumerated the three value names, never claimed a behavior for `stop`, so
+there was no wrong claim to correct.
 
 ---
 

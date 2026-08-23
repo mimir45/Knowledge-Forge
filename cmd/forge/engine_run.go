@@ -54,6 +54,9 @@ in-session instruction for host, a typed refusal for none), and books any spend
 against today's budget in SQLite before printing the result as JSON. If the winning
 tier degraded to none because today's budget is spent and on_exhausted is "queue",
 --rel stamps pending_advisor: true on that note instead of silently doing nothing.
+If on_exhausted is "stop" instead, the same degradation exits non-zero without ever
+calling the tier; "degrade" (or any other configured value) falls through silently,
+same as today.
 
 `
 
@@ -74,14 +77,35 @@ func runEngineRun(vaultDir string, cfg *config.Config, stage, prompt, rel string
 		fmt.Fprintf(os.Stderr, "forge engine run: %v\n", err)
 		return 2
 	}
-	if name == "none" && rel != "" && cfg.Engines.Budget.OnExhausted == "queue" &&
-		engine.Exhausted(cfg, st, time.Now, stage) {
-		if err := queueNote(root, rel); err != nil {
-			fmt.Fprintf(os.Stderr, "forge engine run: queue: %v\n", err)
-			return 1
+	if name == "none" && engine.Exhausted(cfg, st, time.Now, stage) {
+		if code, halt := onExhausted(cfg, root, stage, rel); halt {
+			return code
 		}
 	}
 	return callAndSpend(cfg, st, root, name, stage, prompt)
+}
+
+// onExhausted applies on_exhausted's configured meaning once Resolve has already
+// degraded stage to "none" for lack of budget (B-023's behavior half): "queue" stamps
+// pending_advisor and lets the run fall through to none as before; "stop" halts with a
+// real non-zero exit instead of none's usual quiet refusal; "degrade" (or anything else
+// the validator accepts) is today's silent fallthrough, deliberately unchanged.
+func onExhausted(cfg *config.Config, root, stage, rel string) (code int, halt bool) {
+	switch cfg.Engines.Budget.OnExhausted {
+	case "queue":
+		if rel == "" {
+			return 0, false
+		}
+		if err := queueNote(root, rel); err != nil {
+			fmt.Fprintf(os.Stderr, "forge engine run: queue: %v\n", err)
+			return 1, true
+		}
+	case "stop":
+		fmt.Fprintf(os.Stderr, "forge engine run: stage %q: budget exhausted and "+
+			"on_exhausted is \"stop\"\n", stage)
+		return 1, true
+	}
+	return 0, false
 }
 
 // queueNote stamps pending_advisor: true (ADDENDUM §A.4's `queue` behavior) via the same
