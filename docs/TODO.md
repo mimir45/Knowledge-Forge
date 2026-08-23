@@ -10,25 +10,24 @@ derived from it and deliberately do not restate its argument. Where a backlog en
 
 Written 2026-08-23 from a full scan of B-001…B-035; B-036 and B-037 added the same day as
 B-033 and B-032 closed. Anchors were verified against the tree at that date; re-grep
-before trusting a line number. **Closed items' full plan sections are removed once closed**
-— `docs/BACKLOG.md`'s closure note is the durable record; this file only carries live,
-actionable plans. The index below keeps every ID, closed or open, so nothing goes missing.
+before trusting a line number. **Closed and recorded items are dropped from this file
+entirely, not just their plan sections** — `docs/BACKLOG.md` is the full census (every ID,
+closed or open, with the reasoning) and the durable record of *why*; this file exists only
+to track *how to close* whatever is still open. If an ID isn't below, it's done — look it
+up in BACKLOG.
 
-## Three status classes
+## Two status classes
 
-Not every backlog item can take a plan, and the absence of steps below is a decision, not
-an oversight:
+Not every open backlog item can take a plan, and the absence of steps below is a decision,
+not an oversight:
 
-- **PLANNED** — open, workable, has a full six-field section in this file. Five now:
-  B-015, B-023, B-031, B-034, B-035. B-029, B-027, B-033 and B-032 closed 2026-08-23;
-  B-033's closure opened B-036 and B-032's opened B-037, both NO STEPS by their own
-  argument — each names a measurement to run before any design is chosen, not a fix to
-  apply.
+- **PLANNED** — workable, has a full six-field section in this file. Five now: B-015,
+  B-023, B-031, B-034, B-035. B-029, B-027, B-033 and B-032 closed 2026-08-23; B-033's
+  closure opened B-036 and B-032's opened B-037, both NO STEPS by their own argument —
+  each names a measurement to run before any design is chosen, not a fix to apply.
 - **NO STEPS** — open but not actionable by an implementation session: blocked on external
   observation, or a user decision, or "record, don't fix" by standing rule. Listed with
   its unblock condition instead of steps.
-- **CLOSED / RECORDED** — done, or a measured deviation kept on purpose. One row, no
-  section. Do not re-litigate these; the backlog carries the reasoning.
 
 ## Execution order
 
@@ -46,43 +45,17 @@ B-027 was last because it is documentation with no code consequence left.
 
 ---
 
-## Index — all 37 items
+## Index — 11 open items (26 closed/recorded IDs live in BACKLOG only)
 
 | ID | Subject | Class | Section |
 |---|---|---|---|
-| B-001 | Doc coherence audit | CLOSED 2026-08-09 | — |
-| B-002 | `testdata/vault/` vs `examples/vault/` | RECORDED (a trap, not work) | — |
 | B-003 | Repo directory still named `TIL` | NO STEPS — user decision | [below](#no-steps) |
 | B-004 | Module path has no VCS host prefix | NO STEPS — deferred by decision | [below](#no-steps) |
-| B-005 | Seven note types | CLOSED 2026-08-09 | — |
-| B-006 | Path-qualified wikilink rewrite | CLOSED 2026-08-09 | — |
-| B-007 | Librarian stamps `Forge-Write: true` | CLOSED Phase 4 | — |
-| B-008 | IDF weighting / absent-term admission | CLOSED 2026-08-22 | — |
-| B-009 | `pkg/gitsig` shells out to `git` | CLOSED 2026-08-21 | — |
-| B-010 | AUDIT §7 git-history correction | RECORDED, doc unedited | — |
-| B-011 | `reports/`+`moc/` as graph nodes | CLOSED in 2b | — |
 | B-012 | `code_refs` has no live producer | NO STEPS — blocked on packaging | [below](#no-steps) |
-| B-013 | Code-index cache format version | CLOSED 2026-08-18 | — |
-| B-014 | Index parses TypeScript, not Kotlin | RECORDED — deliberate swap | — |
 | B-015 | `CodeGroup.DependsOn` never populated | **PLANNED** | [§B-015](#b-015--populate-codegroupdependson) |
-| B-016 | Vault carries `sources:` and `source:` | RECORDED — read-both shipped | — |
-| B-017 | §B.5's 90-day window shows nothing | RECORDED — measured, defaults question | — |
-| B-018 | Bare symbol citation arbitration | RECORDED — known asymmetry | — |
-| B-019 | Duplicate detection deviations | RECORDED — deliberate, measured | — |
-| B-020 | `sort.Slice` tiebreaks | CLOSED in 2b | — |
-| B-021 | B2B is a separate project | CLOSED — scope decision | — |
-| B-022 | `engine_trail` schema pattern | CLOSED Phase 4 | — |
 | B-023 | `on_exhausted`: `stop` halts nothing | **PLANNED** (behaviour half) | [§B-023](#b-023--make-on_exhausted-mean-something) |
-| B-024 | `D2Tag` spelling | CLOSED 2026-08-21 | — |
 | B-025 | `PostToolUse`/WebFetch payload shape | NO STEPS — **BLOCKED** | [below](#no-steps) |
-| B-026 | Deleted-file citation never BROKEN | CLOSED 2026-08-16 | — |
-| B-027 | `.forge/code-index-<repo>.json` naming | CLOSED 2026-08-23 | — |
-| B-028 | Hook path immediacy on deletion | CLOSED 2026-08-17 | — |
-| B-029 | `errcheck` disabled tree-wide | CLOSED 2026-08-23 | — |
-| B-030 | `dataset.capture` gates only two tiers | CLOSED Phase 6b | — |
 | B-031 | Kafka/Testcontainers coverage miss | **PLANNED** | [§B-031](#b-031--the-coverage-side-of-the-scoring-surface) |
-| B-032 | Untagged note escapes absent-term penalty | CLOSED 2026-08-23 | — |
-| B-033 | 0.30 neighbour floor on the old scale | CLOSED 2026-08-23 | — |
 | B-034 | D6 (code↔knowledge) not built | **PLANNED** | [§B-034](#b-034--build-d6-as-an-export-view) |
 | B-035 | D1 has no outcome label | **PLANNED** | [§B-035](#b-035--mint-a-run_id-so-d1-can-carry-an-outcome) |
 | B-036 | Broad query links ten neighbours | NO STEPS — measure first | [below](#no-steps) |
