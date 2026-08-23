@@ -384,6 +384,32 @@ cover all three values against both the exhausted and non-exhausted branch. The 
 sites were not touched — they only ever named the three values, never claimed a behaviour
 for `stop`, so there was nothing wrong to fix. See BACKLOG.md's B-023 closure note.
 
+**B-031 closed 2026-08-24, same worktree, out-of-phase — the head of the queue closed with
+no code change.** Its own TODO.md plan asked for the choice between its two shapes to be
+written down before coding; doing that first showed neither survives contact with the
+corpus. Shape 1 ("tag the note `kafka`") is not merely non-generalising as BACKLOG framed
+it — `kafka` and `consumer` appear nowhere in `testcontainers-docker-based-integration-
+testing.md`, title through body, so the tag would misdescribe the note, not under-curate
+it. Shape 2 ("the body channel is the only one that sees `kafka` here") is true of the
+*system* — `cqrs-and-event-driven-messaging.md` (44 hits) and `transactional-outbox-
+pattern.md` (28 hits) carry it heavily — but not of *this row*: both notes sit in
+`notes/howto/`, and `bodyPass`'s top-20 window is filled by `notes/concept/*` first purely
+because ~84 of 92 docs tie at 0.000 frontmatter and the tie-break sorts by path.
+`BodyPassSize` bumped 20→200 locally (not committed) confirmed both kafka-bearing notes
+still score below the 0.150 neighbour floor and below the current winner's 0.311 — they
+carry zero frontmatter signal, being architecture notes that mention Kafka as an example
+rather than testing-infrastructure notes. TODO.md step 2's "measure which one is binding"
+resolves to neither: raising `wBody` or `BodyPassSize` moves nothing for this query without
+a DESIGN §8 ratio change this one row can't justify. Verdict for this row: today's CREATE,
+linking the four testcontainers-family neighbours, is the correct answer to a question the
+vault has no dedicated note for — not a coverage miss. **This closes the row, not the
+general question** — whether a term the body carries strongly and the frontmatter carries
+nowhere should ever lift a candidate is untouched, and the reason it doesn't today (which
+of the seven type directories a note lives in decides its place in `bodyPass`'s tie-break,
+not its content) reproduces on any query, not just this one. Filed as **B-038**. No golden
+diff on B-031 itself; `TestCalibration` unchanged. See BACKLOG.md's B-031 closing section
+for the measurement table and B-038 for the general defect.
+
 **B-022 closed in Phase 4**
 (the schema pattern now covers all nine `cfg.Pipeline` stages minus `critique`); **B-007
 closed in Phase 4** (`agents/forge-librarian.md`'s prompt stamps `Forge-Write: true` on
@@ -509,8 +535,10 @@ B-006 (link rewrite) closed on 2026-08-09; B-007 and B-022 in Phase 4; B-009 and
 halves still open); **B-008 on 2026-08-22**, which opened B-031/B-032/B-033 in its place;
 **B-030 in Phase 6b the same day**, which opened B-034/B-035; **B-029, B-027, B-033 and
 B-032 all on 2026-08-23** (see the notes below), B-033 opening **B-036** and B-032 opening
-**B-037** in their place; **B-023's behaviour half on 2026-08-24**, closing it fully.
-**The head of the queue is now B-031**, and `docs/TODO.md` fixes the order from there.
+**B-037** in their place; **B-023's behaviour half on 2026-08-24**, closing it fully;
+**B-031 also on 2026-08-24**, closed with no code change and opening **B-038** in its
+place (see the Status note above).
+**The head of the queue is now B-015**, and `docs/TODO.md` fixes the order from there.
 
 **`docs/TODO.md` is the execution half of that file** (written 2026-08-23). BACKLOG records
 *why* an item exists; TODO records *how to close it* — a six-field plan (anchors,
