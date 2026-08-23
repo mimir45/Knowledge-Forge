@@ -8,18 +8,22 @@ open it cold, follow the steps, and stop when "Done when" is satisfied.
 derived from it and deliberately do not restate its argument. Where a backlog entry has a
 `###` closing section, that section is more current than its `Status:` line.
 
-Written 2026-08-23 from a full scan of B-001…B-035. Anchors were verified against the
-tree at that date; re-grep before trusting a line number.
+Written 2026-08-23 from a full scan of B-001…B-035; B-036 and B-037 added the same day as
+B-033 and B-032 closed. Anchors were verified against the tree at that date; re-grep
+before trusting a line number. **Closed items' full plan sections are removed once closed**
+— `docs/BACKLOG.md`'s closure note is the durable record; this file only carries live,
+actionable plans. The index below keeps every ID, closed or open, so nothing goes missing.
 
 ## Three status classes
 
 Not every backlog item can take a plan, and the absence of steps below is a decision, not
 an oversight:
 
-- **PLANNED** — open, workable, has a full six-field section in this file. Nine items when
-  this was written; **B-029, B-027 and B-033 closed 2026-08-23**, leaving six. B-033's
-  closure opened **B-036**, which is NO STEPS by its own argument: it names a measurement
-  to run before any design is chosen, not a fix to apply.
+- **PLANNED** — open, workable, has a full six-field section in this file. Five now:
+  B-015, B-023, B-031, B-034, B-035. B-029, B-027, B-033 and B-032 closed 2026-08-23;
+  B-033's closure opened B-036 and B-032's opened B-037, both NO STEPS by their own
+  argument — each names a measurement to run before any design is chosen, not a fix to
+  apply.
 - **NO STEPS** — open but not actionable by an implementation session: blocked on external
   observation, or a user decision, or "record, don't fix" by standing rule. Listed with
   its unblock condition instead of steps.
@@ -30,25 +34,19 @@ an oversight:
 
 ```
 B-029  →  B-033  →  B-032  →  B-031  →  B-015  →  B-023  →  B-035  →  B-034  →  B-027
- done     done      denom     cover     imports   engine    run_id    D6       done
+ done     done      done      head     imports   engine    run_id    D6       done
 ```
 
-**B-029, B-027 and B-033 all closed 2026-08-23.** **B-032 is now the head.**
-
-**B-033 landed before B-032, which was the load-bearing part of this order.** Both
-re-measure against `cmd/forge/testdata/calibration.golden`, and B-032 moves `blend`'s
-denominator for a large fraction of the vault, so every score shifts under it. B-033's
-floor is now derived against the pre-B-032 scale — **so B-032 must re-run the derivation,
-not just re-record the golden.** That is cheap on purpose: `TestNeighbourFloorSweep` reads
-the committed labels and rewrites `testdata/neighbour-sweep.golden` with `-update`, and
-the same applies to `TestIntentGateSeparation`. Both are steps in §B-032 below.
+**B-029, B-027, B-033 and B-032 all closed 2026-08-23.** **B-031 is now the head** — its
+own prerequisite ("B-033 and B-032 should land first") is satisfied; see its section below
+for the note that measurements there must use the post-B-032 `calibration.golden`.
 
 B-029 was first because it is independent of everything else and was the largest single item.
 B-027 was last because it is documentation with no code consequence left.
 
 ---
 
-## Index — all 36 items
+## Index — all 37 items
 
 | ID | Subject | Class | Section |
 |---|---|---|---|
@@ -83,163 +81,12 @@ B-027 was last because it is documentation with no code consequence left.
 | B-029 | `errcheck` disabled tree-wide | CLOSED 2026-08-23 | — |
 | B-030 | `dataset.capture` gates only two tiers | CLOSED Phase 6b | — |
 | B-031 | Kafka/Testcontainers coverage miss | **PLANNED** | [§B-031](#b-031--the-coverage-side-of-the-scoring-surface) |
-| B-032 | Untagged note escapes absent-term penalty | **PLANNED** | [§B-032](#b-032--activation-vs-absent-term-penalty) |
+| B-032 | Untagged note escapes absent-term penalty | CLOSED 2026-08-23 | — |
 | B-033 | 0.30 neighbour floor on the old scale | CLOSED 2026-08-23 | — |
 | B-034 | D6 (code↔knowledge) not built | **PLANNED** | [§B-034](#b-034--build-d6-as-an-export-view) |
 | B-035 | D1 has no outcome label | **PLANNED** | [§B-035](#b-035--mint-a-run_id-so-d1-can-carry-an-outcome) |
 | B-036 | Broad query links ten neighbours | NO STEPS — measure first | [below](#no-steps) |
-
----
-
-# B-029 — re-enable `errcheck` — **CLOSED 2026-08-23**
-
-Done. `errcheck` is off `.golangci.yml`'s `disable:` list and `golangci-lint run ./...`
-returns zero findings under the version `ci.yml` pins. The plan that stood here is kept
-only as the four corrections it earned, because each was a wrong number this file taught a
-later session to trust:
-
-1. **The worklist was 35, not 95 / ~37 / ~27+~10.** Those came from a bare `errcheck`
-   binary and a hand-applied exclusion estimate. The number that matters is what
-   `golangci-lint` **v1.64.8** — `ci.yml`'s pin — reports against the repo's own config: 35,
-   splitting 26 test / 9 production.
-2. **Measure with the pinned linter, not a fresh one.** `golangci-lint` v2 reports 50 on the
-   same tree; it is a different tool with a different exclusion set and its number is not
-   this repo's gate.
-3. **Stock truncation hides findings.** v1 defaults to `max-issues-per-linter: 50` and
-   `max-same-issues: 3`; the same tree reports **22** at those limits. `.golangci.yml` now
-   sets both to `0`. This was never an errcheck question — it applied to every linter in
-   the default set for all of Phase 6.
-4. **Step 5's two signature changes were traced and rejected.** `pkg/drift/apply.go`'s
-   `stamp()` and `pkg/drift/gitindex.go`'s `persist()` each hold one call whose failure is
-   self-healing, and neither caller has an error channel — unlike `refresh()`, which
-   promised propagation it never performed and hid three swallowed errors. Both are
-   `//nolint:errcheck` with the reason on the line. Step 6's re-size held: `cmd.Wait()` was
-   the one real fix and it is now checked, guarded so a truncated stream still reports the
-   read error rather than a broken pipe.
-
-Full closure note: `docs/BACKLOG.md` B-029, final section.
-
----
-
-# B-033 — re-derive the neighbour floor — **CLOSED 2026-08-23**
-
-Done. `neighbour_min_score` is **0.125** at both default sites, and `cmd/forge/intent.go`'s
-gate is `recall.DefaultThresholds.Update` rather than a hardcoded 0.7. The plan that stood
-here is kept only as the five corrections it earned.
-
-1. **The "before" state was not uniformly zero neighbours.** B-033's entry generalised from
-   the Storybook row; three of §3.1's nine emitted none, the other six emitted one to five.
-   The plan's step 2 was right to demand that column exist as its own commit — it is what
-   showed the entry was over-general.
-2. **The plan missed `references/recall-spec.md`.** B-032's section has a spec-update step
-   and this one did not, while §3, §3.1 and §3.2 all described the old floor as current.
-   Any threshold item needs that step; it is not specific to B-032.
-3. **A unit test spelled the threshold into a fixture.** `pkg/recall`'s
-   `TestNeighbourBandEdges` used `0.30` as its "inclusive lower bound" literal and failed
-   on the change as if the band had broken. It now expresses both edges in terms of
-   `DefaultThresholds`. Worth checking for before any threshold move: a test that pins a
-   *number* while claiming to test a *rule* reads as a real regression.
-4. **Step 6's "two acceptable outcomes" were both wrong for the intent gate.** Promoting
-   to config was rejected on the 50ms hook budget; keeping 0.7 with a better comment was
-   ruled out by measurement, since it admitted 3 of 10 FIRE prompts. The answer was a
-   third: re-derive the literal (0.50) and defend it with a test rather than a comment.
-   Reusing `DefaultThresholds.Update` was tried before that and rejected — it reads as the
-   elegant answer and costs three near-verbatim title matches to buy an alignment
-   `printIntent` never asserts, since it computes no verdict at all.
-5. **Labelled prompts could rule the old number out but not choose the new one.** The FIRE
-   and QUIET classes separate at 0.402/0.407, so every value in [0.405, 0.7] scores
-   identically on false positives. A derivation that ends in a range still needs an
-   argument to land on a number, and pretending the data chose it would have been the
-   dishonest half of this item.
-
-The sweep survives as `TestNeighbourFloorSweep` and `TestIntentGateSeparation`, both
-reading committed label files and both re-recordable with `-update`. **B-032 must re-run
-them**, not just re-record the calibration golden.
-
-Full closure note: `docs/BACKLOG.md` B-033, final section. The ruling that supersedes
-`DESIGN:257` is `docs/AUDIT.md` §8.4 **D-9**.
-
----
-
-
-# B-032 — activation vs. absent-term penalty
-
-**Why it's open.** §2.5's activation is two-sided: a note with no `tags:` leaves the tags
-channel *inactive*, dropping out of the blend's denominator rather than scoring zero.
-B-008's admission then charges the tags channel for query terms the vault tags nowhere. A
-tagged note pays that charge in full; an untagged note never sees it. So a note can win a
-row partly by carrying no tags — §2.5's own effect running opposite to its intent.
-
-**Anchors.**
-
-- `pkg/recall/score.go:218` — `if c.Active = ok && len(tags) > 0; c.Active {`. The tags
-  activation rule.
-- `pkg/recall/score.go:231` — the same for stack.
-- `pkg/recall/score.go:287-293` — `blend`, the weighted mean over active channels; `:293`
-  is the `if !c.Active { continue }` that removes the channel from the denominator.
-- `pkg/recall/score.go:110-124` — `weightsOver`, where an absent term takes the mean of the
-  present ones. `:149` `idf`.
-- `pkg/recall/score.go:208`, `:245` — the doc comments arguing both halves from measurement.
-
-**Prerequisites.**
-
-- Both rules are argued from measured vault behaviour. **Do not "fix" this by deleting
-  either one.**
-- **B-033 landed first and its floor is derived against the pre-B-032 scale.** Re-running
-  `TestNeighbourFloorSweep` and `TestIntentGateSeparation` is a step below, not an
-  optional check: this change moves every score, so the floor's derivation and the intent
-  gate's separation margin are both measured against a scale that no longer exists.
-- Exposure: 9 of `examples/vault`'s 91 notes are untagged. CLAUDE.md records 31 of 91 in
-  the live vault as missing `tags:` or `stack:` after the Phase 1 migration — so the real
-  corpus is worse than the example corpus suggests.
-- B-033 should land first (see Execution order).
-
-**Steps.**
-
-1. Reproduce the measurement in the entry before changing anything: "Redis caching in
-   Spring Boot" against `examples/vault` should give
-   `meterreadingsservice-spring-boot-4-x-project` 0.500 with `tags: []` above
-   `spring-cli-and-maven-commands-for-spring-boot` 0.415 with `tags: [spring-cli]`.
-   If it does not reproduce, stop and re-open the entry — the corpus or the scorer moved.
-2. Implement the shape the entry proposes: activation currently asks *whether the note
-   carries the field at all*; make it ask whether the note carries the field **and** the
-   query has something that field could answer. An untagged note is then neither penalised
-   nor advantaged. Keep the change inside `score.go`'s two activation lines plus whatever
-   `weightsOver` must expose for the second half of the condition.
-3. Measure the blast radius explicitly: how many of the 91 notes change activation state,
-   and how many change rank. The denominator moves for a large fraction of the vault, so
-   **every score moves** — that is expected and must be stated, not discovered in review.
-4. Re-record: `go test ./cmd/forge -run TestCalibration -update`. Paste the diff into the
-   commit message.
-4b. **Re-run B-033's two derivations against the new scale**:
-   `go test ./cmd/forge -run 'TestNeighbourFloorSweep|TestIntentGateSeparation' -update`.
-   The label files are committed and must not be edited — re-labelling after seeing new
-   scores is how a derivation becomes a fit. Read the re-recorded
-   `neighbour-sweep.golden`: if F1's peak has moved off 0.125, the floor moves with it and
-   `pkg/recall/doc.go` + `config/forge.config.example.md` change together. Read
-   `intent-gate.golden`: if the FIRE/QUIET margin has gone negative the classes overlap and
-   no gate works, which is a finding, not a number to nudge.
-5. Re-read the golden diff against B-008's closure note. If B-008's false positive
-   (0.415 after the fix) returns to first place, the change is wrong regardless of what
-   this row does.
-6. Update `references/recall-spec.md` §2.5 — the asymmetry note there describes the old
-   behaviour.
-
-**Verification.**
-
-- `go test ./cmd/forge -run TestCalibration` → green against the re-recorded golden.
-- `go test ./pkg/recall/...` → green. `idf(0, n) == 0` must still hold; the absent-term
-  policy lives one layer up in `weightsOver` and its test must not be inverted.
-- `go test ./...`, both lanes.
-
-**Done when** an untagged note is neither charged nor exempted, the golden diff is in the
-commit, spec §2.5 matches the code, B-008's false positive has not returned, and B-033's
-two derivations have been re-run with their verdicts stated — including "unchanged", if
-that is what they say.
-
-**Do not.** Do not move the answer/update thresholds. Note carefully: this change moves
-every score *without* touching a threshold, so "thresholds didn't move" is **not** on its
-own a justification — the commit must argue the denominator change on its merits.
+| B-037 | Intent gate FIRE/QUIET margin now negative | NO STEPS — measure first | [below](#no-steps) |
 
 ---
 
@@ -545,28 +392,6 @@ anonymisation limit plainly, or the item closes with a written decision not to b
 
 ---
 
-# B-027 — decide the design-doc half — **CLOSED 2026-08-23**
-
-Decided: **the docs were editable, and were edited.** All eight sites now show the
-`-<repo>` suffix, plus three Turkish mirrors that described the entry as half-open.
-
-The reasoning, because the decision is the deliverable and not the find-and-replace: the
-"record, don't fix" rule and AUDIT §8.4's mechanism govern **decisions** — a doc line
-superseded by a later ruling, where §8.4 is what a reader follows. B-027 is not one of
-those. Nobody disagrees about the design; the docs name a file that has never existed on
-disk under that name, so a reader following the mechanism here is sent to a doc that is
-factually wrong about a path. That is a correction, not an override, and no §8.4 entry was
-added because there was no decision to record. The roadmap ending at 6b removes the other
-half of the rule's purpose — there is no in-flight phase to destabilise.
-
-The two normative sites (ADDENDUM §B.6, DESIGN §15) carry a dated one-line marker so the
-edit is traceable rather than a silent rewrite. The filename on disk is unchanged;
-`cachePath` in `pkg/drift` stays the single place a name is constructed.
-
-Full closure note: `docs/BACKLOG.md` B-027, final section.
-
----
-
 <a name="no-steps"></a>
 
 # NO STEPS — open, but not implementation work
@@ -617,8 +442,40 @@ Design after reading it.
 **Do not respond to this by raising the floor.** Every floor in B-033's sweep that drops
 those two notes also drops the Storybook family B-033 was opened to fix.
 
-**Re-measure after B-032**, which moves `blend`'s denominator and changes every number in
-the entry.
+**Re-measured after B-032, 2026-08-23: unchanged in kind.** Still three of nine
+calibration queries at the ten-neighbour cap, same two general Spring notes. B-032 moved
+the underlying scores but not this shape — the unblock condition above is still what to
+build.
+
+## B-037 — `forge intent`'s FIRE/QUIET margin went negative under B-032's scale
+
+**Measure before touching the gate — it is not broken today, and that is the reason there
+is no plan below rather than a threshold nudge.** `cmd/forge/testdata/intent-gate.golden`:
+before B-032, the lowest gate-admitted FIRE prompt and the highest QUIET prompt separated
+by +0.005 (0.407 vs 0.402). After, they overlap: lowest FIRE 0.407, highest QUIET **0.443**,
+margin **-0.036**. `TestIntentGateSeparation`'s two pinned invariants both still hold
+mechanically — the gate (0.50) admits zero QUIET prompts and exactly `minFireAdmitted` (8)
+FIRE prompts, both unchanged counts — because the gate sits above the whole overlapping
+band (0.407–0.443), not inside it.
+
+What changed is the *reason* 0.50 is safe. B-033's derivation argued it as "the lowest
+value still a clear step above the QUIET ceiling" — a margin argument. That margin, read
+literally across the full FIRE/QUIET split rather than just at the gate, is now negative:
+somewhere in [0.407, 0.443] a FIRE prompt and a QUIET prompt trade places by score, so no
+single threshold separates the two labelled sets everywhere, only above 0.443 specifically.
+0.50 clears 0.443 with room (0.057), so nothing is mis-admitted today.
+
+**Unblock condition:** either more labelled prompts on both sides of the overlap band, to
+tell whether -0.036 is this 25-prompt sample's noise or a real, growing overlap as more of
+the vault's tags/stack channels shift under B-032 — or a wider sweep of `examples/vault`
+prompts the way `neighbour-labels.txt` widened B-033's evidence past nine queries. Either
+answers whether 0.50 keeps clearing the band as the corpus grows, which this measurement
+alone cannot say.
+
+**Do not respond to this by moving the gate.** 0.50 is still measured safe against every
+labelled prompt on file; a margin turning negative in a data slice the gate doesn't
+actually sit inside is a reason to get more data, not a reason to re-derive a number that
+isn't failing.
 
 ## B-003 — repo directory still named `TIL`
 

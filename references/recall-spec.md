@@ -476,50 +476,44 @@ measurement rather than a projection.
 
 ### 3.2 Neighbour band
 
-On CREATE, candidates scoring `0.125 – 0.55` are the neighbours the new note links to.
+On CREATE, candidates scoring `0.150 – 0.55` are the neighbours the new note links to.
 They arrive pre-filtered in the `neighbours` array (§4), so the caller never applies a
 threshold itself. The band is not a separate query — it is a slice of the same ranking.
 
-**The floor is 0.125, re-derived 2026-08-23 (BACKLOG B-033).** It was 0.30, chosen before
-§2.3.1's IDF change moved the scale under it, and at 0.30 six of fifteen adjacent-topic
-queries emitted no neighbours at all — a CREATE verdict that writes an orphan.
+**The floor is 0.150, re-derived 2026-08-23 (BACKLOG B-032), on top of B-033's 0.125.**
+0.30 was chosen before §2.3.1's IDF change moved the scale under it (BACKLOG B-033); 0.125
+was F1's maximum on that scale. B-032's activation fix (§2.5) then moved every note whose
+tags or stack didn't overlap the query — the exact population sitting in the neighbour
+band — which shifted F1's peak again.
 
-Deriving it from §3.1's nine queries would have been circular, so it was derived from a
-separate set: `cmd/forge/testdata/neighbour-labels.txt`, fifteen adjacent-topic questions
-with 58 expected neighbours written from the corpus file list **before any score was
-measured**, and committed one commit ahead of the sweep that reads them so the ordering is
-checkable. `TestNeighbourFloorSweep` re-runs the sweep and records
+The same label file, unedited, was re-swept: `cmd/forge/testdata/neighbour-labels.txt`,
+fifteen adjacent-topic questions with 58 expected neighbours, written before any score was
+measured and re-used as-is — re-labelling after seeing new scores is how a derivation
+becomes a fit. `TestNeighbourFloorSweep` re-runs the sweep and records
 `testdata/neighbour-sweep.golden`; the number without that sweep is tuning.
 
 | Floor | Precision | Recall | F1 | Median links/query | Queries with none |
 |---|---|---|---|---|---|
-| 0.100 | 0.478 | 0.741 | 0.581 | 6 | 0 |
-| **0.125** | **0.548** | **0.690** | **0.611** | **4** | **0** |
-| 0.150 | 0.600 | 0.569 | 0.584 | 3 | 0 |
-| 0.175 | 0.643 | 0.466 | 0.540 | 2 | 0 |
-| 0.200 | 0.655 | 0.328 | 0.437 | 2 | 1 |
-| 0.300 | 0.900 | 0.155 | 0.265 | 1 | 6 |
+| 0.100 | 0.406 | 0.741 | 0.524 | 7 | 0 |
+| 0.125 | 0.451 | 0.707 | 0.550 | 5 | 0 |
+| **0.150** | **0.506** | **0.672** | **0.578** | **5** | **0** |
+| 0.175 | 0.531 | 0.586 | 0.557 | 3 | 0 |
+| 0.200 | 0.558 | 0.414 | 0.475 | 2 | 1 |
+| 0.300 | 0.857 | 0.207 | 0.333 | 1 | 5 |
 
-Three things decided it, in order:
+F1 peaks at 0.150 (0.578, up from 0.125's now-0.550) and no query is left empty until
+0.200 — the same shape of decision B-033 made, re-run on the new scale rather than
+re-argued from scratch.
 
-1. **It is the only swept value that fixes the case B-033 was opened for.** The five
-   Storybook notes cluster at 0.131–0.323. Every floor at 0.150 and above emits the top
-   one and nothing else — no better than the status quo on that row.
-2. **F1 peaks there** (0.611), and it is within 0.011 of F₂'s peak. F₂ is the right
-   weighting given the cost asymmetry — a missed neighbour orphans a note silently, a
-   spurious one is a wrong wikilink a reviewer deletes — and §2.2 already sets the
-   precedent of preferring F₂ in this scorer.
-3. **Link volume stays reviewable:** median 4 per query, and no query returns empty until
-   0.200.
-
-Precision 0.548 is a **lower bound**, not the true rate: several counted false positives
-are defensible links the labels simply did not name (`food-ordering-system-course-
-architecture-index` on the saga and DDD queries, for one). They were left uncorrected on
-purpose — re-labelling after seeing the scores is how a derivation becomes a fit.
+Precision 0.506 is, as before, a **lower bound**: several counted false positives are
+defensible links the labels simply did not name. Left uncorrected on purpose, same
+reasoning as B-033.
 
 The cost is on file as **B-036**: §3.1's broadest queries now emit ten neighbours, because
 two general Spring notes score on every Spring question. That is a corpus property no
-floor can separate, and a cap on the neighbour count is a different change.
+floor can separate, and a cap on the neighbour count is a different change. B-036's own
+note said to re-measure this after B-032 landed rather than respond to it by raising the
+floor — done: still three of nine queries at the ten-neighbour cap, unchanged in kind.
 
 ---
 
