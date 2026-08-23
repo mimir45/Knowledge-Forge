@@ -23,7 +23,7 @@ func put(t *testing.T, s *Store, rows ...Row) {
 	}
 	for _, r := range rows {
 		if err := Put(tx, r); err != nil {
-			tx.Rollback()
+			tx.Rollback() //nolint:errcheck // the Put error is the one worth reporting
 			t.Fatalf("Put(%s): %v", r.Rel, err)
 		}
 	}

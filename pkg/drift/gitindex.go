@@ -51,7 +51,7 @@ func (g *GitSource) persist(repo, rev string, ix codeindex.Index) {
 	if g.cache == "" || rev != g.Head(repo) || len(ix.Files) == 0 {
 		return
 	}
-	codeindex.Save(g.cachePath(repo), ix)
+	codeindex.Save(g.cachePath(repo), ix) //nolint:errcheck // the cache is derived; a failed write costs the next run a rebuild and nothing else
 }
 
 func (g *GitSource) cachePath(repo string) string {

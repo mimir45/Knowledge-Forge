@@ -133,7 +133,7 @@ func writeRows(st *store.Store, rows []store.Row) error {
 	}
 	for _, r := range rows {
 		if err := store.Put(tx, r); err != nil {
-			tx.Rollback()
+			tx.Rollback() //nolint:errcheck // the Put error is the one worth returning; index.go:persist ignores it for the same reason
 			return err
 		}
 	}

@@ -112,7 +112,7 @@ func TestDrainAdvisorQueueStopsWhenAlreadyExhausted(t *testing.T) {
 
 func critiqueHandler(w http.ResponseWriter, r *http.Request) {
 	critique := `{"disputed":[],"missing":[],"confidence":"medium","patch":""}`
-	json.NewEncoder(w).Encode(map[string]any{
+	_ = json.NewEncoder(w).Encode(map[string]any{
 		"output": critique, "tokens": 10, "cost_usd": 0.02,
 	})
 }

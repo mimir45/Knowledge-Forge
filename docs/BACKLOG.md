@@ -1053,8 +1053,9 @@ practice.
 
 ## B-029 — `errcheck` is disabled tree-wide in `.golangci.yml`
 
-**Owner: recorded during Phase 6's CI delta. Status: open — triage item 1 landed 2026-08-22
-(see the closing section); the sweep and the `disable:` block are untouched.**
+**Owner: recorded during Phase 6's CI delta. Status: closed 2026-08-23.** Triage item 1
+landed 2026-08-22; the sweep and the `disable:` block closed 2026-08-23. **Every count in
+this entry and in its 2026-08-21 re-measure is wrong — read the last section first.**
 
 Phase 6 added `golangci-lint` to `ci.yml` (`docs/CLAUDE-CODE-PROMPT.md`'s original Phase 6
 intent). Its default linter set (`errcheck`, `gosimple`, `govet`, `ineffassign`,
@@ -1068,7 +1069,8 @@ that `pkg/engine/host.go` keeps explicit on purpose, per its own comment, so `Re
 growing fields later can't silently leak into `instruction`'s JSON contract. All four are marked
 with a scoped `//nolint` at the specific line, not a blanket exclusion.
 
-`errcheck` was a different matter: ~20 findings spread across `cmd/forge` and `pkg/drift`,
+`errcheck` was a different matter: ~20 findings — the real figure is **35**, see the
+closing section — spread across `cmd/forge` and `pkg/drift`,
 `pkg/report`, `pkg/store`, `pkg/engine`, `pkg/sentinel`, `pkg/telemetry`, `pkg/codeindex`.
 Some are already-documented deliberate ignores (`pkg/drift/demotions.go`'s `json.Unmarshal`
 next to the comment "a corrupt store loses restore targets, never verdicts"); others are
@@ -1191,6 +1193,79 @@ treats every such line as the documented `"<name> missing"` case and `continue`s
 unexpected line — a `git` diagnostic, a truncated header — therefore desynchronises the
 request/reply stream, after which blob bodies are parsed as headers. Pre-existing, not
 introduced here, and worth its own look because the index feeds drift's verdicts.
+
+### Closed 2026-08-23. Every number above was wrong, in both directions.
+
+`errcheck` is off `.golangci.yml`'s `disable:` list; `golangci-lint run ./...` under the
+CI-pinned **v1.64.8** returns zero findings, both build lanes green.
+
+**The sizing table is superseded.** It compared an `errcheck` binary's raw output against a
+hand-derived exclusion estimate, and never ran the linter CI actually runs. Measured this
+session, all four numbers:
+
+| Count | What it is |
+|---|---|
+| **105** | `errcheck v1.20.0 ./...`, raw. Byte-identical across `CGO_ENABLED=0` and `=1` — the entry's "no CGO blind spot" finding reproduces |
+| 50 | `golangci-lint` **v2** (`--default=none --enable errcheck`). A different tool with a different exclusion set; recorded only so the number is not mistaken for the one below |
+| **35** | **The worklist.** `golangci-lint` v1.64.8 — the version `ci.yml` pins — with the repo's own config and `--max-same-issues=0 --max-issues-per-linter=0` |
+| 22 | The same run at **stock truncation limits**. See below |
+
+The 105 vs. 95 gap is `errcheck` v1.20.0 vs. v1.9.0, not code drift. The derived "~37"
+landed near the truthful 35 by luck: it was applied to the wrong raw count with the wrong
+tool's exclusions.
+
+**35 splits 26 test / 9 production, not 27 / 10.** The entry's "three packages this entry
+never named" — `pkg/dataset` (4, all test), `pkg/qualitygate` (0), `pkg/linkcheck` (0) —
+mostly vanish under v1.64.8's default exclusions; the two `pkg/qualitygate` and one
+`pkg/linkcheck` findings were `EXC0001` cases all along.
+
+**A truncation trap was found and closed, and it is the part of this item worth
+remembering.** golangci-lint v1 defaults to `max-issues-per-linter: 50` and
+`max-same-issues: 3`. With errcheck enabled and stock limits the same tree reports **22**
+findings, not 35 — thirteen repeats silently dropped. A gate that under-reports is worse
+than one that is noisy, so `.golangci.yml` now sets both limits to `0` and says why. This
+was never an `errcheck` question; it applies to every linter in the default set and was
+in force for all of Phase 6.
+
+**Item 2's prescription was traced and not followed, for the same reason item 1's was
+not.** The entry says `pkg/drift/apply.go:109`'s `stamp()` and `pkg/drift/gitindex.go`'s
+`persist()` "need signature changes, not `//nolint`s." They do not, and the distinction
+against `refresh()` is the point: `refresh` promised propagation it never performed, and
+its body hid three swallowed errors including one errcheck could not see. `stamp` and
+`persist` each contain exactly **one** call, their failures are self-healing, and neither
+caller has an error channel to receive one — `applyNote` returns `(Result, bool)` and
+`GitSource.full` returns a bare `codeindex.Index`. Giving them an `error` return would move
+the ignore from one site to two and add a return value that every caller must discard.
+A failed `stamp` leaves `drift_checked_at` stale, so the next run re-evaluates the note —
+the same non-event `demote`'s own write failure at `apply.go:77` already is. A failed
+`persist` costs the next run a rebuild of a derived cache. Both are `//nolint:errcheck`
+with those reasons on the line.
+
+**Item 3 was the one real fix.** `cmd.Wait()` is now checked, and only when `drainBlobs`
+succeeded: `if werr := cmd.Wait(); err == nil { err = werr }`. That is exactly the narrow
+case the 2026-08-22 re-trace identified — a full transcript followed by a non-zero exit —
+and the guard is load-bearing, because on a truncated stream `Wait` reports a broken pipe
+that would bury the read error the caller actually needs. `:55`'s `w.WriteString` stays
+ignored: `feedRequests` runs in a goroutine with nowhere to report, and its failure ends
+git's output, which `drainBlobs` sees as a short read.
+
+**Everything else was mechanical.** Nine production ignores now carry a reason in the four
+precedents' style (`//nolint:<linter> // <lowercase reason>`, no trailing period). The 26
+test findings split three ways by what the failure would cost: setup writes whose failure
+would make the assertions below them meaningless are now checked and `t.Fatal` (a `seed`
+helper in `pkg/sentinel/sentinel_test.go`, the paired `Append`/`AppendD2`/`AppendD4` calls
+whose whole assertion is "two lines survived"); `httptest` handler writes are `_, _ =` with
+one explanation on `testServer`, because `t.Fatal` is illegal off the test goroutine and
+the client-side error is what each test already asserts; the rest are `_ =` at the line.
+No blanket `issues:` exclusion was added — every ignore in this tree names its own reason.
+
+**Not re-measured:** `forge drift`'s <100ms hook-path budget. `catfile.go` is the only
+`pkg/codeindex`/`pkg/drift` change with any runtime effect and it adds no work — `cmd.Wait()`
+was already called at the same point, unconditionally; only its return value is now read.
+The three repos the vault's cached indexes name (`food`, `leprecoin`, `meter`) are not
+present on this machine at any locatable path, so an end-to-end timing run was not possible.
+`CGO_ENABLED=1 go test ./pkg/codeindex/... ./pkg/drift/...` passes, which exercises
+`streamBlobs` but is not a latency measurement.
 
 ---
 

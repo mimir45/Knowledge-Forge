@@ -16,7 +16,9 @@ jobs:
           cache: true
 
       # make lint is gofmt -l + go vet already; golangci-lint below adds staticcheck,
-      # gosimple, ineffassign, unused on top (errcheck disabled repo-wide — BACKLOG B-029).
+      # gosimple, ineffassign, unused and errcheck on top. errcheck was disabled repo-wide
+      # until B-029 closed it 2026-08-23; .golangci.yml also lifts golangci-lint's default
+      # truncation, which was hiding 13 of 35 findings behind max-same-issues: 3.
       - name: lint
         run: make lint
 

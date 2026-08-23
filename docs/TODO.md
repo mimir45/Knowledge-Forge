@@ -16,7 +16,8 @@ tree at that date; re-grep before trusting a line number.
 Not every backlog item can take a plan, and the absence of steps below is a decision, not
 an oversight:
 
-- **PLANNED** — open, workable, has a full six-field section in this file. Nine items.
+- **PLANNED** — open, workable, has a full six-field section in this file. Nine items when
+  this was written; **B-029 closed 2026-08-23**, leaving eight.
 - **NO STEPS** — open but not actionable by an implementation session: blocked on external
   observation, or a user decision, or "record, don't fix" by standing rule. Listed with
   its unblock condition instead of steps.
@@ -27,8 +28,10 @@ an oversight:
 
 ```
 B-029  →  B-033  →  B-032  →  B-031  →  B-015  →  B-023  →  B-035  →  B-034  →  B-027
- lint     floor     denom     cover     imports   engine    run_id    D6       docs
+ done     floor     denom     cover     imports   engine    run_id    D6       docs
 ```
+
+**B-029 closed 2026-08-23**, so **B-033 is the head of the queue.**
 
 **B-033 must land before B-032, and the ordering is load-bearing.** Both re-measure against
 `cmd/forge/testdata/calibration.golden`. B-032 changes `blend`'s denominator for a large
@@ -36,7 +39,7 @@ fraction of the vault — every score moves. If B-032 lands first, B-033's re-de
 against a scale that just shifted again and has to be redone. If the order is reversed
 anyway, B-032's plan must add a step re-deriving the floor a second time.
 
-B-029 is first because it is independent of everything else and is the largest single item.
+B-029 was first because it is independent of everything else and was the largest single item.
 B-027 is last because it is documentation with no code consequence left.
 
 ---
@@ -73,7 +76,7 @@ B-027 is last because it is documentation with no code consequence left.
 | B-026 | Deleted-file citation never BROKEN | CLOSED 2026-08-16 | — |
 | B-027 | `.forge/code-index-<repo>.json` naming | **PLANNED** (doc half) | [§B-027](#b-027--decide-the-design-doc-half) |
 | B-028 | Hook path immediacy on deletion | CLOSED 2026-08-17 | — |
-| B-029 | `errcheck` disabled tree-wide | **PLANNED** | [§B-029](#b-029--re-enable-errcheck) |
+| B-029 | `errcheck` disabled tree-wide | CLOSED 2026-08-23 | — |
 | B-030 | `dataset.capture` gates only two tiers | CLOSED Phase 6b | — |
 | B-031 | Kafka/Testcontainers coverage miss | **PLANNED** | [§B-031](#b-031--the-coverage-side-of-the-scoring-surface) |
 | B-032 | Untagged note escapes absent-term penalty | **PLANNED** | [§B-032](#b-032--activation-vs-absent-term-penalty) |
@@ -83,84 +86,33 @@ B-027 is last because it is documentation with no code consequence left.
 
 ---
 
-# B-029 — re-enable `errcheck`
+# B-029 — re-enable `errcheck` — **CLOSED 2026-08-23**
 
-**Why it's open.** `.golangci.yml` disables `errcheck` tree-wide so Phase 6 could land the
-lint step without sorting ~95 findings. Triage item 1 landed 2026-08-22; the sweep and the
-`disable:` block are untouched.
+Done. `errcheck` is off `.golangci.yml`'s `disable:` list and `golangci-lint run ./...`
+returns zero findings under the version `ci.yml` pins. The plan that stood here is kept
+only as the four corrections it earned, because each was a wrong number this file taught a
+later session to trust:
 
-**Anchors.**
+1. **The worklist was 35, not 95 / ~37 / ~27+~10.** Those came from a bare `errcheck`
+   binary and a hand-applied exclusion estimate. The number that matters is what
+   `golangci-lint` **v1.64.8** — `ci.yml`'s pin — reports against the repo's own config: 35,
+   splitting 26 test / 9 production.
+2. **Measure with the pinned linter, not a fresh one.** `golangci-lint` v2 reports 50 on the
+   same tree; it is a different tool with a different exclusion set and its number is not
+   this repo's gate.
+3. **Stock truncation hides findings.** v1 defaults to `max-issues-per-linter: 50` and
+   `max-same-issues: 3`; the same tree reports **22** at those limits. `.golangci.yml` now
+   sets both to `0`. This was never an errcheck question — it applied to every linter in
+   the default set for all of Phase 6.
+4. **Step 5's two signature changes were traced and rejected.** `pkg/drift/apply.go`'s
+   `stamp()` and `pkg/drift/gitindex.go`'s `persist()` each hold one call whose failure is
+   self-healing, and neither caller has an error channel — unlike `refresh()`, which
+   promised propagation it never performed and hid three swallowed errors. Both are
+   `//nolint:errcheck` with the reason on the line. Step 6's re-size held: `cmd.Wait()` was
+   the one real fix and it is now checked, guarded so a truncated stream still reports the
+   read error rather than a broken pipe.
 
-- `.golangci.yml` — the `linters.disable:` block, currently `- errcheck`, with a comment
-  pointing at B-029. Its "~20 findings" claim is the stale undercount.
-- Four `//nolint` precedents to match exactly — `pkg/engine/host.go:22`,
-  `cmd/forge/check_test.go:131`, `pkg/similarity/similarity_test.go:134`,
-  `pkg/telemetry/qhash_test.go:6`. Verified 2026-08-23: still exactly four in the tree.
-- Signature-change sites — `pkg/drift/apply.go:109` (`stamp()`), callers at `:74` and `:91`;
-  `pkg/drift/gitindex.go:48` (`persist()`), caller at `:38`.
-- The `//nolint`-not-fix exemplar — `cmd/forge/index.go:207` (`tx.Rollback(); return err`).
-- Already-documented deliberate ignore — `pkg/drift/demotions.go`'s `json.Unmarshal`.
-
-**Prerequisites.**
-
-- `errcheck` and `golangci-lint` are **not on PATH** in this environment (checked
-  2026-08-23). Install both before starting, or the sizing below cannot be reproduced.
-- Read B-029's two `###` sections first. The entry's original prescriptions are wrong in
-  two places and the entry says so — see "Do not" below.
-
-**Steps.**
-
-1. Install the tools and re-measure, both lanes: `errcheck ./...` under `CGO_ENABLED=0`
-   and `=1`. Expect ~95 raw and byte-identical output across lanes (the only tag-gated
-   files, `pkg/codeindex/parse_{cgo,nocgo}.go`, have no findings). If the count has moved,
-   record the new number in B-029 before proceeding — the plan below is sized against 95.
-2. Run `golangci-lint run --no-config --enable errcheck ./...` once to get the *actual*
-   post-exclusion count. B-029's "~37" is derived by hand from `EXC0001`, not observed;
-   this step replaces a guess with a measurement.
-3. Split the list into `_test.go` and production. Expect ~27 test / ~10 production. Do the
-   **test files first** — they are fire-and-forget setup calls, mechanical, and finishing
-   them shrinks the review surface for the interesting half.
-4. Production, file by file. For each finding choose one of three, and write the reason:
-   - ignoring is correct → `//nolint:errcheck // <lowercase reason>`, no trailing period,
-     on the offending line, matching the four precedents' style exactly.
-   - the error should be checked → check it.
-   - the signature is the defect → change it (see step 5).
-5. `pkg/drift/apply.go:109` and `pkg/drift/gitindex.go:48` need signature changes, not
-   `//nolint`s. `stamp()` and `persist()` return nothing and their callers cannot check
-   what does not exist. Size these two separately from the rest of the sweep.
-6. **Re-size item 3 before touching it.** `pkg/codeindex/catfile.go:47`'s unchecked
-   `cmd.Wait()` does *not* mean "non-zero exit after partial output reads as success" —
-   that was re-traced 2026-08-22 and is wrong. `drainBlobs` (`:62-78`) returns the
-   `ReadString`/`io.ReadFull` error, so partial output surfaces as EOF through
-   `Build` (`pkg/codeindex/build.go:22`). What `cmd.Wait()` actually hides is the narrow
-   case of **all replies delivered, then a non-zero exit**. Schedule accordingly; it is
-   smaller than the entry originally implied.
-7. Delete the `disable:` block from `.golangci.yml`. This is the whole close — no Makefile
-   or workflow change, because `make lint` is gofmt + `go vet` and never ran errcheck.
-8. Update B-029's status to closed, and correct its "~20" line so the number does not
-   outlive the work.
-
-**Verification.**
-
-- `golangci-lint run ./...` → zero findings.
-- `CGO_ENABLED=0 go build ./...` and `CGO_ENABLED=1 go build ./...` → both clean.
-- `go test ./...` → 18 packages `ok`, both lanes.
-- `go vet ./...` → clean.
-
-**Done when** `errcheck` is off the `disable:` list and CI is green in both lanes.
-
-**Do not.** Do not follow the entry's own item-1 prescription ("use the helper that
-exists" / propagate through `commit`) — it was traced and rejected on 2026-08-22, because
-propagating reaches `runRecall` (`cmd/forge/recall.go:77`), which exits 1 without emitting
-candidates it already scored correctly. That item is closed; leave `refresh`/`writeRows`
-alone. Do not add a blanket exclusion in an `issues:` block — the point of the sweep is
-that each ignore carries its own reason.
-
-**Bonus, not part of the sweep.** `pkg/codeindex/catfile.go`'s `blobSize` returns `!ok` for
-any header that is not three fields ending in a blob size, and `drainBlobs` treats every
-such line as the documented `"<name> missing"` case and `continue`s. Any other unexpected
-line desynchronises the request/reply stream, after which blob bodies are parsed as
-headers. Not an errcheck finding; belongs to whoever owns `catfile.go`.
+Full closure note: `docs/BACKLOG.md` B-029, final section.
 
 ---
 

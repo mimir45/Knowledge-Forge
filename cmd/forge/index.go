@@ -204,7 +204,7 @@ func persist(st *store.Store, notes []*vault.Note, ix *vault.Index) error {
 	for _, n := range notes {
 		live[n.Rel] = true
 		if err := store.Put(tx, rowOf(n, ix)); err != nil {
-			tx.Rollback()
+			tx.Rollback() //nolint:errcheck // the Put error is the one worth returning; a failed rollback leaves the tx to be discarded either way
 			return err
 		}
 	}

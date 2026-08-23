@@ -31,7 +31,7 @@ func OpenWeeklyStore(dir string) *WeeklyStore {
 	s := &WeeklyStore{Weeks: map[string]VaultStats{}, dir: dir}
 	b, err := os.ReadFile(filepath.Join(dir, "weekly-stats.json"))
 	if err == nil {
-		json.Unmarshal(b, s) // a corrupt store loses one week's delta, never a verdict
+		json.Unmarshal(b, s) //nolint:errcheck // a corrupt store loses one week's delta, never a verdict
 	}
 	if s.Weeks == nil {
 		s.Weeks = map[string]VaultStats{}

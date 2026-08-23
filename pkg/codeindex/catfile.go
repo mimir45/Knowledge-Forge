@@ -44,7 +44,12 @@ func streamBlobs(root, rev string, files []string, out chan<- blob) error {
 	}
 	go feedRequests(in, rev, files)
 	err = drainBlobs(bufio.NewReaderSize(pipe, 1<<16), files, out)
-	cmd.Wait()
+	// The exit status only adds information when every reply arrived: a truncated stream
+	// already surfaces as drainBlobs' read error, and Wait would bury it under a broken
+	// pipe. What this catches is the narrow case of a full transcript then a non-zero exit.
+	if werr := cmd.Wait(); err == nil {
+		err = werr
+	}
 	return err
 }
 
@@ -52,7 +57,7 @@ func feedRequests(in io.WriteCloser, rev string, files []string) {
 	defer in.Close()
 	w := bufio.NewWriter(in)
 	for _, p := range files {
-		w.WriteString(rev + ":" + p + "\n")
+		w.WriteString(rev + ":" + p + "\n") //nolint:errcheck // this goroutine has nowhere to report; a failed write ends the reply stream and surfaces as a short read in drainBlobs
 	}
 	w.Flush()
 }

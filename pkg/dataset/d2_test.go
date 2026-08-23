@@ -59,8 +59,12 @@ func TestAppendD2WritesAJSONLLine(t *testing.T) {
 func TestAppendD2NeverDeduplicates(t *testing.T) {
 	root := t.TempDir()
 	p := D2Pair{Kind: D2Kind, Stage: "verify", Draft: "same", Critique: "same"}
-	AppendD2(root, p)
-	AppendD2(root, p)
+	if err := AppendD2(root, p); err != nil {
+		t.Fatal(err)
+	}
+	if err := AppendD2(root, p); err != nil {
+		t.Fatal(err)
+	}
 	out, _ := os.ReadFile(filepath.Join(root, D2Path))
 	if n := strings.Count(string(out), "\n"); n != 2 {
 		t.Errorf("got %d lines, want 2", n)

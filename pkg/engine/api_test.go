@@ -12,6 +12,9 @@ type roundTripperFunc func(*http.Request) (*http.Response, error)
 
 func (f roundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
 
+// testServer's handlers discard w.Write's error on purpose: a write failure into an
+// httptest connection the same process is about to read surfaces as the client-side
+// error each test already asserts on, and t.Fatal is not legal from the server goroutine.
 func testServer(t *testing.T, handler http.HandlerFunc) http.RoundTripper {
 	t.Helper()
 	srv := httptest.NewServer(handler)
@@ -27,7 +30,7 @@ func TestAPIRunReadsTheEnvelope(t *testing.T) {
 		if r.Header.Get("Authorization") != "" {
 			t.Errorf("no key configured but an Authorization header was sent")
 		}
-		w.Write([]byte(`{"output":"hi","tokens":42,"cost_usd":0.01}`))
+		_, _ = w.Write([]byte(`{"output":"hi","tokens":42,"cost_usd":0.01}`))
 	})
 	a := API{RoundTripper: rt, Provider: "openai", Model: "gpt", BaseURL: "http://x"}
 	res, err := a.Run(Request{Stage: "research", Prompt: "hello"})
@@ -44,7 +47,7 @@ func TestAPISendsProviderAuthHeader(t *testing.T) {
 		if got := r.Header.Get("x-api-key"); got != "sk-1" {
 			t.Errorf("x-api-key = %q, want sk-1", got)
 		}
-		w.Write([]byte(`{"output":"ok"}`))
+		_, _ = w.Write([]byte(`{"output":"ok"}`))
 	})
 	a := API{RoundTripper: rt, Provider: "anthropic", BaseURL: "http://x", APIKey: "sk-1"}
 	if _, err := a.Run(Request{Stage: "verify", Prompt: "p"}); err != nil {
@@ -55,7 +58,7 @@ func TestAPISendsProviderAuthHeader(t *testing.T) {
 func TestAPINonOKStatusIsAnError(t *testing.T) {
 	rt := testServer(t, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusTooManyRequests)
-		w.Write([]byte("rate limited"))
+		_, _ = w.Write([]byte("rate limited"))
 	})
 	a := API{RoundTripper: rt, Provider: "openai", BaseURL: "http://x"}
 	if _, err := a.Run(Request{Stage: "research", Prompt: "p"}); err == nil {
@@ -65,7 +68,7 @@ func TestAPINonOKStatusIsAnError(t *testing.T) {
 
 func TestAPIMalformedEnvelopeIsAnError(t *testing.T) {
 	rt := testServer(t, func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("not json"))
+		_, _ = w.Write([]byte("not json"))
 	})
 	a := API{RoundTripper: rt, Provider: "ollama", BaseURL: "http://x"}
 	if _, err := a.Run(Request{Stage: "research", Prompt: "p"}); err == nil {
