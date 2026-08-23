@@ -57,12 +57,18 @@ func TestDecideAtThresholdBoundaries(t *testing.T) {
 	}
 }
 
+// TestNeighbourBandEdges pins the band's inclusivity — closed below, open above — and
+// deliberately does not pin the floor's value. It used to spell 0.30 into the fixture,
+// which meant B-033's re-derivation to 0.125 failed here as if the band had broken. The
+// number is argued in doc.go and measured by cmd/forge's sweep; what belongs in a unit
+// test is which side of each edge is included.
 func TestNeighbourBandEdges(t *testing.T) {
+	floor := DefaultThresholds.Neighbour
 	cands := []Candidate{
-		{Slug: "too-high", Score: 0.55}, // the update band starts here, exclusive
-		{Slug: "in-upper", Score: 0.549},
-		{Slug: "in-lower", Score: 0.30}, // inclusive
-		{Slug: "too-low", Score: 0.299},
+		{Slug: "too-high", Score: DefaultThresholds.Update}, // update band starts here
+		{Slug: "in-upper", Score: DefaultThresholds.Update - 0.001},
+		{Slug: "in-lower", Score: floor}, // inclusive
+		{Slug: "too-low", Score: floor - 0.001},
 	}
 	got := DefaultThresholds.Neighbours(cands)
 	if len(got) != 2 || got[0].Slug != "in-upper" || got[1].Slug != "in-lower" {

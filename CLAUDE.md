@@ -262,7 +262,8 @@ rather than folded in: **B-031** (Kafka/Testcontainers is a coverage defect, spl
 admission is strictly decreasing, so one knob cannot move a false positive down and a miss
 up), **B-032** (an untagged note escapes the absent-term penalty entirely, §2.5's asymmetry
 running the other way), **B-033** (the 0.30 neighbour floor predates the scale change, so an
-adjacent-topic query now verdicts CREATE with *zero* neighbours). **The thresholds did not
+adjacent-topic query now verdicts CREATE with *zero* neighbours — **closed 2026-08-23**,
+see below). **The thresholds did not
 move and still must not.** `references/recall-spec.md` §2.3/§2.4 were stale by two changes,
 since 2b's IDF weighting was never documented at all; there is now a §2.3.1, a §2.5 note,
 a generated §3.1 and a §4.1 example matching real output.
@@ -293,6 +294,46 @@ file that never existed on disk under that name, so following the mechanism sent
 to a doc that is factually wrong about a path. Correcting a filename is not overriding a
 decision, no §8.4 entry was added, and the two normative sites (ADDENDUM §B.6, DESIGN §15)
 carry a dated marker so the edit is traceable. **The rule still stands for decisions.**
+
+**B-033 closed 2026-08-23, same worktree, out-of-phase — and it is the case that rule
+governs.** The neighbour floor moved **0.30 → 0.125** at both default sites
+(`pkg/recall/doc.go`, `config/forge.config.example.md`; `config/presets/` restates neither
+threshold, checked). `DESIGN:257`'s "0.3–0.55" was **deliberately not edited** — a decision
+superseded by a later ruling is exactly what AUDIT §8.4 governs, unlike B-027's wrong
+filename — and the ruling is **D-9**, the first §8.4 entry with no C-number.
+The derivation is the point: 0.30 left six of fifteen adjacent-topic queries emitting
+**zero** neighbours, and re-deriving against §3.1's nine would have been circular, so
+`cmd/forge/testdata/neighbour-labels.txt` is a separate set — fifteen queries, 58 expected
+neighbours, written from the corpus file list before any score was measured and **committed
+one commit ahead of the sweep that reads them**, so the ordering is checkable in git rather
+than asserted. 0.125 is F1's maximum (0.611) and the only swept value that recovers the
+Storybook family; measured end to end, that query now emits seven neighbours where it
+emitted zero. **Precision 0.548 is a lower bound and was left uncorrected on purpose** —
+several counted false positives are defensible links the labels did not name, and
+re-labelling after seeing scores is how a derivation becomes a fit.
+**The intent gate got the opposite answer, deliberately.** B-033's entry called the two
+numbers "one question, not two"; that is true of the root cause and false of the answer,
+because `printIntent` interrupts a live session under a never-disturb contract. Measured
+against 25 labelled prompts, the old `0.7` admitted **3 of 10** FIRE prompts — but the two
+classes separate at 0.402/0.407, a **0.005** margin, so the labels rule 0.7 out and cannot
+choose its replacement. The gate is **0.50**, the lowest value still a clear step above the
+QUIET ceiling that admits every FIRE prompt whose phrasing tracks a note title (8 of 10),
+and `minFireAdmitted` is pinned to exactly 8 so any decay fails the build rather than
+passing quietly the way 0.7's did. **`DefaultThresholds.Update` was tried first and
+rejected** — the argument for it (below Update the verdict is CREATE, so the message would
+contradict the scorer) does not survive contact with the code: `printIntent` computes no
+verdict and `emitIntentHit` hedges with "may". It would have cost three near-verbatim title
+matches for an alignment nothing in the function asserts. Same failure as
+`TestNeighbourBandEdges`, inverted — that test pinned a *number* while claiming to test a
+*rule*; this would have pinned the gate to a *rule* that does not govern it. It stays a
+plain constant, because `printIntent` runs under the 50ms hook budget and loads no config.
+Two things worth carrying forward: `pkg/recall`'s `TestNeighbourBandEdges` had `0.30`
+spelled into its fixture and failed as if the band had broken (it now expresses both edges
+via `DefaultThresholds` — a test that pins a *number* while claiming to test a *rule* reads
+as a real regression), and **B-036** was opened rather than built: three of §3.1's nine
+queries now emit ten neighbours because two general Spring notes score on every Spring
+question, which no single scalar cut separates. **Do not respond to B-036 by raising the
+floor.**
 
 **B-022 closed in Phase 4**
 (the schema pattern now covers all nine `cfg.Pipeline` stages minus `critique`); **B-007
@@ -412,14 +453,14 @@ time runs out the cut order is `6b → 5b → advisor tier`. If work comes up ou
 current phase's scope, write it to `docs/BACKLOG.md` rather than building it.
 
 **Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004, **B-031**,
-**B-032**, **B-033**, **B-034**, **B-035** and most of the twelve findings 2b recorded are
+**B-032**, **B-034**, **B-035**, **B-036** and most of the twelve findings 2b recorded are
 open; **B-025 is blocked**, not open. B-001 (doc coherence), B-005 (seven note types) and
 B-006 (link rewrite) closed on 2026-08-09; B-007 and B-022 in Phase 4; B-009 and B-024 on
 2026-08-21, when B-023 and B-027 were also half-closed (docs synced, the behavior/design-doc
 halves still open); **B-008 on 2026-08-22**, which opened B-031/B-032/B-033 in its place;
-**B-030 in Phase 6b the same day**, which opened B-034/B-035; **B-029 and B-027 on
-2026-08-23** (see the note below).
-**The head of the queue is now B-033**, and `docs/TODO.md` fixes the order from there.
+**B-030 in Phase 6b the same day**, which opened B-034/B-035; **B-029, B-027 and B-033 on
+2026-08-23** (see the notes below), B-033 opening **B-036** in its place.
+**The head of the queue is now B-032**, and `docs/TODO.md` fixes the order from there.
 
 **`docs/TODO.md` is the execution half of that file** (written 2026-08-23). BACKLOG records
 *why* an item exists; TODO records *how to close it* — a six-field plan (anchors,
@@ -427,8 +468,11 @@ prerequisites, steps, verification, done-when, and an explicit "do not") for eac
 nine workable items — **seven now, B-029 and B-027 closed 2026-08-23** — an index row for
 all 35, and an unblock condition rather than steps for the four that are open but not
 actionable. It also fixes the execution order: **B-033
-must land before B-032**, because B-032 moves `blend`'s denominator and would shift the
-scale B-033 re-derives against.
+had to land before B-032**, because B-032 moves `blend`'s denominator and would shift the
+scale B-033 re-derives against. It did, on 2026-08-23 — so **B-032 now owes a re-run of
+B-033's two derivations**, not just a re-recorded calibration golden. Both are tests
+(`TestNeighbourFloorSweep`, `TestIntentGateSeparation`) reading committed label files, and
+`docs/TODO.md` §B-032 step 4b spells out what to read in each.
 
 Before touching `pkg/recall`'s scoring, read B-008's closure note and spec §2.3.1. Three
 things there are easy to undo by accident: the vocabulary filter applies to `--stack` hints

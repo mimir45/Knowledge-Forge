@@ -1480,6 +1480,87 @@ already stage the corpus and diff a table, and the neighbour column is an additi
 B-008 forbids that and this entry does not reopen it. `neighbour_min_score` is a different
 knob, named nowhere in that prohibition, and it is the only one in scope here.
 
+### Closed 2026-08-23 — floor 0.30 → 0.125, and the intent gate 0.7 → `Update`
+
+**The floor is 0.125.** Derived, not tuned: `cmd/forge/testdata/neighbour-labels.txt` is
+fifteen adjacent-topic queries with 58 expected neighbours, written from the corpus file
+list **before any score was measured** and committed one commit ahead of the sweep that
+reads them, so the ordering is checkable in git rather than asserted here.
+`TestNeighbourFloorSweep` records `testdata/neighbour-sweep.golden`.
+
+| Floor | Precision | Recall | F1 | Median links/query | Queries with none |
+|---|---|---|---|---|---|
+| 0.100 | 0.478 | 0.741 | 0.581 | 6 | 0 |
+| **0.125** | **0.548** | **0.690** | **0.611** | **4** | **0** |
+| 0.150 | 0.600 | 0.569 | 0.584 | 3 | 0 |
+| 0.175 | 0.643 | 0.466 | 0.540 | 2 | 0 |
+| 0.300 (old) | 0.900 | 0.155 | 0.265 | 1 | **6** |
+
+The old floor's numbers are the finding: precision 0.900 looks excellent and is an
+artifact of emitting ten links across fifteen queries, six of which got none at all.
+
+Three things chose 0.125, in order. **It is the only swept value that fixes the case this
+entry was opened for** — the five Storybook notes cluster at 0.131–0.323, and every floor
+at 0.150 and up emits the top one and nothing else, no better than the status quo on that
+row. **F1 peaks there** (0.611), within 0.011 of F₂'s peak, and F₂ is the right weighting
+given the cost asymmetry: a missed neighbour orphans a note silently, a spurious one is a
+wrong wikilink a reviewer deletes. §2.2 already set the precedent of preferring F₂ in this
+scorer. **Volume stays reviewable:** median 4 links per query, none empty until 0.200.
+
+Verified end to end — `forge recall "Storybook interaction testing with play functions"`
+against `examples/vault` now emits seven neighbours, five of them the Storybook family,
+where before it emitted zero.
+
+**Precision 0.548 is a lower bound and was deliberately not improved.** Several counted
+false positives are defensible links the labels did not name (`food-ordering-system-course-
+architecture-index` on the saga and DDD queries). Re-labelling after seeing the scores is
+how a derivation becomes a fit, so the labels were left exactly as written.
+
+**Two of this entry's own assumptions did not survive.** The "before" state is not
+uniformly zero neighbours — three of §3.1's nine emitted none, the other six emitted one
+to five; the entry generalised from the Storybook row. And `pkg/recall`'s
+`TestNeighbourBandEdges` spelled `0.30` into its fixture, so it failed on the change as if
+the band had broken; it now expresses both edges in terms of `DefaultThresholds`, because
+what belongs in a unit test is which side of an edge is included, not what number the edge
+sits at.
+
+**The intent gate got the opposite answer, and that is the point.** This entry said the
+two numbers "are one question, not two." True of the root cause, false of the answer:
+`printIntent` interrupts a live session on a hook contracted never to disturb it, so it is
+derived for precision first, and for recall only inside what precision leaves free.
+`testdata/intent-gate-labels.txt` labels 25 prompts FIRE/QUIET (ten of the QUIET ones
+adjacent-topic hard negatives) and `TestIntentGateSeparation` pins both directions.
+Measured: **0.7 admitted 3 of 10 FIRE prompts**, dropping one at 0.652 that matches a note
+title almost verbatim. But the classes separate at 0.402/0.407 — a **0.005** margin — so
+every value from 0.405 to 0.7 is false-positive-free on that set and *the labels cannot
+choose the replacement*. The gate is **0.50**: the lowest value still a clear step above
+the QUIET ceiling (~24% headroom) that admits every FIRE prompt whose phrasing tracks a
+note title, recovering three the old gate dropped at 0.546, 0.533 and 0.517. 8 of 10, and
+`minFireAdmitted` is set to exactly 8 rather than to something comfortably below it — a
+tripwire with slack would have let 0.7's silent decay happen again, more slowly.
+
+**`DefaultThresholds.Update` was tried first and rejected, which is worth recording
+because it is the more elegant-looking answer.** The argument for it was that below Update
+the verdict is CREATE, so `emitIntentHit`'s "may already answer this" would contradict the
+scorer. Checked against the code, that argument is false: `printIntent` computes no
+verdict — it reads `cands[0].Score` — and the message hedges with "may". Binding to Update
+would have cost 3 of 10 FIRE prompts, all near-verbatim title matches, for an alignment
+nothing in the function asserts, and coupled hook behaviour to a config key this path
+never reads. It is the same failure as `TestNeighbourBandEdges` above, inverted: that test
+pinned a *number* while claiming to test a *rule*; this would have pinned the gate to a
+*rule* that does not govern it. It stays a plain constant — `printIntent` runs under a
+50ms budget and loads no config, and that half of the argument does survive.
+
+**`DESIGN:257` still says "0.3–0.55" and was deliberately not edited** — a decision
+superseded by a later ruling is exactly what AUDIT §8.4 governs. The ruling is **D-9**,
+the first §8.4 entry with no C-number. `config/presets/` restates neither threshold, so
+the two default sites (`pkg/recall/doc.go`, `config/forge.config.example.md`) are the whole
+surface. Spec §3, §3.1 and §3.2 were updated; §4's `"neighbours": []` example is on an
+ANSWER verdict and is still correct.
+
+**Opened in its place: B-036** — §3.1's broadest queries now emit ten neighbours, because
+two general Spring notes score on every Spring question. No floor separates them.
+
 ---
 
 ## B-034 — D6 (code↔knowledge) is specified but not built
@@ -1559,3 +1640,52 @@ the datasheet will have to say so.
 Related: **B-032** is the other place D1's features are thinner than they look (an untagged
 note escapes the absent-term penalty), and **B-031** is the coverage side of the same
 scoring surface.
+
+---
+
+## B-036 — a broad query links ten neighbours, and no floor can separate them
+
+**Owner: unassigned. Status: open — opened 2026-08-23 while closing B-033.**
+
+Closing B-033 lowered the neighbour floor to 0.125 and the calibration golden now shows
+what that costs at the broad end. Three of §3.1's nine queries emit **ten** neighbours —
+the maximum `forge recall` returns at all — and the tenth is not a near miss but a cliff:
+the list is truncated, so a broader query would emit more.
+
+Measured, `examples/vault`, at floor 0.125:
+
+| Query | Neighbours | Of which are the two general Spring notes |
+|---|---|---|
+| Redis caching in Spring Boot | 10 | 2 |
+| Spring Boot 4 configuration properties binding | 10 | 2 |
+| Java virtual threads with Spring Boot | 10 | 2 |
+| Storybook interaction testing with play functions | 7 | 0 |
+| JPA entity graph to avoid N+1 | 0 | 0 |
+
+`meterreadingsservice-spring-boot-4-x-project` and `spring-cli-and-maven-commands-for-
+spring-boot` appear on every Spring question regardless of what it asks. They are broad
+notes about a broad ecosystem and they score legitimately; nothing in the ranking is
+wrong. **That is why the floor cannot fix it** — admission is a single scalar cut, and
+these notes sit above every note the same query genuinely needs. B-033 measured four
+narrower floors and each one that removed them also removed the Storybook family.
+
+**Why it matters rather than being cosmetic.** DESIGN §5.3's band feeds a new note's link
+list. Ten links in a 91-note vault attaches a note to 11% of the graph, and `pkg/graph`'s
+hub and centrality reports are where that shows up — as a hub that is an artifact of the
+linking rule, not of the knowledge. The failure is the mirror of the orphan B-033 fixed,
+and both come from treating one scalar as the whole answer.
+
+**Shape when someone picks it up.** A cap on neighbour count is the obvious move and the
+least interesting one; a cap alone keeps the same ten and truncates arbitrarily, since
+they are already score-ordered. The question worth answering first is whether a note that
+scores on *every* query in an ecosystem should be admitted as a neighbour at all — which
+is a document-frequency property the scorer already computes for terms (§2.3.1) and does
+not compute for notes. Measure before building: `TestNeighbourFloorSweep`'s harness
+already stages the corpus, and a per-note "appears in N of M query results" column is an
+addition to it, not new machinery.
+
+**Do not respond to this by raising the floor.** B-033's sweep is in its closure note and
+every floor that drops these two notes also drops the case B-033 was opened to fix.
+
+Related: **B-031** is the coverage side of the same scoring surface, and **B-032** moves
+`blend`'s denominator, which will change every number above — re-measure after it lands.
