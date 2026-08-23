@@ -43,16 +43,14 @@ trigger:
 #
 # neighbour_min_score is the one of the three that has moved: 0.30 -> 0.125 closing
 # BACKLOG B-033, because 0.30 was calibrated before B-008 changed the scale and left most
-# adjacent-topic queries creating a note with no links at all; then 0.125 -> 0.150 closing
-# B-032, because that fix moved every tags/stack channel score whose note didn't actually
-# hit the query, which shifted F1's peak on the same label sweep. Raise it for fewer,
-# surer links; lower it for a denser graph. The other two are DESIGN §5.3's and should not
-# be touched — see docs/BACKLOG.md B-008.
+# adjacent-topic queries creating a note with no links at all. Raise it for fewer, surer
+# links; lower it for a denser graph. The other two are DESIGN §5.3's and should not be
+# touched — see docs/BACKLOG.md B-008.
 recall:
   strategy: lexical        # lexical | hybrid (hybrid is a v2.2 upgrade, not built)
   answer_threshold: 0.85
   update_threshold: 0.55
-  neighbour_min_score: 0.150
+  neighbour_min_score: 0.125
 
 # Days before a note of each type is considered stale. 0 = never stale.
 freshness_days:

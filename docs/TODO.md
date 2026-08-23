@@ -30,11 +30,10 @@ an oversight:
 
 ```
 B-029  →  B-033  →  B-032  →  B-031  →  B-015  →  B-023  →  B-035  →  B-034  →  B-027
- done     done      done      cover     imports   engine    run_id    D6       done
+ done     done      denom     cover     imports   engine    run_id    D6       done
 ```
 
-**B-029, B-027, B-033 and B-032 all closed 2026-08-23.** **B-031 is now the head** — its
-own prerequisite ("B-033 and B-032 should land first") is now satisfied.
+**B-029, B-027 and B-033 all closed 2026-08-23.** **B-032 is now the head.**
 
 **B-033 landed before B-032, which was the load-bearing part of this order.** Both
 re-measure against `cmd/forge/testdata/calibration.golden`, and B-032 moves `blend`'s
@@ -84,12 +83,11 @@ B-027 was last because it is documentation with no code consequence left.
 | B-029 | `errcheck` disabled tree-wide | CLOSED 2026-08-23 | — |
 | B-030 | `dataset.capture` gates only two tiers | CLOSED Phase 6b | — |
 | B-031 | Kafka/Testcontainers coverage miss | **PLANNED** | [§B-031](#b-031--the-coverage-side-of-the-scoring-surface) |
-| B-032 | Untagged note escapes absent-term penalty | CLOSED 2026-08-23 | — |
+| B-032 | Untagged note escapes absent-term penalty | **PLANNED** | [§B-032](#b-032--activation-vs-absent-term-penalty) |
 | B-033 | 0.30 neighbour floor on the old scale | CLOSED 2026-08-23 | — |
 | B-034 | D6 (code↔knowledge) not built | **PLANNED** | [§B-034](#b-034--build-d6-as-an-export-view) |
 | B-035 | D1 has no outcome label | **PLANNED** | [§B-035](#b-035--mint-a-run_id-so-d1-can-carry-an-outcome) |
 | B-036 | Broad query links ten neighbours | NO STEPS — measure first | [below](#no-steps) |
-| B-037 | Intent gate FIRE/QUIET margin now negative | NO STEPS — measure first | [below](#no-steps) |
 
 ---
 
@@ -164,27 +162,7 @@ Full closure note: `docs/BACKLOG.md` B-033, final section. The ruling that super
 ---
 
 
-# B-032 — activation vs. absent-term penalty — **CLOSED 2026-08-23**
-
-Done, but not by the shape step 2 describes below. That step's English ("carries the field
-**and** the query has something the field could answer") reads as the code already shipped
-(`ok && len(tags) > 0`) — the two candidates that literal reading actually admits were both
-computed by hand first and one is disqualified: dropping `len(tags) > 0` entirely fixes the
-cited row but resurrects B-008's false positive at first place (step 5's own named check)
-*and* deletes the untagged-exemption rule step 5's prerequisites forbid deleting. The
-shipped fix reads "carries the field" as "carries a **hit**" — `len(hits) > 0` in place of
-`len(tags) > 0` / `len(stack) > 0` — which needed no change to `weightsOver` at all, so the
-"plus whatever weightsOver must expose" half of step 2 turned out to be nothing.
-Step 4b was not optional and both derivations moved: the neighbour floor's F1 peak shifted
-0.125 → 0.150 (§B-031's prerequisite below is now satisfied), and the intent gate's
-FIRE/QUIET margin went negative (+0.005 → -0.036) — mechanically still safe (gate 0.50,
-8/10 FIRE admitted, 0 QUIET admitted) but no longer a clean separation, filed as **B-037**
-rather than nudged, exactly as step 4b's own text anticipated. Full closure note:
-`docs/BACKLOG.md` B-032, final section.
-
----
-
-# B-032 (original plan, kept for the corrections above) — activation vs. absent-term penalty
+# B-032 — activation vs. absent-term penalty
 
 **Why it's open.** §2.5's activation is two-sided: a note with no `tags:` leaves the tags
 channel *inactive*, dropping out of the blend's denominator rather than scoring zero.
@@ -639,40 +617,8 @@ Design after reading it.
 **Do not respond to this by raising the floor.** Every floor in B-033's sweep that drops
 those two notes also drops the Storybook family B-033 was opened to fix.
 
-**Re-measured after B-032, 2026-08-23: unchanged in kind.** Still three of nine
-calibration queries at the ten-neighbour cap, same two general Spring notes. B-032 moved
-the underlying scores but not this shape — the unblock condition above is still what to
-build.
-
-## B-037 — `forge intent`'s FIRE/QUIET margin went negative under B-032's scale
-
-**Measure before touching the gate — it is not broken today, and that is the reason there
-is no plan below rather than a threshold nudge.** `cmd/forge/testdata/intent-gate.golden`:
-before B-032, the lowest gate-admitted FIRE prompt and the highest QUIET prompt separated
-by +0.005 (0.407 vs 0.402). After, they overlap: lowest FIRE 0.407, highest QUIET **0.443**,
-margin **-0.036**. `TestIntentGateSeparation`'s two pinned invariants both still hold
-mechanically — the gate (0.50) admits zero QUIET prompts and exactly `minFireAdmitted` (8)
-FIRE prompts, both unchanged counts — because the gate sits above the whole overlapping
-band (0.407–0.443), not inside it.
-
-What changed is the *reason* 0.50 is safe. B-033's derivation argued it as "the lowest
-value still a clear step above the QUIET ceiling" — a margin argument. That margin, read
-literally across the full FIRE/QUIET split rather than just at the gate, is now negative:
-somewhere in [0.407, 0.443] a FIRE prompt and a QUIET prompt trade places by score, so no
-single threshold separates the two labelled sets everywhere, only above 0.443 specifically.
-0.50 clears 0.443 with room (0.057), so nothing is mis-admitted today.
-
-**Unblock condition:** either more labelled prompts on both sides of the overlap band, to
-tell whether -0.036 is this 25-prompt sample's noise or a real, growing overlap as more of
-the vault's tags/stack channels shift under B-032 — or a wider sweep of `examples/vault`
-prompts the way `neighbour-labels.txt` widened B-033's evidence past nine queries. Either
-answers whether 0.50 keeps clearing the band as the corpus grows, which this measurement
-alone cannot say.
-
-**Do not respond to this by moving the gate.** 0.50 is still measured safe against every
-labelled prompt on file; a margin turning negative in a data slice the gate doesn't
-actually sit inside is a reason to get more data, not a reason to re-derive a number that
-isn't failing.
+**Re-measure after B-032**, which moves `blend`'s denominator and changes every number in
+the entry.
 
 ## B-003 — repo directory still named `TIL`
 

@@ -335,39 +335,6 @@ queries now emit ten neighbours because two general Spring notes score on every 
 question, which no single scalar cut separates. **Do not respond to B-036 by raising the
 floor.**
 
-**B-032 closed 2026-08-23, same worktree, out-of-phase, landing right after B-033 per
-`docs/TODO.md`'s execution order.** `tagsChannel` and `stackChannel` now activate on
-`len(hits) > 0` rather than `len(tags) > 0` / `len(stack) > 0` (`pkg/recall/score.go`), so
-a note whose tags or stack don't overlap the query is inactive exactly like a note with
-none at all — parity, not the exemption §2.5 argues against deleting. **Two candidate
-fixes were computed by hand against the entry's own cited row before either was written,
-and the more literal reading of the entry's English (drop `len(tags) > 0` entirely) is the
-one that turned out disqualified** — it fixes the row but returns B-008's false positive
-(`spring-cli`, 0.415) to first place, which the entry's own step 5 forbids, and it does so
-by deleting the untagged-exemption rule the entry says not to delete. The row itself does
-not move under the shipped fix — `meterreadingsservice` stays 0.500, `spring-cli` stays
-0.415 — matching the entry's own note that the row "is not a regression"; what moves is
-every note in between that carried an *irrelevant* tag (128 active tags/stack channels
-across the nine calibration queries drop to 84, all 43 that scored a hard 0.000 are gone).
-One calibration winner changes: the Docker query's top-1 moves from a note with one real
-`docker` tag hit (0.163) to one with none (0.170) — the same shape of trade recurring one
-level down, and `weighted`'s own documented behavior (a channel capped low by corpus-wide
-term absence still drags an active note below where exclusion would leave it), not a new
-mechanism this fix introduces.
-**Both of B-033's derivations were re-run against the new scale, not skipped.** The
-neighbour floor moved again, **0.125 → 0.150** — F1's peak on the same unedited
-`neighbour-labels.txt` sweep shifted to 0.150 (0.578, up from 0.125's now-0.550) — at both
-default sites, with a second AUDIT §8.4 entry (**D-10**) recording the supersession over
-D-9 the same way D-9 recorded it over `DESIGN:257`. The intent gate's derivation held
-*mechanically* — gate stays 0.50, still 8/10 FIRE admitted, still 0 QUIET admitted — but
-its measured FIRE/QUIET separation margin went from +0.005 to **-0.036**, opening
-**B-037** rather than being nudged: the lowest gate-admitted FIRE prompt and the highest
-QUIET prompt now overlap in score between 0.407 and 0.443, and the gate is safe only
-because it sits above that whole band, not because the two classes still separate
-everywhere the way B-033's derivation described. **Do not respond to B-037 by moving the
-gate** — nothing is failing today, and a margin going negative in a slice the gate doesn't
-sit inside is a reason to gather more labelled prompts, not to re-derive a number.
-
 **B-022 closed in Phase 4**
 (the schema pattern now covers all nine `cfg.Pipeline` stages minus `critique`); **B-007
 closed in Phase 4** (`agents/forge-librarian.md`'s prompt stamps `Forge-Write: true` on
@@ -486,15 +453,26 @@ time runs out the cut order is `6b → 5b → advisor tier`. If work comes up ou
 current phase's scope, write it to `docs/BACKLOG.md` rather than building it.
 
 **Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004, **B-031**,
-**B-034**, **B-035**, **B-036**, **B-037** and most of the twelve findings 2b recorded are
+**B-032**, **B-034**, **B-035**, **B-036** and most of the twelve findings 2b recorded are
 open; **B-025 is blocked**, not open. B-001 (doc coherence), B-005 (seven note types) and
 B-006 (link rewrite) closed on 2026-08-09; B-007 and B-022 in Phase 4; B-009 and B-024 on
 2026-08-21, when B-023 and B-027 were also half-closed (docs synced, the behavior/design-doc
 halves still open); **B-008 on 2026-08-22**, which opened B-031/B-032/B-033 in its place;
-**B-030 in Phase 6b the same day**, which opened B-034/B-035; **B-029, B-027, B-033 and
-B-032 all on 2026-08-23** (see the notes below), B-033 opening **B-036** and B-032 opening
-**B-037** in their place.
-**The head of the queue is now B-031**, and `docs/TODO.md` fixes the order from there.
+**B-030 in Phase 6b the same day**, which opened B-034/B-035; **B-029, B-027 and B-033 on
+2026-08-23** (see the notes below), B-033 opening **B-036** in its place.
+**The head of the queue is now B-032**, and `docs/TODO.md` fixes the order from there.
+
+**`docs/TODO.md` is the execution half of that file** (written 2026-08-23). BACKLOG records
+*why* an item exists; TODO records *how to close it* — a six-field plan (anchors,
+prerequisites, steps, verification, done-when, and an explicit "do not") for each of the
+nine workable items — **seven now, B-029 and B-027 closed 2026-08-23** — an index row for
+all 35, and an unblock condition rather than steps for the four that are open but not
+actionable. It also fixes the execution order: **B-033
+had to land before B-032**, because B-032 moves `blend`'s denominator and would shift the
+scale B-033 re-derives against. It did, on 2026-08-23 — so **B-032 now owes a re-run of
+B-033's two derivations**, not just a re-recorded calibration golden. Both are tests
+(`TestNeighbourFloorSweep`, `TestIntentGateSeparation`) reading committed label files, and
+`docs/TODO.md` §B-032 step 4b spells out what to read in each.
 
 **`docs/TODO.md` is the execution half of that file** (written 2026-08-23). BACKLOG records
 *why* an item exists; TODO records *how to close it* — a six-field plan (anchors,
