@@ -9,8 +9,9 @@ derived from it and deliberately do not restate its argument. Where a backlog en
 `###` closing section, that section is more current than its `Status:` line.
 
 Written 2026-08-23 from a full scan of B-001…B-035; B-036 and B-037 added the same day as
-B-033 and B-032 closed. Anchors were verified against the tree at that date; re-grep
-before trusting a line number. **Closed and recorded items are dropped from this file
+B-033 and B-032 closed; B-038 added 2026-08-24 when B-031 closed and split it out. Anchors
+were verified against the tree at that date; re-grep before trusting a line number.
+**Closed and recorded items are dropped from this file
 entirely, not just their plan sections** — `docs/BACKLOG.md` is the full census (every ID,
 closed or open, with the reasoning) and the durable record of *why*; this file exists only
 to track *how to close* whatever is still open. If an ID isn't below, it's done — look it
@@ -21,8 +22,8 @@ up in BACKLOG.
 Not every open backlog item can take a plan, and the absence of steps below is a decision,
 not an oversight:
 
-- **PLANNED** — workable, has a full six-field section in this file. Four now: B-015,
-  B-031, B-034, B-035. B-029, B-027, B-033, B-032 and B-023 closed 2026-08-23/24; B-033's
+- **PLANNED** — workable, has a full six-field section in this file. Three now: B-015,
+  B-034, B-035. B-029, B-027, B-033, B-032, B-023 and B-031 closed 2026-08-23/24; B-033's
   closure opened B-036 and B-032's opened B-037, both NO STEPS by their own argument —
   each names a measurement to run before any design is chosen, not a fix to apply.
 - **NO STEPS** — open but not actionable by an implementation session: blocked on external
@@ -33,20 +34,20 @@ not an oversight:
 
 ```
 B-029  →  B-033  →  B-032  →  B-023  →  B-031  →  B-015  →  B-035  →  B-034  →  B-027
- done     done      done      done      head     imports   run_id    D6       done
+ done     done      done      done      done      head     run_id    D6       done
 ```
 
-**B-029, B-027, B-033, B-032 and B-023 all closed** (the first four 2026-08-23, B-023
-2026-08-24). **B-031 is now the head** — its own prerequisite ("B-033 and B-032 should
-land first") is satisfied; see its section below for the note that measurements there must
-use the post-B-032 `calibration.golden`.
+**B-029, B-027, B-033, B-032, B-023 and B-031 all closed** (the first four 2026-08-23,
+B-023 2026-08-24, B-031 2026-08-24). B-031 closed with no code change — see its BACKLOG
+entry's closing section: neither of its two shapes survives measurement against the corpus.
+**B-015 is now the head.**
 
 B-029 was first because it is independent of everything else and was the largest single item.
 B-027 was last because it is documentation with no code consequence left.
 
 ---
 
-## Index — 10 open items (27 closed/recorded IDs live in BACKLOG only)
+## Index — 10 open items (28 closed/recorded IDs live in BACKLOG only)
 
 | ID | Subject | Class | Section |
 |---|---|---|---|
@@ -55,67 +56,11 @@ B-027 was last because it is documentation with no code consequence left.
 | B-012 | `code_refs` has no live producer | NO STEPS — blocked on packaging | [below](#no-steps) |
 | B-015 | `CodeGroup.DependsOn` never populated | **PLANNED** | [§B-015](#b-015--populate-codegroupdependson) |
 | B-025 | `PostToolUse`/WebFetch payload shape | NO STEPS — **BLOCKED** | [below](#no-steps) |
-| B-031 | Kafka/Testcontainers coverage miss | **PLANNED** | [§B-031](#b-031--the-coverage-side-of-the-scoring-surface) |
 | B-034 | D6 (code↔knowledge) not built | **PLANNED** | [§B-034](#b-034--build-d6-as-an-export-view) |
 | B-035 | D1 has no outcome label | **PLANNED** | [§B-035](#b-035--mint-a-run_id-so-d1-can-carry-an-outcome) |
 | B-036 | Broad query links ten neighbours | NO STEPS — measure first | [below](#no-steps) |
 | B-037 | Intent gate FIRE/QUIET margin now negative | NO STEPS — measure first | [below](#no-steps) |
-
----
-
-# B-031 — the coverage side of the scoring surface
-
-**Why it's open.** "Kafka consumers with Testcontainers" ranks
-`testcontainers-docker-based-integration-testing` at 0.311 (CREATE). The note is the right
-one, but `kafka` — the term carrying the question — appears in its title, tags and stack
-**not at all**. Admission is strictly decreasing for every positive weight, so the same
-knob that pushed B-008's false positive down cannot push this up. Split from B-008
-deliberately.
-
-**Anchors.**
-
-- `pkg/recall/rank.go:12` — `const BodyPassSize = 20`. The body channel runs only for the
-  top 20 candidates.
-- `pkg/recall/rank.go:79` — where that cap is applied.
-- `pkg/recall/score.go:268` — `Channel{Name: "body", Weight: wBody, Active: true}`. The body
-  channel is unconditionally active and carries 0.1 of the blend.
-- `docs/KNOWLEDGE-FORGE-DESIGN.md` §8 — the weight ratios this item reopens.
-
-**Prerequisites.**
-
-- **This item needs its own session and its own argument.** It reopens DESIGN §8's weight
-  ratios. Do not fold it into a scoring pass that is doing something else.
-- **B-033 and B-032 have both landed (2026-08-23)** — measure this item against the
-  current `calibration.golden`, not the pre-B-032 numbers in earlier drafts of this file.
-
-**Steps.**
-
-1. Choose between the two shapes the entry names, and write the choice down before coding:
-   - **Fix the corpus** — add a `kafka` tag to the note. Honest, and the note *is*
-     under-curated. But a fix that edits the vault to make a query score is not a recall
-     fix and does not generalise. If chosen, close this item as a corpus fix and say so.
-   - **Fix the coverage signal** — the body channel is the only one that sees `kafka` here.
-     Whether a term the body carries strongly and the frontmatter carries nowhere should
-     lift a candidate is the real question and the more interesting one.
-2. If shape 2: the 0.1 body weight and the `BodyPassSize = 20` cap are two separate
-   constraints and a candidate at rank 40 never gets a body pass at all. Measure which one
-   is binding for this row *before* changing either.
-3. Build the argument against DESIGN §8, not against this row. A coefficient nudged until
-   one query passes is tuning; B-008 forbids it by name.
-4. Re-record: `go test ./cmd/forge -run TestCalibration -update`. Paste the diff.
-
-**Verification.**
-
-- `go test ./cmd/forge -run TestCalibration` → green.
-- The B-008 false positive stays out of first place. Check this explicitly — it is the
-  regression this whole area exists to prevent.
-- `go test ./...`, both lanes.
-
-**Done when** either the corpus fix is made and recorded, or the body-channel question is
-answered with an argument that stands without reference to this one query.
-
-**Do not.** Do not move the thresholds. 0.311 and 0.315 sit next to notes that should not
-be admitted; lowering the bar admits them too.
+| B-038 | `bodyPass` window allocated by path, not relevance | NO STEPS — measure first | [below](#b-038--bodypasss-top-20-window-is-allocated-by-path-not-by-relevance) |
 
 ---
 
@@ -392,6 +337,26 @@ alone cannot say.
 labelled prompt on file; a margin turning negative in a data slice the gate doesn't
 actually sit inside is a reason to get more data, not a reason to re-derive a number that
 isn't failing.
+
+## B-038 — `bodyPass`'s top-20 window is allocated by path, not by relevance
+
+**Measure before designing — see BACKLOG's entry for the full derivation, split out of
+B-031's closure.** `bodyPass` opens `cands[:20]` after sorting by frontmatter score then
+**path ascending**; on any query where more candidates tie at 0.000 frontmatter than fit
+the window, which directory a note lives in (not its content) decides whether its body is
+ever read. Confirmed for one pair: `transactional-outbox-pattern.md` and
+`cqrs-and-event-driven-messaging.md` (`notes/howto/`) carry heavy body signal for a real
+query and are never opened, because `notes/concept/*` fills the window first.
+
+**Unblock condition:** run `TestCalibration`'s corpus staging at a widened or removed
+`BodyPassSize` across more than the nine-query calibration set (the entry's own check
+found no change on those nine) to see whether the window ever changes a real verdict —
+that answers question (a) in the BACKLOG entry. If it does, question (b) — what the
+tie-break should be instead of path — needs its own design pass, not a default guess.
+
+**Do not respond to this by simply raising `BodyPassSize`.** The cost (a file open per
+window slot) is real and unmeasured at corpus scale; DESIGN §8 sized "top 20" for latency,
+and nothing here shows a wider window changes an actual verdict yet.
 
 ## B-003 — repo directory still named `TIL`
 
