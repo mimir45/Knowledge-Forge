@@ -476,11 +476,14 @@ B-033's two derivations**, not just a re-recorded calibration golden. Both are t
 
 **`docs/TODO.md` is the execution half of that file** (written 2026-08-23). BACKLOG records
 *why* an item exists; TODO records *how to close it* — a six-field plan (anchors,
-prerequisites, steps, verification, done-when, and an explicit "do not") for each of the
-nine workable items, an index row for all 35, and an unblock condition rather than steps
-for the four that are open but not actionable. It also fixes the execution order: **B-033
-must land before B-032**, because B-032 moves `blend`'s denominator and would shift the
-scale B-033 re-derives against.
+prerequisites, steps, verification, done-when, and an explicit "do not") for each workable
+item, an index row for all 37, and an unblock condition rather than steps for the items
+open but not actionable. It also fixed the execution order in advance: **B-033 had to land
+before B-032**, because B-032 moves `blend`'s denominator and would shift the scale B-033
+re-derives against. It did, both on 2026-08-23 — B-032 owed a re-run of B-033's two
+derivations, not just a re-recorded calibration golden, and both ran
+(`TestNeighbourFloorSweep`, `TestIntentGateSeparation` — see the B-032 closure note above
+for what each said).
 
 Before touching `pkg/recall`'s scoring, read B-008's closure note and spec §2.3.1. Three
 things there are easy to undo by accident: the vocabulary filter applies to `--stack` hints

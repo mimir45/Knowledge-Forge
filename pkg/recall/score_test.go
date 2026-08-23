@@ -259,6 +259,35 @@ func TestAbsentTermWeighsThePresentMean(t *testing.T) {
 	}
 }
 
+// B-032. Before this fix, activation asked only whether the note carries the field
+// (len(tags) > 0), so a tagged note with zero overlap paid the absent-term penalty in
+// full while an untagged note skipped the channel entirely — the note that carries
+// nothing relevant was worse off than the note that carries nothing at all. weighted's
+// own comment already argues the fix: "scoring such a query 0.0 on an active channel
+// would drag every note down uniformly, the same mistake spec §2.5 rejects for untagged
+// notes." Both notes here have zero hits and must be treated alike.
+func TestTagsChannelZeroOverlapMatchesUntagged(t *testing.T) {
+	docs := []Doc{
+		{Slug: "untagged"},
+		{Slug: "irrelevant-tag", Tags: []string{"issue"}},
+		// Gives the query vocabulary a real hit somewhere in the corpus, so ok=true and
+		// the other two notes' inactivity is a note-side decision, not a global one —
+		// without this the query has nothing any tag channel could answer at all, and
+		// both would be inactive regardless of this fix.
+		{Slug: "relevant-tag", Tags: []string{"spring"}},
+	}
+	s := newScope(Query{Question: "redis caching in spring boot"}, docs)
+	if c := s.tagsChannel(docs[0]); c.Active {
+		t.Error("untagged note: channel active, want inactive")
+	}
+	if c := s.tagsChannel(docs[1]); c.Active {
+		t.Error("tagged-but-zero-overlap note: channel active, want inactive (same as untagged)")
+	}
+	if c := s.tagsChannel(docs[2]); !c.Active {
+		t.Error("tagged note with a real hit: channel inactive, want active")
+	}
+}
+
 // The degenerate case falls out of the mean rule rather than being special-cased: with no
 // present term there is nothing to average, every weight stays 0, and weighted's empty
 // denominator leaves the channel inactive. Pinned deliberately, because the alternative is

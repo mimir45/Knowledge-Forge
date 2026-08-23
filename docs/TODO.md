@@ -265,7 +265,8 @@ deliberately.
 
 - **This item needs its own session and its own argument.** It reopens DESIGN §8's weight
   ratios. Do not fold it into a scoring pass that is doing something else.
-- B-033 and B-032 should land first — both move the scale this item measures against.
+- **B-033 and B-032 have both landed (2026-08-23)** — measure this item against the
+  current `calibration.golden`, not the pre-B-032 numbers in earlier drafts of this file.
 
 **Steps.**
 

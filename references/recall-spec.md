@@ -235,15 +235,48 @@ rule cannot resurrect a channel the note-side rule switched off — with no quer
 the vocabulary there is no weight to take a mean of, every weight stays zero, and the
 channel deactivates exactly as it did before.
 
-**One asymmetry the two rules produce together, recorded rather than corrected.** An
-untagged note escapes the absent-term penalty entirely — its tags channel is inactive and
-drops out of the denominator — while a tagged note pays it in full. Measured on
-`examples/vault`: "Redis caching in Spring Boot" is now topped by a note carrying
-`tags: []`, at 0.500 against the tagged note's 0.415, and 9 of 91 notes are untagged.
-This is the effect §2.5 was written to prevent, running the other way round. It does not
-change the verdict here — 0.500 is CREATE, and the note that had to stop winning did stop
-winning — but it is a live consequence of curating tags at all, and it is on file as
-**BACKLOG B-032**.
+**The asymmetry above was real and is fixed (BACKLOG B-032, closed 2026-08-23).** An
+untagged note escaped the absent-term penalty entirely — its tags channel went inactive
+and dropped out of the denominator — while a tagged note with no relevant tags paid the
+same penalty in full, active at a hard 0.000. The note that carried nothing relevant was
+worse off than the note that carried nothing at all, which is the effect this section was
+written to prevent, running the other way round.
+
+Activation is now decided on the **hit**, not on field presence: `tagsChannel` and
+`stackChannel` activate on `len(hits) > 0` rather than `len(tags) > 0` / `len(stack) > 0`.
+A note whose tags don't overlap the query is now inactive exactly like a note with no tags
+at all — parity, not a new exemption. The table above still holds as the *note-carries-
+the-field* row: what changed is that "carries the field" now means "carries something the
+query could match." This is the same principle §2.5 already argues for the corpus-wide
+case (a query outside the vault's vocabulary entirely must not activate a channel and
+score every note 0.0) generalized to the per-note case.
+
+**Measured on `examples/vault`, "Redis caching in Spring Boot":** `meterreadingsservice-
+spring-boot-4-x-project` (still untagged) stays at 0.500, and `spring-cli-and-maven-
+commands-for-spring-boot` (the one note with a genuinely matching tag) stays at 0.415 —
+neither of the two notes the entry named moves, and B-008's false positive does not
+return to first place. What moves is every note in between that carried an *irrelevant*
+tag: across the corpus, 128 active tags/stack channels drop to 84, and all 43 that scored
+a hard 0.000 are gone. One calibration row's winner changes as a result — the Docker
+query's top-1 moves from `docker-compose-init-container-pattern…` (0.163, one real
+`docker` tag hit) to `docker-compose-local-yaml…` (0.170, no relevant tags at all) — which
+is the same shape of trade recurring one level down: a channel that can only ever manage
+a low value (three of six query terms have vault-wide df 0 here) still drags an active
+note below where exclusion would leave it. That is `weighted`'s documented behavior
+operating as designed, not a new mechanism, and it is why this fix is scoped to
+activation and does not touch `weightsOver`'s weighting formula.
+
+**Consequence for §3.2's floor and `forge intent`'s gate, both re-measured rather than
+re-tuned.** Every score in the corpus moved by some amount, so both of B-033's derivations
+were re-run against their original, unedited label files. The neighbour floor's F1 peak
+moved from 0.125 to **0.150** — §3.2 below carries the new sweep. `forge intent`'s gate
+derivation (`cmd/forge/testdata/intent-gate.golden`) still holds mechanically — the gate
+stays 0.50, no QUIET prompt is admitted, and 8 of 10 FIRE prompts still are — but the
+measured separation margin between the two classes went from +0.005 to **-0.036**: the
+lowest admitted-at-gate FIRE prompt and the highest QUIET prompt now overlap in score
+between 0.407 and 0.443. The gate itself sits safely above both, so nothing is broken
+today, but the classes are no longer cleanly separable everywhere, which is a real finding
+and not something this fix corrects — see **BACKLOG B-037**.
 
 ```
 score = Σ(w_c · v_c) / Σ(w_c)   over active c

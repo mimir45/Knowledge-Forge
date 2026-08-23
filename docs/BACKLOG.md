@@ -1409,7 +1409,8 @@ applies: 0.311 and 0.315 sit next to notes that should not be admitted.
 
 ## B-032 — an untagged note escapes B-008's absent-term penalty entirely
 
-**Owner: unassigned. Status: open — recorded 2026-08-22 while closing B-008.**
+**Owner: unassigned. Status: closed 2026-08-23, `worktree-b-008-recall-recalibration` —
+out-of-phase work, not a phase. Recorded 2026-08-22 while closing B-008.**
 
 Two rules interact in a way neither anticipates alone. §2.5's activation is two-sided: a
 note with no `tags:` leaves the tags channel *inactive*, dropping out of the blend's
@@ -1440,6 +1441,59 @@ carries the field at all; it could instead ask whether the note carries the fiel
 query has something the field could answer, so that an untagged note is neither penalised
 nor advantaged. That changes `blend`'s denominator for a large fraction of the vault and
 must be measured against `cmd/forge/testdata/calibration.golden`, which now exists.
+
+### Closed 2026-08-23 — activation moved from field-presence to hit-presence
+
+**Two candidate fixes were computed by hand against the cited row before either was
+written, and one of them is disqualified by the row itself.** Dropping the note-side
+conjunct entirely (`c.Active = ok`, letting any note with tags evaluate at 0.000 when
+nothing overlaps) does fix the row — `meterreadingsservice` drops to 0.350, below
+`spring-cli`'s unchanged 0.415 — but it does so by deleting §2.5's untagged-exemption rule
+outright, which this entry and `references/recall-spec.md` both name as not-to-be-deleted,
+and it independently fails the row check: 0.415 becomes first place, which is exactly
+B-008's false positive returning. That path was rejected on both grounds, not just one.
+
+**The shipped fix:** `tagsChannel` and `stackChannel` activate on `len(hits) > 0` rather
+than `len(tags) > 0` / `len(stack) > 0` (`pkg/recall/score.go`). A note whose tags don't
+overlap the query is now inactive exactly like a note with no tags — parity, not a new
+exemption, and the note-side rule is preserved rather than deleted. The principle is
+already in the codebase: `weighted`'s own comment argues that scoring 0.0 on an active
+channel "drags every note down uniformly" for a query outside the vault's vocabulary
+entirely, and rejects it for that corpus-wide case. This fix is the same argument applied
+per note rather than per corpus.
+
+**The cited row does not move.** `meterreadingsservice-spring-boot-4-x-project` stays
+0.500 (still untagged, still inactive on tags); `spring-cli-and-maven-commands-for-spring-
+boot` stays 0.415 (its one real hit, `spring`, is unaffected). This matches the entry's own
+observation that the row "is not a regression" — B-032's defect is the *mechanism*, not
+this specific ranking, and the fix targets the mechanism.
+
+**What does move, measured:** across the nine calibration queries, active tags/stack
+channels drop from 128 to 84, and all 43 that scored a hard 0.000 are eliminated. One
+calibration winner changes: the Docker query's top-1 moves from `docker-compose-init-
+container-pattern…` (0.163, one real `docker` tag hit) to `docker-compose-local-yaml…`
+(0.170, no relevant tags). That is the same trade recurring one level down — a channel
+capped low by vault-wide term absence (three of six query terms have df 0) still drags an
+active note below where exclusion would leave it — and it is `weighted`'s documented
+behavior, not a defect this fix introduces. No verdict crosses a threshold anywhere in the
+nine-query set; every row stays CREATE. `cmd/forge/testdata/calibration.golden` carries
+the full diff.
+
+**B-033's two derivations were re-run against the new scale, per this entry's own
+prerequisite, not skipped.** The neighbour floor's F1 peak moved off 0.125 — the new
+maximum is 0.150 (F1 0.578), re-derived against the same unedited
+`neighbour-labels.txt`. `pkg/recall/doc.go` and `config/forge.config.example.md` moved
+together. `forge intent`'s gate derivation still holds *mechanically* — gate stays 0.50,
+still admits 8 of 10 FIRE prompts, still admits zero QUIET — but the measured FIRE/QUIET
+separation margin went from +0.005 to **-0.036**: the lowest gate-admitted FIRE prompt and
+the highest QUIET prompt now overlap between 0.407 and 0.443. The gate sits above both, so
+nothing is broken today, but the classes are no longer separable everywhere, which is a
+finding rather than something this fix corrects — filed as **B-037**, not nudged.
+
+Verified: `go test ./pkg/recall/...` and `go test ./cmd/forge -run TestCalibration` green
+against the re-recorded goldens; `idf(0, n) == 0` unchanged; no existing test in either
+package pinned the old tagged-but-zero-overlap behavior, so nothing was inverted to make
+this pass. `go test ./...` green on both build lanes.
 
 ---
 
