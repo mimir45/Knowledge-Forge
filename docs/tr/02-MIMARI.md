@@ -746,14 +746,16 @@ alındı, canlı bir oturumun ölçümü değil.
     └── cache/<url-hash>.md       WebFetch kaynak cache'i, TTL'li
 ```
 
-**B-027** (yarısı açık): `pkg/drift/gitindex.go` cache'i repo başına
+**B-027** (kapandı 2026-08-23): `pkg/drift/gitindex.go` cache'i repo başına
 `.forge/code-index-<repo>.json` olarak yazıyor, oysa ADDENDUM ve DESIGN tekil
 `.forge/code-index.json` diyor. Davranış **doğru** — `--repo` tekrarlanabilir olduğu için
 tek bir paylaşılan isim repolar arasında çakışırdı. 2026-08-21'de kod tarafı dokümante
 edildi (`persist`'in doc comment'i sapmanın gerekçesini taşıyor) ve ağacın içindeki üç
 yanlış iddia düzeltildi — bunlardan `agents/forge-codebase-scout.md` gerçek bir sorundu:
 bir agent'a diskte hiç var olmayan bir yoldan arama tohumlamasını söylüyordu. Tasarım
-dokümanları bilerek eski hâlde bırakıldı ("record, don't fix"), açık kalan kısım budur.
+dokümanlarındaki sekiz satır 2026-08-23'te düzeltildi: yol haritası bittiği için akışta
+bozulacak bir faz kalmadı ve bu bir *karar* değil, yanlış yazılmış bir **dosya adı**ydı —
+AUDIT §8.4'ün "doküman eski, §8.4 bağlayıcı" mekanizmasına dokunulmadı.
 
 ---
 

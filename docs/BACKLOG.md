@@ -934,9 +934,9 @@ only a citation proven to have once resolved verdicts `Broken`.
 
 ## B-027 — `.forge/code-index-<repo>.json` is plural-per-repo; ADDENDUM/DESIGN say the singular `.forge/code-index.json`
 
-**Owner: whoever next edits ADDENDUM §B.6 or DESIGN §15. Status: half done, 2026-08-21 —
-the code side and one wrong agent instruction are fixed; the design docs still say the
-singular name, deliberately. Originally found during Phase 5b's explore pass while
+**Owner: whoever next edits ADDENDUM §B.6 or DESIGN §15. Status: closed 2026-08-23 — the
+code side and one wrong agent instruction were fixed 2026-08-21, the eight doc sites on
+2026-08-23. Originally found during Phase 5b's explore pass while
 confirming `forge logback`'s requirement 3 ("keep the code index fresh") was already
 satisfied by existing machinery; the naming predates Phase 5b, live since Phase 2b's
 `pkg/drift`.**
@@ -978,6 +978,34 @@ sites inside the tree also claimed the singular name:
 Still open: ADDENDUM §B.6 (`:247`, `:318`) and DESIGN §15 (`:714`, `:954`), plus
 `CLAUDE-CODE-PROMPT.md:208,365,458` and `ROADMAP.md:53`. `examples/vault/` is out of scope
 by construction — it is scrubbed vault content, a historical artifact, not documentation.
+
+### Closed 2026-08-23. The docs were edited, and here is why that is not a rule change.
+
+The eight sites listed above now show the `-<repo>` suffix: ADDENDUM `:247` (§B.6), `:318`
+and the phase table at `:563`; DESIGN `:714` and `:954` (§15); `ROADMAP.md:53`;
+`CLAUDE-CODE-PROMPT.md:208,365,458`. Three Turkish mirrors that described this entry as
+half-open were corrected with it (`docs/tr/02-MIMARI.md:749`, `03-KULLANIM-KILAVUZU.md:761`;
+`04-DOSYA-DOSYA.md:349` was already accurate and is unchanged).
+
+**The standing "record, don't fix" rule is untouched, on two grounds.** First, it exists so
+a doc does not shift under a phase that is mid-flight against it; the roadmap ended at 6b,
+so there is no such phase. Second and more important: that rule and AUDIT §8.4's mechanism
+govern **decisions** — a line where the doc says one thing, a later decision says another,
+and §8.4 is what a reader follows. B-027 is not one of those. Nobody disagrees about the
+design; the docs simply name a file that has never existed on disk under that name. A
+reader following §8.4's mechanism here would be told to follow a doc that is factually
+wrong about a path. Correcting a filename is not overriding a decision, and no §8.4 entry
+was added, because there was no decision to record.
+
+The two normative sites (ADDENDUM §B.6, DESIGN §15) carry a one-line marker saying they
+said the singular name until 2026-08-23 and pointing here, so the edit is traceable rather
+than a silent rewrite. The reason itself — repeatable `--repo` means a shared name lets
+repo two overwrite repo one — is now stated at §B.6 rather than living only in
+`pkg/drift/gitindex.go`'s `persist` doc comment.
+
+**Unchanged, deliberately:** the filename on disk. `cachePath` in `pkg/drift` stays the
+single place a name is constructed. `examples/vault/` is scrubbed vault content and a
+historical artifact, out of scope by construction.
 
 ---
 

@@ -17,7 +17,7 @@ Not every backlog item can take a plan, and the absence of steps below is a deci
 an oversight:
 
 - **PLANNED** — open, workable, has a full six-field section in this file. Nine items when
-  this was written; **B-029 closed 2026-08-23**, leaving eight.
+  this was written; **B-029 and B-027 closed 2026-08-23**, leaving seven.
 - **NO STEPS** — open but not actionable by an implementation session: blocked on external
   observation, or a user decision, or "record, don't fix" by standing rule. Listed with
   its unblock condition instead of steps.
@@ -28,10 +28,11 @@ an oversight:
 
 ```
 B-029  →  B-033  →  B-032  →  B-031  →  B-015  →  B-023  →  B-035  →  B-034  →  B-027
- done     floor     denom     cover     imports   engine    run_id    D6       docs
+ done     floor     denom     cover     imports   engine    run_id    D6       done
 ```
 
-**B-029 closed 2026-08-23**, so **B-033 is the head of the queue.**
+**B-029 and B-027 both closed 2026-08-23** — the two ends of the queue, taken together
+because they share no anchor with anything between them. **B-033 is now the head.**
 
 **B-033 must land before B-032, and the ordering is load-bearing.** Both re-measure against
 `cmd/forge/testdata/calibration.golden`. B-032 changes `blend`'s denominator for a large
@@ -40,7 +41,7 @@ against a scale that just shifted again and has to be redone. If the order is re
 anyway, B-032's plan must add a step re-deriving the floor a second time.
 
 B-029 was first because it is independent of everything else and was the largest single item.
-B-027 is last because it is documentation with no code consequence left.
+B-027 was last because it is documentation with no code consequence left.
 
 ---
 
@@ -74,7 +75,7 @@ B-027 is last because it is documentation with no code consequence left.
 | B-024 | `D2Tag` spelling | CLOSED 2026-08-21 | — |
 | B-025 | `PostToolUse`/WebFetch payload shape | NO STEPS — **BLOCKED** | [below](#no-steps) |
 | B-026 | Deleted-file citation never BROKEN | CLOSED 2026-08-16 | — |
-| B-027 | `.forge/code-index-<repo>.json` naming | **PLANNED** (doc half) | [§B-027](#b-027--decide-the-design-doc-half) |
+| B-027 | `.forge/code-index-<repo>.json` naming | CLOSED 2026-08-23 | — |
 | B-028 | Hook path immediacy on deletion | CLOSED 2026-08-17 | — |
 | B-029 | `errcheck` disabled tree-wide | CLOSED 2026-08-23 | — |
 | B-030 | `dataset.capture` gates only two tiers | CLOSED Phase 6b | — |
@@ -561,49 +562,25 @@ anonymisation limit plainly, or the item closes with a written decision not to b
 
 ---
 
-# B-027 — decide the design-doc half
+# B-027 — decide the design-doc half — **CLOSED 2026-08-23**
 
-**Why it's open.** `.forge/code-index-<repo>.json` is per-repo, correctly — repeatable
-`--repo` means one shared name would let repo two overwrite repo one. The code side and one
-wrong agent instruction were fixed 2026-08-21. The design docs still say the singular
-`.forge/code-index.json`, **deliberately**, under the standing "record, don't fix" rule.
+Decided: **the docs were editable, and were edited.** All eight sites now show the
+`-<repo>` suffix, plus three Turkish mirrors that described the entry as half-open.
 
-**Anchors — the sites still saying the singular name.**
+The reasoning, because the decision is the deliverable and not the find-and-replace: the
+"record, don't fix" rule and AUDIT §8.4's mechanism govern **decisions** — a doc line
+superseded by a later ruling, where §8.4 is what a reader follows. B-027 is not one of
+those. Nobody disagrees about the design; the docs name a file that has never existed on
+disk under that name, so a reader following the mechanism here is sent to a doc that is
+factually wrong about a path. That is a correction, not an override, and no §8.4 entry was
+added because there was no decision to record. The roadmap ending at 6b removes the other
+half of the rule's purpose — there is no in-flight phase to destabilise.
 
-- `docs/KNOWLEDGE-FORGE-ADDENDUM.md:247`, `:318` (§B.6)
-- `docs/KNOWLEDGE-FORGE-DESIGN.md:714`, `:954` (§15)
-- `docs/CLAUDE-CODE-PROMPT.md:208`, `:365`, `:458`
-- `docs/ROADMAP.md:53`
-- Already correct: `pkg/drift/gitindex.go`'s `persist` doc comment (carries the
-  explanation), `pkg/codeindex/index.go:52`, `store.go:9`,
-  `agents/forge-codebase-scout.md:33`.
-- Out of scope by construction: `examples/vault/` — scrubbed vault content, a historical
-  artifact, not documentation.
+The two normative sites (ADDENDUM §B.6, DESIGN §15) carry a dated one-line marker so the
+edit is traceable rather than a silent rewrite. The filename on disk is unchanged;
+`cachePath` in `pkg/drift` stays the single place a name is constructed.
 
-**Prerequisites.** CLAUDE.md's precedence rule says design docs are **not** edited
-mid-flight; §8.4-style decisions are what a later reader follows. This item is therefore a
-*decision* about whether the rule still applies now that the roadmap is complete.
-
-**Steps.**
-
-1. Decide, and write the decision into B-027: either the docs are now editable because the
-   roadmap is done and there is no in-flight phase to destabilise, or the rule stands and
-   this item closes as "recorded, permanent".
-2. If editable: update the eight sites above to show the `-<repo>` suffix. Nothing else —
-   this is a find-and-replace with a sanity read of each surrounding sentence, not a
-   rewrite of §B.6.
-3. Check `docs/tr/` for a mirror of these lines (it needed nothing for B-023's enum, but
-   these are different sections).
-4. Close B-027 either way. It is currently half-open with no remaining code consequence,
-   which is the worst state for a backlog entry to sit in.
-
-**Verification.** `grep -rn "code-index\.json" docs/` returns nothing, or returns only
-lines a written decision says stay.
-
-**Done when** the entry is closed with a stated decision, not left half-open.
-
-**Do not.** Do not rename the file on disk to match the docs — the per-repo suffix is
-required, and `cachePath` in `pkg/drift` stays the single place a name is constructed.
+Full closure note: `docs/BACKLOG.md` B-027, final section.
 
 ---
 

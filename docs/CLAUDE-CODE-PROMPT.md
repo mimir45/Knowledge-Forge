@@ -205,7 +205,8 @@ Layout:
   pkg/graph/            note link graph: components, hubs, orphans, centrality
   pkg/codeindex/        go-tree-sitter for java/kotlin (start there; add py/ts on
                         demand); pom.xml / build.gradle / package.json -> dep +
-                        version map. Output .forge/code-index.json.
+                        version map. Output .forge/code-index-<repo>.json,
+                        one per --repo (B-027).
   pkg/gitsig/           go-git: churn, blame ownership, co-change coupling
   pkg/drift/            THE KEY PACKAGE — addendum B.6. AST comparison, not line
                         diffs. BROKEN / SUSPECT / auto-repair-line-numbers.
@@ -362,7 +363,7 @@ Read KNOWLEDGE-FORGE-DESIGN.md sections 11 and 12.
 
 2. forge-codebase-scout is the one that matters most. It answers "how is this
    ACTUALLY used in the repo I'm in right now" and returns file:line evidence plus
-   local conventions — seeded from .forge/code-index.json so it greps precisely
+   local conventions — seeded from .forge/code-index-<repo>.json so it greps
    instead of broadly. Its findings go into the note's "In <stack>" section,
    attributed to the repo. Generic notes are a web search; this is the part that
    makes the note irreplaceable.
@@ -455,7 +456,7 @@ Build `forge logback` (T0, deterministic, idempotent):
 2. A CLAUDE.md fragment per module ("Relevant notes: [[...]]") so ANY agent
    session in that repo gets the vault's knowledge without the plugin. Managed
    begin/end sentinel blocks — never touch content outside them.
-3. Keep .forge/code-index.json fresh (already built in 2b) and documented for
+3. Keep .forge/code-index-<repo>.json fresh (already built in 2b) and documented for
    other tools.
 4. Inline `// forge: [[note-slug]]` markers: implement behind
    static.logback.inline_markers, DEFAULT OFF, same sentinel discipline,
