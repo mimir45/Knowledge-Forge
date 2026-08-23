@@ -244,7 +244,12 @@ git
    └── coupling:   files that change together (co-change matrix)
 ```
 
-Everything above is deterministic and takes seconds. It produces `.forge/code-index.json`.
+Everything above is deterministic and takes seconds. It produces
+`.forge/code-index-<repo>.json` — **one file per configured `--repo name=path`, not one
+shared file.** `forge drift`/`check`/`logback` all take `--repo` repeatably, so a single
+name would let the second repo's index overwrite the first's on the very next run. This
+section said the singular `.forge/code-index.json` until 2026-08-23; corrected under
+BACKLOG B-027, which is a filename correction and not a design change.
 
 **The map:** join code → notes with pure matching — a note with `stack: [kafka]` maps
 to files importing `org.apache.kafka`; a note mentioning `OrderConsumer` maps to the
@@ -315,7 +320,7 @@ Bidirectional, so knowledge is discoverable from the code, not just from the vau
 - `docs/knowledge-map.md` in the repo — module → relevant notes, generated.
 - A `CLAUDE.md` fragment per module: *"Relevant notes: [[…]]"* — so **any** agent
   session in that repo gets the vault's knowledge in context without the plugin.
-- `.forge/code-index.json` for other tools.
+- `.forge/code-index-<repo>.json` for other tools (one per `--repo`; see §B.6).
 
 **Opt-in (default off):**
 - Inline `// forge: [[note-slug]]` markers above the symbols a note documents, in a
@@ -560,7 +565,7 @@ Changes from the main doc's §15:
 | **3b — Engine abstraction** ⭐ NEW | one interface, four backends, budget accounting, `engine_trail` |
 | 4 — Subagents | + advisor as critique-mode second pass |
 | 5 — Hooks | → **weekly checker** becomes the centrepiece; drift hook on Edit/Write |
-| **5b — Log-back** ⭐ NEW | knowledge-map, CLAUDE.md fragments, code-index.json |
+| **5b — Log-back** ⭐ NEW | knowledge-map, CLAUDE.md fragments, code-index-&lt;repo&gt;.json |
 | 6 — Package | + document the tier matrix and the honest capability table |
 | **6b — Datasets** ⭐ NEW | capture + export + datasheets |
 | 7 — Real use | + first LoRA on D1 routing once ~300 pairs exist |

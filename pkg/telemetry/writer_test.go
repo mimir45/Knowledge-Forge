@@ -32,8 +32,12 @@ func TestAppendRoundTrip(t *testing.T) {
 
 func TestAppendAppendsRatherThanOverwrites(t *testing.T) {
 	dir := t.TempDir()
-	Append(dir, Event{Topic: "a"})
-	Append(dir, Event{Topic: "b"})
+	if err := Append(dir, Event{Topic: "a"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := Append(dir, Event{Topic: "b"}); err != nil {
+		t.Fatal(err)
+	}
 	b, err := os.ReadFile(filepath.Join(dir, ".forge", "log.jsonl"))
 	if err != nil {
 		t.Fatal(err)

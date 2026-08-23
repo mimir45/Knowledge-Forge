@@ -7,7 +7,7 @@ import (
 
 func TestAdvisorAcceptsAWellFormedCritique(t *testing.T) {
 	rt := testServer(t, func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`{"output":"{\"disputed\":[\"claim 1\"],\"missing\":[],` +
+		_, _ = w.Write([]byte(`{"output":"{\"disputed\":[\"claim 1\"],\"missing\":[],` +
 			`\"confidence\":\"medium\",\"patch\":\"add a source\"}"}`))
 	})
 	adv := Advisor{API: API{RoundTripper: rt, Provider: "anthropic", BaseURL: "http://x"}}
@@ -22,7 +22,7 @@ func TestAdvisorAcceptsAWellFormedCritique(t *testing.T) {
 
 func TestAdvisorRejectsAnEmptyConfidence(t *testing.T) {
 	rt := testServer(t, func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`{"output":"{}"}`)) // valid JSON, but judges nothing
+		_, _ = w.Write([]byte(`{"output":"{}"}`)) // valid JSON, but judges nothing
 	})
 	adv := Advisor{API: API{RoundTripper: rt, Provider: "anthropic", BaseURL: "http://x"}}
 	if _, err := adv.Run(Request{Stage: "verify", Prompt: "p"}); err == nil {
@@ -32,7 +32,7 @@ func TestAdvisorRejectsAnEmptyConfidence(t *testing.T) {
 
 func TestAdvisorRejectsNonJSONOutput(t *testing.T) {
 	rt := testServer(t, func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`{"output":"looks great, ship it"}`))
+		_, _ = w.Write([]byte(`{"output":"looks great, ship it"}`))
 	})
 	adv := Advisor{API: API{RoundTripper: rt, Provider: "anthropic", BaseURL: "http://x"}}
 	if _, err := adv.Run(Request{Stage: "verify", Prompt: "p"}); err == nil {

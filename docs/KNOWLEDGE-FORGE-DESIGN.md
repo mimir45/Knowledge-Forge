@@ -711,7 +711,9 @@ phase N+1 with phase N unmerged.
 - **Done when:** a fresh session's first response cites an existing note unprompted.
 
 ### Phase 5b — Log-back into the codebase *(1 day)*
-- `docs/knowledge-map.md`, per-module CLAUDE.md fragments, `.forge/code-index.json`.
+- `docs/knowledge-map.md`, per-module CLAUDE.md fragments, `.forge/code-index-<repo>.json`
+  — one per configured `--repo`, not one shared file. Said the singular name until
+  2026-08-23; corrected under BACKLOG B-027.
   Inline markers stay opt-in. Spec: addendum §B.7.
 
 ### Phase 6 — Package & release *(2–3 days)*
@@ -951,7 +953,7 @@ the 10 reports · `moc/codebase.md` (spec: addendum §B, STACK §10)
 `skills/forge-stats/SKILL.md`
 
 **Phase 5b** — `forge logback` → `docs/knowledge-map.md` · CLAUDE.md fragments ·
-`.forge/code-index.json`
+`.forge/code-index-<repo>.json`
 
 **Phase 6** — `.claude-plugin/plugin.json` · `.claude-plugin/marketplace.json` ·
 `README.md` · `LICENSE` · `CHANGELOG.md` · `CONTRIBUTING.md` · `docs/*.md` ·

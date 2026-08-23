@@ -16,7 +16,10 @@ tree at that date; re-grep before trusting a line number.
 Not every backlog item can take a plan, and the absence of steps below is a decision, not
 an oversight:
 
-- **PLANNED** — open, workable, has a full six-field section in this file. Nine items.
+- **PLANNED** — open, workable, has a full six-field section in this file. Nine items when
+  this was written; **B-029, B-027 and B-033 closed 2026-08-23**, leaving six. B-033's
+  closure opened **B-036**, which is NO STEPS by its own argument: it names a measurement
+  to run before any design is chosen, not a fix to apply.
 - **NO STEPS** — open but not actionable by an implementation session: blocked on external
   observation, or a user decision, or "record, don't fix" by standing rule. Listed with
   its unblock condition instead of steps.
@@ -27,21 +30,25 @@ an oversight:
 
 ```
 B-029  →  B-033  →  B-032  →  B-031  →  B-015  →  B-023  →  B-035  →  B-034  →  B-027
- lint     floor     denom     cover     imports   engine    run_id    D6       docs
+ done     done      denom     cover     imports   engine    run_id    D6       done
 ```
 
-**B-033 must land before B-032, and the ordering is load-bearing.** Both re-measure against
-`cmd/forge/testdata/calibration.golden`. B-032 changes `blend`'s denominator for a large
-fraction of the vault — every score moves. If B-032 lands first, B-033's re-derivation is
-against a scale that just shifted again and has to be redone. If the order is reversed
-anyway, B-032's plan must add a step re-deriving the floor a second time.
+**B-029, B-027 and B-033 all closed 2026-08-23.** **B-032 is now the head.**
 
-B-029 is first because it is independent of everything else and is the largest single item.
-B-027 is last because it is documentation with no code consequence left.
+**B-033 landed before B-032, which was the load-bearing part of this order.** Both
+re-measure against `cmd/forge/testdata/calibration.golden`, and B-032 moves `blend`'s
+denominator for a large fraction of the vault, so every score shifts under it. B-033's
+floor is now derived against the pre-B-032 scale — **so B-032 must re-run the derivation,
+not just re-record the golden.** That is cheap on purpose: `TestNeighbourFloorSweep` reads
+the committed labels and rewrites `testdata/neighbour-sweep.golden` with `-update`, and
+the same applies to `TestIntentGateSeparation`. Both are steps in §B-032 below.
+
+B-029 was first because it is independent of everything else and was the largest single item.
+B-027 was last because it is documentation with no code consequence left.
 
 ---
 
-## Index — all 35 items
+## Index — all 36 items
 
 | ID | Subject | Class | Section |
 |---|---|---|---|
@@ -71,175 +78,89 @@ B-027 is last because it is documentation with no code consequence left.
 | B-024 | `D2Tag` spelling | CLOSED 2026-08-21 | — |
 | B-025 | `PostToolUse`/WebFetch payload shape | NO STEPS — **BLOCKED** | [below](#no-steps) |
 | B-026 | Deleted-file citation never BROKEN | CLOSED 2026-08-16 | — |
-| B-027 | `.forge/code-index-<repo>.json` naming | **PLANNED** (doc half) | [§B-027](#b-027--decide-the-design-doc-half) |
+| B-027 | `.forge/code-index-<repo>.json` naming | CLOSED 2026-08-23 | — |
 | B-028 | Hook path immediacy on deletion | CLOSED 2026-08-17 | — |
-| B-029 | `errcheck` disabled tree-wide | **PLANNED** | [§B-029](#b-029--re-enable-errcheck) |
+| B-029 | `errcheck` disabled tree-wide | CLOSED 2026-08-23 | — |
 | B-030 | `dataset.capture` gates only two tiers | CLOSED Phase 6b | — |
 | B-031 | Kafka/Testcontainers coverage miss | **PLANNED** | [§B-031](#b-031--the-coverage-side-of-the-scoring-surface) |
 | B-032 | Untagged note escapes absent-term penalty | **PLANNED** | [§B-032](#b-032--activation-vs-absent-term-penalty) |
-| B-033 | 0.30 neighbour floor on the old scale | **PLANNED** | [§B-033](#b-033--re-derive-the-neighbour-floor) |
+| B-033 | 0.30 neighbour floor on the old scale | CLOSED 2026-08-23 | — |
 | B-034 | D6 (code↔knowledge) not built | **PLANNED** | [§B-034](#b-034--build-d6-as-an-export-view) |
 | B-035 | D1 has no outcome label | **PLANNED** | [§B-035](#b-035--mint-a-run_id-so-d1-can-carry-an-outcome) |
+| B-036 | Broad query links ten neighbours | NO STEPS — measure first | [below](#no-steps) |
 
 ---
 
-# B-029 — re-enable `errcheck`
+# B-029 — re-enable `errcheck` — **CLOSED 2026-08-23**
 
-**Why it's open.** `.golangci.yml` disables `errcheck` tree-wide so Phase 6 could land the
-lint step without sorting ~95 findings. Triage item 1 landed 2026-08-22; the sweep and the
-`disable:` block are untouched.
+Done. `errcheck` is off `.golangci.yml`'s `disable:` list and `golangci-lint run ./...`
+returns zero findings under the version `ci.yml` pins. The plan that stood here is kept
+only as the four corrections it earned, because each was a wrong number this file taught a
+later session to trust:
 
-**Anchors.**
+1. **The worklist was 35, not 95 / ~37 / ~27+~10.** Those came from a bare `errcheck`
+   binary and a hand-applied exclusion estimate. The number that matters is what
+   `golangci-lint` **v1.64.8** — `ci.yml`'s pin — reports against the repo's own config: 35,
+   splitting 26 test / 9 production.
+2. **Measure with the pinned linter, not a fresh one.** `golangci-lint` v2 reports 50 on the
+   same tree; it is a different tool with a different exclusion set and its number is not
+   this repo's gate.
+3. **Stock truncation hides findings.** v1 defaults to `max-issues-per-linter: 50` and
+   `max-same-issues: 3`; the same tree reports **22** at those limits. `.golangci.yml` now
+   sets both to `0`. This was never an errcheck question — it applied to every linter in
+   the default set for all of Phase 6.
+4. **Step 5's two signature changes were traced and rejected.** `pkg/drift/apply.go`'s
+   `stamp()` and `pkg/drift/gitindex.go`'s `persist()` each hold one call whose failure is
+   self-healing, and neither caller has an error channel — unlike `refresh()`, which
+   promised propagation it never performed and hid three swallowed errors. Both are
+   `//nolint:errcheck` with the reason on the line. Step 6's re-size held: `cmd.Wait()` was
+   the one real fix and it is now checked, guarded so a truncated stream still reports the
+   read error rather than a broken pipe.
 
-- `.golangci.yml` — the `linters.disable:` block, currently `- errcheck`, with a comment
-  pointing at B-029. Its "~20 findings" claim is the stale undercount.
-- Four `//nolint` precedents to match exactly — `pkg/engine/host.go:22`,
-  `cmd/forge/check_test.go:131`, `pkg/similarity/similarity_test.go:134`,
-  `pkg/telemetry/qhash_test.go:6`. Verified 2026-08-23: still exactly four in the tree.
-- Signature-change sites — `pkg/drift/apply.go:109` (`stamp()`), callers at `:74` and `:91`;
-  `pkg/drift/gitindex.go:48` (`persist()`), caller at `:38`.
-- The `//nolint`-not-fix exemplar — `cmd/forge/index.go:207` (`tx.Rollback(); return err`).
-- Already-documented deliberate ignore — `pkg/drift/demotions.go`'s `json.Unmarshal`.
-
-**Prerequisites.**
-
-- `errcheck` and `golangci-lint` are **not on PATH** in this environment (checked
-  2026-08-23). Install both before starting, or the sizing below cannot be reproduced.
-- Read B-029's two `###` sections first. The entry's original prescriptions are wrong in
-  two places and the entry says so — see "Do not" below.
-
-**Steps.**
-
-1. Install the tools and re-measure, both lanes: `errcheck ./...` under `CGO_ENABLED=0`
-   and `=1`. Expect ~95 raw and byte-identical output across lanes (the only tag-gated
-   files, `pkg/codeindex/parse_{cgo,nocgo}.go`, have no findings). If the count has moved,
-   record the new number in B-029 before proceeding — the plan below is sized against 95.
-2. Run `golangci-lint run --no-config --enable errcheck ./...` once to get the *actual*
-   post-exclusion count. B-029's "~37" is derived by hand from `EXC0001`, not observed;
-   this step replaces a guess with a measurement.
-3. Split the list into `_test.go` and production. Expect ~27 test / ~10 production. Do the
-   **test files first** — they are fire-and-forget setup calls, mechanical, and finishing
-   them shrinks the review surface for the interesting half.
-4. Production, file by file. For each finding choose one of three, and write the reason:
-   - ignoring is correct → `//nolint:errcheck // <lowercase reason>`, no trailing period,
-     on the offending line, matching the four precedents' style exactly.
-   - the error should be checked → check it.
-   - the signature is the defect → change it (see step 5).
-5. `pkg/drift/apply.go:109` and `pkg/drift/gitindex.go:48` need signature changes, not
-   `//nolint`s. `stamp()` and `persist()` return nothing and their callers cannot check
-   what does not exist. Size these two separately from the rest of the sweep.
-6. **Re-size item 3 before touching it.** `pkg/codeindex/catfile.go:47`'s unchecked
-   `cmd.Wait()` does *not* mean "non-zero exit after partial output reads as success" —
-   that was re-traced 2026-08-22 and is wrong. `drainBlobs` (`:62-78`) returns the
-   `ReadString`/`io.ReadFull` error, so partial output surfaces as EOF through
-   `Build` (`pkg/codeindex/build.go:22`). What `cmd.Wait()` actually hides is the narrow
-   case of **all replies delivered, then a non-zero exit**. Schedule accordingly; it is
-   smaller than the entry originally implied.
-7. Delete the `disable:` block from `.golangci.yml`. This is the whole close — no Makefile
-   or workflow change, because `make lint` is gofmt + `go vet` and never ran errcheck.
-8. Update B-029's status to closed, and correct its "~20" line so the number does not
-   outlive the work.
-
-**Verification.**
-
-- `golangci-lint run ./...` → zero findings.
-- `CGO_ENABLED=0 go build ./...` and `CGO_ENABLED=1 go build ./...` → both clean.
-- `go test ./...` → 18 packages `ok`, both lanes.
-- `go vet ./...` → clean.
-
-**Done when** `errcheck` is off the `disable:` list and CI is green in both lanes.
-
-**Do not.** Do not follow the entry's own item-1 prescription ("use the helper that
-exists" / propagate through `commit`) — it was traced and rejected on 2026-08-22, because
-propagating reaches `runRecall` (`cmd/forge/recall.go:77`), which exits 1 without emitting
-candidates it already scored correctly. That item is closed; leave `refresh`/`writeRows`
-alone. Do not add a blanket exclusion in an `issues:` block — the point of the sweep is
-that each ignore carries its own reason.
-
-**Bonus, not part of the sweep.** `pkg/codeindex/catfile.go`'s `blobSize` returns `!ok` for
-any header that is not three fields ending in a blob size, and `drainBlobs` treats every
-such line as the documented `"<name> missing"` case and `continue`s. Any other unexpected
-line desynchronises the request/reply stream, after which blob bodies are parsed as
-headers. Not an errcheck finding; belongs to whoever owns `catfile.go`.
+Full closure note: `docs/BACKLOG.md` B-029, final section.
 
 ---
 
-# B-033 — re-derive the neighbour floor
+# B-033 — re-derive the neighbour floor — **CLOSED 2026-08-23**
 
-**Why it's open.** B-008 changed the scale of two of four channels; the 0.30 neighbour
-floor did not move with it, so an adjacent-topic query now verdicts CREATE with **zero**
-neighbours — an orphan-creation path in a vault whose graph report already tracks 21
-orphans of 94.
+Done. `neighbour_min_score` is **0.125** at both default sites, and `cmd/forge/intent.go`'s
+gate is `recall.DefaultThresholds.Update` rather than a hardcoded 0.7. The plan that stood
+here is kept only as the five corrections it earned.
 
-**Anchors.**
+1. **The "before" state was not uniformly zero neighbours.** B-033's entry generalised from
+   the Storybook row; three of §3.1's nine emitted none, the other six emitted one to five.
+   The plan's step 2 was right to demand that column exist as its own commit — it is what
+   showed the entry was over-general.
+2. **The plan missed `references/recall-spec.md`.** B-032's section has a spec-update step
+   and this one did not, while §3, §3.1 and §3.2 all described the old floor as current.
+   Any threshold item needs that step; it is not specific to B-032.
+3. **A unit test spelled the threshold into a fixture.** `pkg/recall`'s
+   `TestNeighbourBandEdges` used `0.30` as its "inclusive lower bound" literal and failed
+   on the change as if the band had broken. It now expresses both edges in terms of
+   `DefaultThresholds`. Worth checking for before any threshold move: a test that pins a
+   *number* while claiming to test a *rule* reads as a real regression.
+4. **Step 6's "two acceptable outcomes" were both wrong for the intent gate.** Promoting
+   to config was rejected on the 50ms hook budget; keeping 0.7 with a better comment was
+   ruled out by measurement, since it admitted 3 of 10 FIRE prompts. The answer was a
+   third: re-derive the literal (0.50) and defend it with a test rather than a comment.
+   Reusing `DefaultThresholds.Update` was tried before that and rejected — it reads as the
+   elegant answer and costs three near-verbatim title matches to buy an alignment
+   `printIntent` never asserts, since it computes no verdict at all.
+5. **Labelled prompts could rule the old number out but not choose the new one.** The FIRE
+   and QUIET classes separate at 0.402/0.407, so every value in [0.405, 0.7] scores
+   identically on false positives. A derivation that ends in a range still needs an
+   argument to land on a number, and pretending the data chose it would have been the
+   dishonest half of this item.
 
-- `pkg/recall/doc.go:30` — `var DefaultThresholds = Thresholds{Answer: 0.85, Update: 0.55,
-  Neighbour: 0.30}`. The Go-side default.
-- `config/forge.config.example.md:47` — `neighbour_min_score: 0.30`. The packaged default.
-- `pkg/config/types.go:61` — `NeighbourMinScore float64`.
-- `cmd/forge/recall.go:57-58` — where the config value overrides `t.Neighbour`.
-- `pkg/config/validate.go:125-127` — rejects `update_threshold < neighbour_min_score`.
-- `pkg/recall/rank.go:102-105` — `Thresholds.Neighbours`, the band `>= Neighbour && < Update`.
-- `pkg/recall/result.go:18,33` — neighbours populated on CREATE only.
-- `cmd/forge/intent.go:48-52,62` — the second instance: a hardcoded `0.7` gate, with a doc
-  comment already pointing here.
-- `cmd/forge/calibration_test.go:93` `calibrationRow`, `:52` `goldenPath`, `:49` `-update`.
+The sweep survives as `TestNeighbourFloorSweep` and `TestIntentGateSeparation`, both
+reading committed label files and both re-recordable with `-update`. **B-032 must re-run
+them**, not just re-record the calibration golden.
 
-**Prerequisites — read these before choosing a number.**
-
-- **The knob already exists.** This item is *not* "add a config value and pick a number";
-  it is "re-derive the default." Confirmed 2026-08-23.
-- **The default lives in two places** — `pkg/recall/doc.go:30` and
-  `config/forge.config.example.md:47`. They must move together or they diverge silently,
-  and the Go default is what every test and every un-configured install sees.
-- **The new floor has a hard ceiling of 0.55.** `validate.go:125` enforces
-  `update_threshold >= neighbour_min_score`, and B-008 forbids moving `update_threshold`.
-- **Re-deriving against B-008's own nine queries is circular** — the number would be chosen
-  to make those rows produce links. An honest derivation needs its own query set, one where
-  the right neighbour set is known independently of what the scorer says.
-
-**Steps.**
-
-1. Add a neighbour column to `calibrationRow` (`cmd/forge/calibration_test.go:93`) — count,
-   and the slugs. This is an addition to an existing row builder, not new machinery.
-2. Re-record the golden: `go test ./cmd/forge -run TestCalibration -update`. Commit that
-   diff **on its own**, before any threshold changes. It is the "before" measurement and
-   it must exist as a separate commit or the later diff proves nothing.
-3. Build a **separate** query set — not §3.1's nine. For each query, write down the notes
-   that *should* be neighbours before running the scorer. Ten to fifteen queries over
-   `examples/vault` is enough. Record it in the repo (a testdata file, not a comment) so
-   the derivation is reproducible.
-4. Sweep candidate floors across `[0.10, 0.55]` against that set. Report precision/recall
-   of the neighbour set at each. Pick the value, and write the argument down — the number
-   without the argument is tuning, which B-008 forbids by name.
-5. Change both defaults together: `pkg/recall/doc.go:30` and
-   `config/forge.config.example.md:47`. Check `config/presets/` too — eight packaged
-   presets, any that restate the value must move with it.
-6. Decide `intent.go`'s `0.7` **in the same session**. Two acceptable outcomes, one
-   mechanism each: promote it to a config value (add to `config.Recall`, wire it in
-   `cmd/forge/intent.go`, default it in the packaged config), or keep it hardcoded and
-   replace its doc comment with the re-derived justification. Do not leave it as
-   "re-derive both" without naming which.
-7. Re-record the golden a second time and **paste the diff into the commit message**.
-
-**Verification.**
-
-- `go test ./cmd/forge -run TestCalibration` → passes against the re-recorded golden.
-- `go test ./...` → green, both lanes.
-- Manual: `forge recall "Storybook interaction testing with play functions"` against
-  `examples/vault` emits a non-empty `neighbours` array. That row is the one that
-  motivated the item — before: CREATE 0.217, both Storybook notes under 0.30, zero
-  neighbours.
-
-**Done when** the floor is re-derived from an independent query set, both default sites
-agree, `intent.go`'s gate has a stated resolution, and the golden diff is in the commit.
-
-**Do not.** Do not move `Answer` (0.85) or `Update` (0.55) — B-008 forbids it and this item
-does not reopen it. `neighbour_min_score` is a different knob, named nowhere in that
-prohibition, and it is the only one in scope. Do not derive the floor from the nine
-calibration queries.
+Full closure note: `docs/BACKLOG.md` B-033, final section. The ruling that supersedes
+`DESIGN:257` is `docs/AUDIT.md` §8.4 **D-9**.
 
 ---
+
 
 # B-032 — activation vs. absent-term penalty
 
@@ -264,6 +185,10 @@ row partly by carrying no tags — §2.5's own effect running opposite to its in
 
 - Both rules are argued from measured vault behaviour. **Do not "fix" this by deleting
   either one.**
+- **B-033 landed first and its floor is derived against the pre-B-032 scale.** Re-running
+  `TestNeighbourFloorSweep` and `TestIntentGateSeparation` is a step below, not an
+  optional check: this change moves every score, so the floor's derivation and the intent
+  gate's separation margin are both measured against a scale that no longer exists.
 - Exposure: 9 of `examples/vault`'s 91 notes are untagged. CLAUDE.md records 31 of 91 in
   the live vault as missing `tags:` or `stack:` after the Phase 1 migration — so the real
   corpus is worse than the example corpus suggests.
@@ -286,6 +211,14 @@ row partly by carrying no tags — §2.5's own effect running opposite to its in
    **every score moves** — that is expected and must be stated, not discovered in review.
 4. Re-record: `go test ./cmd/forge -run TestCalibration -update`. Paste the diff into the
    commit message.
+4b. **Re-run B-033's two derivations against the new scale**:
+   `go test ./cmd/forge -run 'TestNeighbourFloorSweep|TestIntentGateSeparation' -update`.
+   The label files are committed and must not be edited — re-labelling after seeing new
+   scores is how a derivation becomes a fit. Read the re-recorded
+   `neighbour-sweep.golden`: if F1's peak has moved off 0.125, the floor moves with it and
+   `pkg/recall/doc.go` + `config/forge.config.example.md` change together. Read
+   `intent-gate.golden`: if the FIRE/QUIET margin has gone negative the classes overlap and
+   no gate works, which is a finding, not a number to nudge.
 5. Re-read the golden diff against B-008's closure note. If B-008's false positive
    (0.415 after the fix) returns to first place, the change is wrong regardless of what
    this row does.
@@ -300,7 +233,9 @@ row partly by carrying no tags — §2.5's own effect running opposite to its in
 - `go test ./...`, both lanes.
 
 **Done when** an untagged note is neither charged nor exempted, the golden diff is in the
-commit, spec §2.5 matches the code, and B-008's false positive has not returned.
+commit, spec §2.5 matches the code, B-008's false positive has not returned, and B-033's
+two derivations have been re-run with their verdicts stated — including "unchanged", if
+that is what they say.
 
 **Do not.** Do not move the answer/update thresholds. Note carefully: this change moves
 every score *without* touching a threshold, so "thresholds didn't move" is **not** on its
@@ -609,49 +544,25 @@ anonymisation limit plainly, or the item closes with a written decision not to b
 
 ---
 
-# B-027 — decide the design-doc half
+# B-027 — decide the design-doc half — **CLOSED 2026-08-23**
 
-**Why it's open.** `.forge/code-index-<repo>.json` is per-repo, correctly — repeatable
-`--repo` means one shared name would let repo two overwrite repo one. The code side and one
-wrong agent instruction were fixed 2026-08-21. The design docs still say the singular
-`.forge/code-index.json`, **deliberately**, under the standing "record, don't fix" rule.
+Decided: **the docs were editable, and were edited.** All eight sites now show the
+`-<repo>` suffix, plus three Turkish mirrors that described the entry as half-open.
 
-**Anchors — the sites still saying the singular name.**
+The reasoning, because the decision is the deliverable and not the find-and-replace: the
+"record, don't fix" rule and AUDIT §8.4's mechanism govern **decisions** — a doc line
+superseded by a later ruling, where §8.4 is what a reader follows. B-027 is not one of
+those. Nobody disagrees about the design; the docs name a file that has never existed on
+disk under that name, so a reader following the mechanism here is sent to a doc that is
+factually wrong about a path. That is a correction, not an override, and no §8.4 entry was
+added because there was no decision to record. The roadmap ending at 6b removes the other
+half of the rule's purpose — there is no in-flight phase to destabilise.
 
-- `docs/KNOWLEDGE-FORGE-ADDENDUM.md:247`, `:318` (§B.6)
-- `docs/KNOWLEDGE-FORGE-DESIGN.md:714`, `:954` (§15)
-- `docs/CLAUDE-CODE-PROMPT.md:208`, `:365`, `:458`
-- `docs/ROADMAP.md:53`
-- Already correct: `pkg/drift/gitindex.go`'s `persist` doc comment (carries the
-  explanation), `pkg/codeindex/index.go:52`, `store.go:9`,
-  `agents/forge-codebase-scout.md:33`.
-- Out of scope by construction: `examples/vault/` — scrubbed vault content, a historical
-  artifact, not documentation.
+The two normative sites (ADDENDUM §B.6, DESIGN §15) carry a dated one-line marker so the
+edit is traceable rather than a silent rewrite. The filename on disk is unchanged;
+`cachePath` in `pkg/drift` stays the single place a name is constructed.
 
-**Prerequisites.** CLAUDE.md's precedence rule says design docs are **not** edited
-mid-flight; §8.4-style decisions are what a later reader follows. This item is therefore a
-*decision* about whether the rule still applies now that the roadmap is complete.
-
-**Steps.**
-
-1. Decide, and write the decision into B-027: either the docs are now editable because the
-   roadmap is done and there is no in-flight phase to destabilise, or the rule stands and
-   this item closes as "recorded, permanent".
-2. If editable: update the eight sites above to show the `-<repo>` suffix. Nothing else —
-   this is a find-and-replace with a sanity read of each surrounding sentence, not a
-   rewrite of §B.6.
-3. Check `docs/tr/` for a mirror of these lines (it needed nothing for B-023's enum, but
-   these are different sections).
-4. Close B-027 either way. It is currently half-open with no remaining code consequence,
-   which is the worst state for a backlog entry to sit in.
-
-**Verification.** `grep -rn "code-index\.json" docs/` returns nothing, or returns only
-lines a written decision says stay.
-
-**Done when** the entry is closed with a stated decision, not left half-open.
-
-**Do not.** Do not rename the file on disk to match the docs — the per-repo suffix is
-required, and `cachePath` in `pkg/drift` stays the single place a name is constructed.
+Full closure note: `docs/BACKLOG.md` B-027, final section.
 
 ---
 
@@ -687,6 +598,27 @@ Phase 6 but has never been verified from a clean machine.
 dispatches. Until then the field is documentation, every note reaches drift through
 `pkg/coderef`'s recovery path, and B-018's ambiguity is the direct consequence.
 
+## B-036 — a broad query links ten neighbours
+
+**Measure before designing, and the measurement is the first real step — which is why
+there are no implementation steps here rather than a plan with a guess at the top.** After
+B-033's floor landed, three of §3.1's nine queries emit ten neighbours, the maximum
+`forge recall` returns; two general Spring notes appear on every Spring question. The
+obvious move — cap the count — truncates a score-ordered list arbitrarily and keeps the
+same two notes at the top of it.
+
+**Unblock condition:** a per-note "appears in N of M query results" column added to
+`TestNeighbourFloorSweep`'s harness, which already stages the corpus. That answers whether
+a note scoring on *every* query in an ecosystem should be admitted as a neighbour at all —
+a document-frequency property the scorer computes for terms (§2.3.1) and not for notes.
+Design after reading it.
+
+**Do not respond to this by raising the floor.** Every floor in B-033's sweep that drops
+those two notes also drops the Storybook family B-033 was opened to fix.
+
+**Re-measure after B-032**, which moves `blend`'s denominator and changes every number in
+the entry.
+
 ## B-003 — repo directory still named `TIL`
 
 **User decision.** Renaming breaks shell aliases, IDE projects, and `.idea/` state pointing
@@ -709,7 +641,13 @@ Collected here so a plan does not have to restate them and a session cannot miss
 1. **Scoring changes must show the golden diff.** `go test ./cmd/forge -run TestCalibration
    -update` rewrites `cmd/forge/testdata/calibration.golden`, and that diff is the review
    surface. A `pkg/recall` change without it is unreviewed, not harmless. Applies to
-   B-031, B-032, B-033.
+   B-031, B-032, B-036.
+1b. **Two more goldens are now derivations, not just records.**
+   `testdata/neighbour-sweep.golden` and `testdata/intent-gate.golden` are produced by
+   `TestNeighbourFloorSweep` and `TestIntentGateSeparation` from committed label files.
+   A scoring change re-runs both with `-update` and states the verdict. **Never edit the
+   label files to match new scores** — they were written before any score was measured and
+   that ordering is the only thing making the derivation honest.
 2. **The answer/update thresholds do not move.** 0.85 / 0.55, per DESIGN §5.3 and B-008's
    closure. `neighbour_min_score` is a separate knob and is the only threshold in scope
    anywhere in this file.

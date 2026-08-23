@@ -129,6 +129,6 @@ func BenchmarkParseJava(b *testing.B) {
 	}
 	src := []byte(javaSrc)
 	for b.Loop() {
-		Parse("A.java", src)
+		_, _ = Parse("A.java", src)
 	}
 }

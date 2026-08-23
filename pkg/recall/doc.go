@@ -27,7 +27,20 @@ type Thresholds struct {
 }
 
 // DefaultThresholds are DESIGN §10's recall.answer_threshold / update_threshold.
-var DefaultThresholds = Thresholds{Answer: 0.85, Update: 0.55, Neighbour: 0.30}
+//
+// Answer and Update are DESIGN §5.3's and do not move — B-008 forbids it by name.
+// Neighbour was re-derived from 0.30 to 0.125 closing BACKLOG B-033: 0.30 was calibrated
+// against the pre-B-008 scale, and after that change it left 6 of 15 adjacent-topic
+// queries with zero neighbours, i.e. writing a new note orphaned in a vault whose graph
+// report already tracks 21 orphans of 94. Swept over labelled ground truth
+// (cmd/forge/testdata/neighbour-labels.txt, TestNeighbourFloorSweep), 0.125 is F1's
+// maximum and the only value that recovers the case B-033 was opened for. The full
+// argument is in docs/BACKLOG.md's B-033 closure note; changing this number without
+// re-running that sweep is tuning.
+//
+// This is the Go default and every un-configured install sees it. It has a twin in
+// config/forge.config.example.md's neighbour_min_score, which must move with it.
+var DefaultThresholds = Thresholds{Answer: 0.85, Update: 0.55, Neighbour: 0.125}
 
 // Decision is what stage 2 does with the top candidate.
 type Decision string

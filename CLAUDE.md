@@ -93,7 +93,8 @@ temp git repo confirming byte-identical reruns (`diff`, no output) and a byte-fo
 must key off `coderef.Ref.Symbol != ""`, not `Ref.Kind == KindSymbol` — the canonical
 `code_refs:` citation form (`repo:path#Symbol`) parses to `KindPath` with `Symbol` set,
 so filtering on `Kind` alone would silently skip nearly every real citation. New backlog
-item recorded rather than fixed this phase: **B-027** (half-closed 2026-08-21;
+item recorded rather than fixed this phase: **B-027** (half-closed 2026-08-21, closed
+2026-08-23;
 `pkg/drift/gitindex.go` caches
 per-repo as `.forge/code-index-<repo>.json`, while ADDENDUM/DESIGN both describe the
 singular `.forge/code-index.json` — correct behavior, since one shared name would
@@ -136,7 +137,8 @@ files were added per AUDIT §8.4 D-3: `docs/adr/0001-lexical-recall-vs-embedding
 CONTRIBUTING.md were added — README and LICENSE are release-blocking, not just
 documentation, since `.goreleaser.yml`'s `archives.files` lists `README.md` as a
 non-glob entry. `evals/` scaffolding and a `ci.yml` lint/evals step (`golangci-lint` via
-new `.golangci.yml`, `errcheck` disabled repo-wide, recorded as **B-029**) round out the
+new `.golangci.yml`, `errcheck` disabled repo-wide, recorded as **B-029** and re-enabled
+2026-08-23) round out the
 phase. **B-013 closed this phase**: `pkg/codeindex.Extractor`'s doc comment now
 explicitly covers cache-format/serialized-shape versioning, not just extraction-logic
 versioning, per its own "must land before the first released binary" text. Verified:
@@ -217,23 +219,23 @@ metered advisor call) and **B-009** (it was already satisfied by `README.md:25-3
 not a distinct path from the default fallthrough — is untouched and still open, kept out of
 a doc commit on purpose) and **B-027** (`agents/forge-codebase-scout.md` was telling that
 agent to seed from a path that never exists on disk, which was the one operational
-consequence, plus two `pkg/codeindex` doc comments; ADDENDUM §B.6 / DESIGN §15 still say
-the singular name, deliberately). Re-triaged: **B-025** is blocked on observing a live
+consequence, plus two `pkg/codeindex` doc comments; ADDENDUM §B.6 / DESIGN §15 kept the
+singular name until 2026-08-23, when the doc half closed too). Re-triaged: **B-025** is blocked on observing a live
 `PostToolUse`/WebFetch payload, not open work — **do not re-attempt the WebFetch**. New:
 **B-030** (`dataset.capture` accepts five tiers but only `d2`/`d4` gate anything; `d3` is
 implemented and never reads the list, so removing `d3` silently does not stop capture —
 **closed in Phase 6b, 2026-08-22**, by making the control real rather than documenting it).
 Two items were re-sized rather than fixed, so the next session does not start on a wrong
-estimate: **B-029** is roughly double its recorded scope (measured **95** raw errcheck
-findings, not "~20"; ~37 after default exclusions, 10 of them production). Its triage item 1
+estimate: **B-029** is roughly double its recorded scope — **and that re-size was itself
+wrong; see the B-029 closure note below for the four measured numbers.** Its triage item 1
 landed 2026-08-22 — `cmd/forge/recall_load.go`'s `refresh()` returned `nil` on every path —
 but **not the way the entry prescribed**: propagating reaches `runRecall`, which exits 1
 without emitting candidates it already scored correctly, so a transient SQLite lock held by
 a concurrent `forge intent` would cost the answer. The signature was the defect, not the
 missing propagation; `refresh` no longer returns `error` and `writeRows` checks all three
 errors the old body dropped. The entry's item 3 (`catfile.go`'s `cmd.Wait()`) was re-traced
-in the same pass and its claim is **weaker** than recorded — read B-029's closing section
-before scheduling the sweep. **B-008's** hidden prerequisite was
+in the same pass and its claim is **weaker** than recorded — that re-trace held up, and
+`cmd.Wait()` was the sweep's one real fix when B-029 closed 2026-08-23. **B-008's** hidden prerequisite was
 that **no harness producing the §3.1 table existed** — closed since, see below. See BACKLOG
 for the rest.
 
@@ -260,10 +262,78 @@ rather than folded in: **B-031** (Kafka/Testcontainers is a coverage defect, spl
 admission is strictly decreasing, so one knob cannot move a false positive down and a miss
 up), **B-032** (an untagged note escapes the absent-term penalty entirely, §2.5's asymmetry
 running the other way), **B-033** (the 0.30 neighbour floor predates the scale change, so an
-adjacent-topic query now verdicts CREATE with *zero* neighbours). **The thresholds did not
+adjacent-topic query now verdicts CREATE with *zero* neighbours — **closed 2026-08-23**,
+see below). **The thresholds did not
 move and still must not.** `references/recall-spec.md` §2.3/§2.4 were stale by two changes,
 since 2b's IDF weighting was never documented at all; there is now a §2.3.1, a §2.5 note,
 a generated §3.1 and a §4.1 example matching real output.
+
+**B-029 and B-027 closed 2026-08-23, same worktree, out-of-phase — two items, one at each
+end of `docs/TODO.md`'s queue, sharing no anchor with anything between them.**
+B-029 re-enabled `errcheck`: it is off `.golangci.yml`'s `disable:` list and
+`golangci-lint run ./...` is clean under the **v1.64.8** `ci.yml` pins. **Every count the
+entry carried was wrong, in both directions** — the worklist is **35** (26 test / 9
+production), measured with the pinned linter against the repo's own config; the bare
+`errcheck` binary reports 105 raw and golangci-lint **v2** reports 50, and neither is this
+repo's gate. The finding worth carrying forward is not an errcheck finding at all:
+golangci-lint v1 defaults to `max-issues-per-linter: 50` and `max-same-issues: 3`, so the
+same tree reports **22** at stock limits — thirteen repeats silently dropped, for every
+linter in the default set, for all of Phase 6. Both limits are now `0`. Two of the entry's
+three prescriptions did not survive a trace: `stamp()`/`persist()` do **not** need signature
+changes (one call each, self-healing failure, and neither caller has an error channel —
+unlike `refresh()`, which promised propagation it never performed), and `cmd.Wait()` — the
+one real fix — is adopted **only when `drainBlobs` succeeded**, because on a truncated
+stream `Wait` reports a broken pipe that would bury the read error the caller needs. Not
+re-measured and not claimed: `forge drift`'s <100ms hook budget — `catfile.go` adds no work
+(Wait was already called there; only its return value is now read) and the three repos the
+vault's cached indexes name are not on this machine.
+B-027 closed by **editing the eight design-doc sites**, which is a change of practice worth
+knowing about: the standing "record, don't fix" rule and AUDIT §8.4's mechanism govern
+**decisions** — a doc line superseded by a later ruling. B-027 is not one; the docs named a
+file that never existed on disk under that name, so following the mechanism sent a reader
+to a doc that is factually wrong about a path. Correcting a filename is not overriding a
+decision, no §8.4 entry was added, and the two normative sites (ADDENDUM §B.6, DESIGN §15)
+carry a dated marker so the edit is traceable. **The rule still stands for decisions.**
+
+**B-033 closed 2026-08-23, same worktree, out-of-phase — and it is the case that rule
+governs.** The neighbour floor moved **0.30 → 0.125** at both default sites
+(`pkg/recall/doc.go`, `config/forge.config.example.md`; `config/presets/` restates neither
+threshold, checked). `DESIGN:257`'s "0.3–0.55" was **deliberately not edited** — a decision
+superseded by a later ruling is exactly what AUDIT §8.4 governs, unlike B-027's wrong
+filename — and the ruling is **D-9**, the first §8.4 entry with no C-number.
+The derivation is the point: 0.30 left six of fifteen adjacent-topic queries emitting
+**zero** neighbours, and re-deriving against §3.1's nine would have been circular, so
+`cmd/forge/testdata/neighbour-labels.txt` is a separate set — fifteen queries, 58 expected
+neighbours, written from the corpus file list before any score was measured and **committed
+one commit ahead of the sweep that reads them**, so the ordering is checkable in git rather
+than asserted. 0.125 is F1's maximum (0.611) and the only swept value that recovers the
+Storybook family; measured end to end, that query now emits seven neighbours where it
+emitted zero. **Precision 0.548 is a lower bound and was left uncorrected on purpose** —
+several counted false positives are defensible links the labels did not name, and
+re-labelling after seeing scores is how a derivation becomes a fit.
+**The intent gate got the opposite answer, deliberately.** B-033's entry called the two
+numbers "one question, not two"; that is true of the root cause and false of the answer,
+because `printIntent` interrupts a live session under a never-disturb contract. Measured
+against 25 labelled prompts, the old `0.7` admitted **3 of 10** FIRE prompts — but the two
+classes separate at 0.402/0.407, a **0.005** margin, so the labels rule 0.7 out and cannot
+choose its replacement. The gate is **0.50**, the lowest value still a clear step above the
+QUIET ceiling that admits every FIRE prompt whose phrasing tracks a note title (8 of 10),
+and `minFireAdmitted` is pinned to exactly 8 so any decay fails the build rather than
+passing quietly the way 0.7's did. **`DefaultThresholds.Update` was tried first and
+rejected** — the argument for it (below Update the verdict is CREATE, so the message would
+contradict the scorer) does not survive contact with the code: `printIntent` computes no
+verdict and `emitIntentHit` hedges with "may". It would have cost three near-verbatim title
+matches for an alignment nothing in the function asserts. Same failure as
+`TestNeighbourBandEdges`, inverted — that test pinned a *number* while claiming to test a
+*rule*; this would have pinned the gate to a *rule* that does not govern it. It stays a
+plain constant, because `printIntent` runs under the 50ms hook budget and loads no config.
+Two things worth carrying forward: `pkg/recall`'s `TestNeighbourBandEdges` had `0.30`
+spelled into its fixture and failed as if the band had broken (it now expresses both edges
+via `DefaultThresholds` — a test that pins a *number* while claiming to test a *rule* reads
+as a real regression), and **B-036** was opened rather than built: three of §3.1's nine
+queries now emit ten neighbours because two general Spring notes score on every Spring
+question, which no single scalar cut separates. **Do not respond to B-036 by raising the
+floor.**
 
 **B-022 closed in Phase 4**
 (the schema pattern now covers all nine `cfg.Pipeline` stages minus `critique`); **B-007
@@ -382,15 +452,27 @@ project, not a phase gated inside this one; see BACKLOG B-021. One phase per ses
 time runs out the cut order is `6b → 5b → advisor tier`. If work comes up outside the
 current phase's scope, write it to `docs/BACKLOG.md` rather than building it.
 
-**Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004, **B-029**, **B-031**,
-**B-032**, **B-033**, **B-034**, **B-035** and most of the twelve findings 2b recorded are
+**Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004, **B-031**,
+**B-032**, **B-034**, **B-035**, **B-036** and most of the twelve findings 2b recorded are
 open; **B-025 is blocked**, not open. B-001 (doc coherence), B-005 (seven note types) and
 B-006 (link rewrite) closed on 2026-08-09; B-007 and B-022 in Phase 4; B-009 and B-024 on
 2026-08-21, when B-023 and B-027 were also half-closed (docs synced, the behavior/design-doc
 halves still open); **B-008 on 2026-08-22**, which opened B-031/B-032/B-033 in its place;
-**B-030 in Phase 6b the same day**, which opened B-034/B-035.
-**The one still needing its own session is B-029** — re-sized on 2026-08-21 rather than
-attempted, and its closing section says what the estimate actually is.
+**B-030 in Phase 6b the same day**, which opened B-034/B-035; **B-029, B-027 and B-033 on
+2026-08-23** (see the notes below), B-033 opening **B-036** in its place.
+**The head of the queue is now B-032**, and `docs/TODO.md` fixes the order from there.
+
+**`docs/TODO.md` is the execution half of that file** (written 2026-08-23). BACKLOG records
+*why* an item exists; TODO records *how to close it* — a six-field plan (anchors,
+prerequisites, steps, verification, done-when, and an explicit "do not") for each of the
+nine workable items — **seven now, B-029 and B-027 closed 2026-08-23** — an index row for
+all 35, and an unblock condition rather than steps for the four that are open but not
+actionable. It also fixes the execution order: **B-033
+had to land before B-032**, because B-032 moves `blend`'s denominator and would shift the
+scale B-033 re-derives against. It did, on 2026-08-23 — so **B-032 now owes a re-run of
+B-033's two derivations**, not just a re-recorded calibration golden. Both are tests
+(`TestNeighbourFloorSweep`, `TestIntentGateSeparation`) reading committed label files, and
+`docs/TODO.md` §B-032 step 4b spells out what to read in each.
 
 **`docs/TODO.md` is the execution half of that file** (written 2026-08-23). BACKLOG records
 *why* an item exists; TODO records *how to close it* — a six-field plan (anchors,

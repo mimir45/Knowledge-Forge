@@ -30,7 +30,7 @@ func TestUpsertCreatesFileAndIsIdempotent(t *testing.T) {
 
 func TestUpsertReplacesInPlaceAndKeepsSurroundingContent(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "CLAUDE.md")
-	os.WriteFile(path, []byte("# Module notes\n\nHand-written prose stays here.\n"), 0o644)
+	seed(t, path, "# Module notes\n\nHand-written prose stays here.\n")
 	if err := Upsert(path, "logback", Markdown, "Notes: [[a]]"); err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +47,7 @@ func TestUpsertReplacesInPlaceAndKeepsSurroundingContent(t *testing.T) {
 
 func TestUpsertBeforeAnchorsANewBlockAndLeavesAnExistingOneInPlace(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "App.java")
-	os.WriteFile(path, []byte("package app;\n\npublic class App {\n}\n"), 0o644)
+	seed(t, path, "package app;\n\npublic class App {\n}\n")
 	if err := UpsertBefore(path, "App.App", Slash, "forge: [[a]]", 3); err != nil {
 		t.Fatal(err)
 	}
@@ -71,9 +71,13 @@ func TestUpsertBeforeAnchorsANewBlockAndLeavesAnExistingOneInPlace(t *testing.T)
 
 func TestTwoDistinctIDsCoexistInOneFile(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "App.java")
-	os.WriteFile(path, []byte("package app;\n"), 0o644)
-	UpsertBefore(path, "App.foo", Slash, "forge: [[a]]", 1)
-	UpsertBefore(path, "App.bar", Slash, "forge: [[b]]", 1)
+	seed(t, path, "package app;\n")
+	if err := UpsertBefore(path, "App.foo", Slash, "forge: [[a]]", 1); err != nil {
+		t.Fatal(err)
+	}
+	if err := UpsertBefore(path, "App.bar", Slash, "forge: [[b]]", 1); err != nil {
+		t.Fatal(err)
+	}
 	if err := Remove(path, "App.foo", Slash); err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +91,7 @@ func TestTwoDistinctIDsCoexistInOneFile(t *testing.T) {
 func TestRemoveRestoresTheFileByteForByteWhenTheBlockWasAppended(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "CLAUDE.md")
 	before := "# Module notes\n\nHand-written prose stays here.\n"
-	os.WriteFile(path, []byte(before), 0o644)
+	seed(t, path, before)
 	if err := Upsert(path, "logback", Markdown, "Notes: [[a]]"); err != nil {
 		t.Fatal(err)
 	}
@@ -106,12 +110,22 @@ func TestRemoveIsANoOpWithoutAFileOrAnUnwrittenID(t *testing.T) {
 		t.Fatalf("missing file: %v", err)
 	}
 	path := filepath.Join(dir, "CLAUDE.md")
-	os.WriteFile(path, []byte("# Notes\n"), 0o644)
+	seed(t, path, "# Notes\n")
 	if err := Remove(path, "logback", Markdown); err != nil {
 		t.Fatalf("unwritten id: %v", err)
 	}
 	got, _ := os.ReadFile(path)
 	if string(got) != "# Notes\n" {
 		t.Errorf("no-op Remove changed the file: %q", got)
+	}
+}
+
+// seed writes a test fixture file. A failed setup write makes every assertion below it
+// meaningless, so it aborts rather than letting the test report a byte comparison against
+// a file that was never created.
+func seed(t *testing.T, path, body string) {
+	t.Helper()
+	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+		t.Fatal(err)
 	}
 }

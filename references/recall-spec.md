@@ -324,7 +324,7 @@ top_score
    ├─ ≥ 0.85  and note fresh   → ANSWER_FROM_VAULT
    ├─ ≥ 0.85  and note stale   → UPDATE(refresh)
    ├─ 0.55 – 0.85              → UPDATE(extend)
-   └─ < 0.55                   → CREATE, then link the 0.3–0.55 neighbours
+   └─ < 0.55                   → CREATE, then link the 0.125–0.55 neighbours
 ```
 
 `answer_threshold: 0.85` and `update_threshold: 0.55` are DESIGN §10's config keys.
@@ -357,6 +357,12 @@ with:
 go test ./cmd/forge -run TestCalibration -update   # rewrites the golden
 git diff cmd/forge/testdata/calibration.golden     # before -> after, reviewable
 ```
+
+The golden carries a fifth column the table below does not restate: the neighbour set
+each row emits, added closing B-033. Verdict says a note gets created; that column says
+whether it gets created linked or orphaned, and it is the only column a floor change may
+move — score and verdict are functions of `Rank` and `Decide`, which the floor does not
+enter. A golden diff that moves them is a leak into scoring.
 
 The corpus is `examples/vault` (92 scored docs), staged into a temp dir per run so the
 SQLite cache cannot warm one column and not the other. It is git-tracked on purpose: the
@@ -416,13 +422,15 @@ narrower than the question (`keyset-pagination-compound-or-predicate`), which is
 the better reading of it — but it is a demotion, and it is recorded here rather than
 argued away.
 
-**The residual cost, on file rather than fixed.** Adjacent-topic queries now lose their
-neighbour links as well as their UPDATE verdict. The Storybook query verdicts CREATE with
-**zero** neighbours: both Storybook notes land at 0.217 and 0.201, under §3.2's 0.30
-floor, so the new note would be written unlinked to the two notes obviously related to
-it. The neighbour floor was calibrated against the old scale and this change moved the
-scale; re-deriving it against the same nine queries used to validate the fix would be
-circular, so it is **BACKLOG B-033** and its own session. Two further consequences are
+**The residual cost — recorded here, closed 2026-08-23.** Adjacent-topic queries briefly
+lost their neighbour links as well as their UPDATE verdict. The Storybook query verdicted
+CREATE with **zero** neighbours: both Storybook notes landed at 0.217 and 0.201, under
+§3.2's then-0.30 floor, so the new note would have been written unlinked to the two notes
+obviously related to it. That floor was calibrated against the old scale; re-deriving it
+against the same nine queries used to validate the fix would have been circular, so it
+went to **BACKLOG B-033** and its own session, where the floor was re-derived to **0.125**
+against a separate labelled query set. The same row now emits seven neighbours, five of
+them the Storybook family. §3.2 carries the derivation. Two further consequences are
 **B-031** (the Kafka/Testcontainers miss is a coverage defect, not a precision one, and
 was split out of B-008) and **B-032** (§2.5's untagged-note asymmetry).
 
@@ -435,9 +443,50 @@ measurement rather than a projection.
 
 ### 3.2 Neighbour band
 
-On CREATE, candidates scoring `0.3 – 0.55` are the neighbours the new note links to.
+On CREATE, candidates scoring `0.125 – 0.55` are the neighbours the new note links to.
 They arrive pre-filtered in the `neighbours` array (§4), so the caller never applies a
 threshold itself. The band is not a separate query — it is a slice of the same ranking.
+
+**The floor is 0.125, re-derived 2026-08-23 (BACKLOG B-033).** It was 0.30, chosen before
+§2.3.1's IDF change moved the scale under it, and at 0.30 six of fifteen adjacent-topic
+queries emitted no neighbours at all — a CREATE verdict that writes an orphan.
+
+Deriving it from §3.1's nine queries would have been circular, so it was derived from a
+separate set: `cmd/forge/testdata/neighbour-labels.txt`, fifteen adjacent-topic questions
+with 58 expected neighbours written from the corpus file list **before any score was
+measured**, and committed one commit ahead of the sweep that reads them so the ordering is
+checkable. `TestNeighbourFloorSweep` re-runs the sweep and records
+`testdata/neighbour-sweep.golden`; the number without that sweep is tuning.
+
+| Floor | Precision | Recall | F1 | Median links/query | Queries with none |
+|---|---|---|---|---|---|
+| 0.100 | 0.478 | 0.741 | 0.581 | 6 | 0 |
+| **0.125** | **0.548** | **0.690** | **0.611** | **4** | **0** |
+| 0.150 | 0.600 | 0.569 | 0.584 | 3 | 0 |
+| 0.175 | 0.643 | 0.466 | 0.540 | 2 | 0 |
+| 0.200 | 0.655 | 0.328 | 0.437 | 2 | 1 |
+| 0.300 | 0.900 | 0.155 | 0.265 | 1 | 6 |
+
+Three things decided it, in order:
+
+1. **It is the only swept value that fixes the case B-033 was opened for.** The five
+   Storybook notes cluster at 0.131–0.323. Every floor at 0.150 and above emits the top
+   one and nothing else — no better than the status quo on that row.
+2. **F1 peaks there** (0.611), and it is within 0.011 of F₂'s peak. F₂ is the right
+   weighting given the cost asymmetry — a missed neighbour orphans a note silently, a
+   spurious one is a wrong wikilink a reviewer deletes — and §2.2 already sets the
+   precedent of preferring F₂ in this scorer.
+3. **Link volume stays reviewable:** median 4 per query, and no query returns empty until
+   0.200.
+
+Precision 0.548 is a **lower bound**, not the true rate: several counted false positives
+are defensible links the labels simply did not name (`food-ordering-system-course-
+architecture-index` on the saga and DDD queries, for one). They were left uncorrected on
+purpose — re-labelling after seeing the scores is how a derivation becomes a fit.
+
+The cost is on file as **B-036**: §3.1's broadest queries now emit ten neighbours, because
+two general Spring notes score on every Spring question. That is a corpus property no
+floor can separate, and a cap on the neighbour count is a different change.
 
 ---
 

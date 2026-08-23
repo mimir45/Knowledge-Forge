@@ -30,7 +30,7 @@ func TestEngineRunHitsRealHTTPAndBooksSpend(t *testing.T) {
 // costingHandler is the fake provider: the uniform envelope api.go's do() reads,
 // regardless of which provider payload shape hit it.
 func costingHandler(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(map[string]any{
+	_ = json.NewEncoder(w).Encode(map[string]any{
 		"output": "ok", "tokens": 10, "cost_usd": 0.05,
 	})
 }

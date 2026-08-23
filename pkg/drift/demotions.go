@@ -38,7 +38,7 @@ func OpenStore(dir string) *Store {
 	s := &Store{Notes: map[string]Demotion{}, dir: dir}
 	b, err := os.ReadFile(filepath.Join(dir, "demotions.json"))
 	if err == nil {
-		json.Unmarshal(b, s) // a corrupt store loses restore targets, never verdicts
+		json.Unmarshal(b, s) //nolint:errcheck // a corrupt store loses restore targets, never verdicts
 	}
 	if s.Notes == nil {
 		s.Notes = map[string]Demotion{}
@@ -94,5 +94,5 @@ func (s *Store) Log(line string) {
 		return
 	}
 	defer f.Close()
-	f.WriteString(time.Now().Format("2006-01-02T15:04:05") + " " + line + "\n")
+	f.WriteString(time.Now().Format("2006-01-02T15:04:05") + " " + line + "\n") //nolint:errcheck // drift.log is best-effort history; a failed append must never change a verdict
 }

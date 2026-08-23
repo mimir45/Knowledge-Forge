@@ -106,7 +106,7 @@ func stamp(n *vault.Note, sch *vault.Schema, head string) {
 	if head == "" || n.FM.Str("drift_checked_at") == head {
 		return
 	}
-	write(n, sch, map[string]string{"drift_checked_at": head})
+	write(n, sch, map[string]string{"drift_checked_at": head}) //nolint:errcheck // a failed stamp leaves drift_checked_at stale, so the next run re-evaluates the note: the same non-event demote's own write failure is
 }
 
 func write(n *vault.Note, sch *vault.Schema, kv map[string]string) error {

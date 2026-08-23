@@ -1,0 +1,44 @@
+# Intent-gate ground truth — the prompts cmd/forge/intent.go's threshold is derived from.
+#
+# B-033 pairs the neighbour floor with intent.go's hardcoded 0.7 because both were
+# calibrated against the pre-B-008 scale. They share a root cause, not an answer: the two
+# gates have opposite cost functions. A neighbour false positive is one wrong wikilink in
+# a note under review. An intent false positive interrupts a user prompt with injected
+# context, on every prompt, in a hook contracted never to disturb the session. So this
+# gate is derived for precision where the floor is derived for recall.
+#
+# FIRE  — the vault genuinely already answers this; surfacing the hit is the point.
+#         Each is phrased as a user would type it, against a note that exists.
+# QUIET — the vault does not answer this. Adjacent-topic prompts, which are exactly the
+#         hard negatives (a related note exists and scores), plus off-corpus prompts,
+#         which must never fire.
+#
+# Written from the corpus slug list before any score was measured, same rule as
+# neighbour-labels.txt.
+
+FIRE: why does @Value not work for a YAML list in Spring Boot
+FIRE: how does keyset pagination work
+FIRE: why is Continue.dev sending zero requests to llama.cpp
+FIRE: why does Qwen3 return a blank response in Continue.dev
+FIRE: what is the transactional outbox pattern
+FIRE: why do I need saveAndFlush to get a creation timestamp
+FIRE: Testcontainers HTTP 400 from the Docker Desktop CLI socket
+FIRE: what does the Storybook decorator pattern do for Redux providers
+FIRE: why did IntelliJ lose src/test/java as a test sources root
+FIRE: how does the saga pattern work with choreography
+
+QUIET: Spring Data JPA pagination with sorting on multiple columns
+QUIET: Testcontainers reuse across test classes in Spring Boot
+QUIET: Keycloak client scopes and custom claim mappers
+QUIET: Storybook accessibility addon for component checks
+QUIET: Liquibase rollback strategy for a failed migration
+QUIET: Kafka consumer group rebalancing in an event driven system
+QUIET: Maven multi module build with a shared parent pom
+QUIET: React hook for detecting clicks outside a dropdown
+QUIET: Docker Compose healthcheck for a Postgres service
+QUIET: Binding a nested YAML list into a Spring Boot configuration record
+QUIET: how do I rename a file in bash
+QUIET: what is the time complexity of quicksort
+QUIET: write a regex that matches an email address
+QUIET: how do I set up a Kubernetes ingress with cert-manager
+QUIET: what is the difference between a mutex and a semaphore

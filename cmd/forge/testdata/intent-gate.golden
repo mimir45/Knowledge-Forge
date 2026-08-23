@@ -1,0 +1,33 @@
+Intent gate: 0.50. Corpus ../../examples/vault, 25 prompts.
+
+| Score | Class | Admitted | Prompt |
+|---|---|---|---|
+| 1.000 | FIRE | true | what is the transactional outbox pattern |
+| 0.950 | FIRE | true | how does the saga pattern work with choreography |
+| 0.729 | FIRE | true | how does keyset pagination work |
+| 0.652 | FIRE | true | what does the Storybook decorator pattern do for Redux providers |
+| 0.576 | FIRE | true | why did IntelliJ lose src/test/java as a test sources root |
+| 0.546 | FIRE | true | Testcontainers HTTP 400 from the Docker Desktop CLI socket |
+| 0.533 | FIRE | true | why is Continue.dev sending zero requests to llama.cpp |
+| 0.517 | FIRE | true | why does Qwen3 return a blank response in Continue.dev |
+| 0.464 | FIRE | false | why do I need saveAndFlush to get a creation timestamp |
+| 0.407 | FIRE | false | why does @Value not work for a YAML list in Spring Boot |
+| 0.402 | QUIET | false | Kafka consumer group rebalancing in an event driven system |
+| 0.376 | QUIET | false | Docker Compose healthcheck for a Postgres service |
+| 0.323 | QUIET | false | Storybook accessibility addon for component checks |
+| 0.313 | QUIET | false | Liquibase rollback strategy for a failed migration |
+| 0.310 | QUIET | false | Testcontainers reuse across test classes in Spring Boot |
+| 0.308 | QUIET | false | Binding a nested YAML list into a Spring Boot configuration record |
+| 0.292 | QUIET | false | React hook for detecting clicks outside a dropdown |
+| 0.289 | QUIET | false | how do I rename a file in bash |
+| 0.213 | QUIET | false | Maven multi module build with a shared parent pom |
+| 0.201 | QUIET | false | Spring Data JPA pagination with sorting on multiple columns |
+| 0.195 | QUIET | false | Keycloak client scopes and custom claim mappers |
+| 0.158 | QUIET | false | how do I set up a Kubernetes ingress with cert-manager |
+| 0.080 | QUIET | false | write a regex that matches an email address |
+| 0.067 | QUIET | false | what is the time complexity of quicksort |
+| 0.022 | QUIET | false | what is the difference between a mutex and a semaphore |
+
+Lowest FIRE 0.407, highest QUIET 0.402, margin 0.005 — every value from the top of
+QUIET to the old 0.7 is false-positive-free here, so this measurement rules out
+0.7 but does not pick its replacement. See intent.go for what does.

@@ -934,9 +934,9 @@ only a citation proven to have once resolved verdicts `Broken`.
 
 ## B-027 — `.forge/code-index-<repo>.json` is plural-per-repo; ADDENDUM/DESIGN say the singular `.forge/code-index.json`
 
-**Owner: whoever next edits ADDENDUM §B.6 or DESIGN §15. Status: half done, 2026-08-21 —
-the code side and one wrong agent instruction are fixed; the design docs still say the
-singular name, deliberately. Originally found during Phase 5b's explore pass while
+**Owner: whoever next edits ADDENDUM §B.6 or DESIGN §15. Status: closed 2026-08-23 — the
+code side and one wrong agent instruction were fixed 2026-08-21, the eight doc sites on
+2026-08-23. Originally found during Phase 5b's explore pass while
 confirming `forge logback`'s requirement 3 ("keep the code index fresh") was already
 satisfied by existing machinery; the naming predates Phase 5b, live since Phase 2b's
 `pkg/drift`.**
@@ -978,6 +978,34 @@ sites inside the tree also claimed the singular name:
 Still open: ADDENDUM §B.6 (`:247`, `:318`) and DESIGN §15 (`:714`, `:954`), plus
 `CLAUDE-CODE-PROMPT.md:208,365,458` and `ROADMAP.md:53`. `examples/vault/` is out of scope
 by construction — it is scrubbed vault content, a historical artifact, not documentation.
+
+### Closed 2026-08-23. The docs were edited, and here is why that is not a rule change.
+
+The eight sites listed above now show the `-<repo>` suffix: ADDENDUM `:247` (§B.6), `:318`
+and the phase table at `:563`; DESIGN `:714` and `:954` (§15); `ROADMAP.md:53`;
+`CLAUDE-CODE-PROMPT.md:208,365,458`. Three Turkish mirrors that described this entry as
+half-open were corrected with it (`docs/tr/02-MIMARI.md:749`, `03-KULLANIM-KILAVUZU.md:761`;
+`04-DOSYA-DOSYA.md:349` was already accurate and is unchanged).
+
+**The standing "record, don't fix" rule is untouched, on two grounds.** First, it exists so
+a doc does not shift under a phase that is mid-flight against it; the roadmap ended at 6b,
+so there is no such phase. Second and more important: that rule and AUDIT §8.4's mechanism
+govern **decisions** — a line where the doc says one thing, a later decision says another,
+and §8.4 is what a reader follows. B-027 is not one of those. Nobody disagrees about the
+design; the docs simply name a file that has never existed on disk under that name. A
+reader following §8.4's mechanism here would be told to follow a doc that is factually
+wrong about a path. Correcting a filename is not overriding a decision, and no §8.4 entry
+was added, because there was no decision to record.
+
+The two normative sites (ADDENDUM §B.6, DESIGN §15) carry a one-line marker saying they
+said the singular name until 2026-08-23 and pointing here, so the edit is traceable rather
+than a silent rewrite. The reason itself — repeatable `--repo` means a shared name lets
+repo two overwrite repo one — is now stated at §B.6 rather than living only in
+`pkg/drift/gitindex.go`'s `persist` doc comment.
+
+**Unchanged, deliberately:** the filename on disk. `cachePath` in `pkg/drift` stays the
+single place a name is constructed. `examples/vault/` is scrubbed vault content and a
+historical artifact, out of scope by construction.
 
 ---
 
@@ -1053,8 +1081,9 @@ practice.
 
 ## B-029 — `errcheck` is disabled tree-wide in `.golangci.yml`
 
-**Owner: recorded during Phase 6's CI delta. Status: open — triage item 1 landed 2026-08-22
-(see the closing section); the sweep and the `disable:` block are untouched.**
+**Owner: recorded during Phase 6's CI delta. Status: closed 2026-08-23.** Triage item 1
+landed 2026-08-22; the sweep and the `disable:` block closed 2026-08-23. **Every count in
+this entry and in its 2026-08-21 re-measure is wrong — read the last section first.**
 
 Phase 6 added `golangci-lint` to `ci.yml` (`docs/CLAUDE-CODE-PROMPT.md`'s original Phase 6
 intent). Its default linter set (`errcheck`, `gosimple`, `govet`, `ineffassign`,
@@ -1068,7 +1097,8 @@ that `pkg/engine/host.go` keeps explicit on purpose, per its own comment, so `Re
 growing fields later can't silently leak into `instruction`'s JSON contract. All four are marked
 with a scoped `//nolint` at the specific line, not a blanket exclusion.
 
-`errcheck` was a different matter: ~20 findings spread across `cmd/forge` and `pkg/drift`,
+`errcheck` was a different matter: ~20 findings — the real figure is **35**, see the
+closing section — spread across `cmd/forge` and `pkg/drift`,
 `pkg/report`, `pkg/store`, `pkg/engine`, `pkg/sentinel`, `pkg/telemetry`, `pkg/codeindex`.
 Some are already-documented deliberate ignores (`pkg/drift/demotions.go`'s `json.Unmarshal`
 next to the comment "a corrupt store loses restore targets, never verdicts"); others are
@@ -1191,6 +1221,79 @@ treats every such line as the documented `"<name> missing"` case and `continue`s
 unexpected line — a `git` diagnostic, a truncated header — therefore desynchronises the
 request/reply stream, after which blob bodies are parsed as headers. Pre-existing, not
 introduced here, and worth its own look because the index feeds drift's verdicts.
+
+### Closed 2026-08-23. Every number above was wrong, in both directions.
+
+`errcheck` is off `.golangci.yml`'s `disable:` list; `golangci-lint run ./...` under the
+CI-pinned **v1.64.8** returns zero findings, both build lanes green.
+
+**The sizing table is superseded.** It compared an `errcheck` binary's raw output against a
+hand-derived exclusion estimate, and never ran the linter CI actually runs. Measured this
+session, all four numbers:
+
+| Count | What it is |
+|---|---|
+| **105** | `errcheck v1.20.0 ./...`, raw. Byte-identical across `CGO_ENABLED=0` and `=1` — the entry's "no CGO blind spot" finding reproduces |
+| 50 | `golangci-lint` **v2** (`--default=none --enable errcheck`). A different tool with a different exclusion set; recorded only so the number is not mistaken for the one below |
+| **35** | **The worklist.** `golangci-lint` v1.64.8 — the version `ci.yml` pins — with the repo's own config and `--max-same-issues=0 --max-issues-per-linter=0` |
+| 22 | The same run at **stock truncation limits**. See below |
+
+The 105 vs. 95 gap is `errcheck` v1.20.0 vs. v1.9.0, not code drift. The derived "~37"
+landed near the truthful 35 by luck: it was applied to the wrong raw count with the wrong
+tool's exclusions.
+
+**35 splits 26 test / 9 production, not 27 / 10.** The entry's "three packages this entry
+never named" — `pkg/dataset` (4, all test), `pkg/qualitygate` (0), `pkg/linkcheck` (0) —
+mostly vanish under v1.64.8's default exclusions; the two `pkg/qualitygate` and one
+`pkg/linkcheck` findings were `EXC0001` cases all along.
+
+**A truncation trap was found and closed, and it is the part of this item worth
+remembering.** golangci-lint v1 defaults to `max-issues-per-linter: 50` and
+`max-same-issues: 3`. With errcheck enabled and stock limits the same tree reports **22**
+findings, not 35 — thirteen repeats silently dropped. A gate that under-reports is worse
+than one that is noisy, so `.golangci.yml` now sets both limits to `0` and says why. This
+was never an `errcheck` question; it applies to every linter in the default set and was
+in force for all of Phase 6.
+
+**Item 2's prescription was traced and not followed, for the same reason item 1's was
+not.** The entry says `pkg/drift/apply.go:109`'s `stamp()` and `pkg/drift/gitindex.go`'s
+`persist()` "need signature changes, not `//nolint`s." They do not, and the distinction
+against `refresh()` is the point: `refresh` promised propagation it never performed, and
+its body hid three swallowed errors including one errcheck could not see. `stamp` and
+`persist` each contain exactly **one** call, their failures are self-healing, and neither
+caller has an error channel to receive one — `applyNote` returns `(Result, bool)` and
+`GitSource.full` returns a bare `codeindex.Index`. Giving them an `error` return would move
+the ignore from one site to two and add a return value that every caller must discard.
+A failed `stamp` leaves `drift_checked_at` stale, so the next run re-evaluates the note —
+the same non-event `demote`'s own write failure at `apply.go:77` already is. A failed
+`persist` costs the next run a rebuild of a derived cache. Both are `//nolint:errcheck`
+with those reasons on the line.
+
+**Item 3 was the one real fix.** `cmd.Wait()` is now checked, and only when `drainBlobs`
+succeeded: `if werr := cmd.Wait(); err == nil { err = werr }`. That is exactly the narrow
+case the 2026-08-22 re-trace identified — a full transcript followed by a non-zero exit —
+and the guard is load-bearing, because on a truncated stream `Wait` reports a broken pipe
+that would bury the read error the caller actually needs. `:55`'s `w.WriteString` stays
+ignored: `feedRequests` runs in a goroutine with nowhere to report, and its failure ends
+git's output, which `drainBlobs` sees as a short read.
+
+**Everything else was mechanical.** Nine production ignores now carry a reason in the four
+precedents' style (`//nolint:<linter> // <lowercase reason>`, no trailing period). The 26
+test findings split three ways by what the failure would cost: setup writes whose failure
+would make the assertions below them meaningless are now checked and `t.Fatal` (a `seed`
+helper in `pkg/sentinel/sentinel_test.go`, the paired `Append`/`AppendD2`/`AppendD4` calls
+whose whole assertion is "two lines survived"); `httptest` handler writes are `_, _ =` with
+one explanation on `testServer`, because `t.Fatal` is illegal off the test goroutine and
+the client-side error is what each test already asserts; the rest are `_ =` at the line.
+No blanket `issues:` exclusion was added — every ignore in this tree names its own reason.
+
+**Not re-measured:** `forge drift`'s <100ms hook-path budget. `catfile.go` is the only
+`pkg/codeindex`/`pkg/drift` change with any runtime effect and it adds no work — `cmd.Wait()`
+was already called at the same point, unconditionally; only its return value is now read.
+The three repos the vault's cached indexes name (`food`, `leprecoin`, `meter`) are not
+present on this machine at any locatable path, so an end-to-end timing run was not possible.
+`CGO_ENABLED=1 go test ./pkg/codeindex/... ./pkg/drift/...` passes, which exercises
+`streamBlobs` but is not a latency measurement.
 
 ---
 
@@ -1377,6 +1480,87 @@ already stage the corpus and diff a table, and the neighbour column is an additi
 B-008 forbids that and this entry does not reopen it. `neighbour_min_score` is a different
 knob, named nowhere in that prohibition, and it is the only one in scope here.
 
+### Closed 2026-08-23 — floor 0.30 → 0.125, and the intent gate 0.7 → `Update`
+
+**The floor is 0.125.** Derived, not tuned: `cmd/forge/testdata/neighbour-labels.txt` is
+fifteen adjacent-topic queries with 58 expected neighbours, written from the corpus file
+list **before any score was measured** and committed one commit ahead of the sweep that
+reads them, so the ordering is checkable in git rather than asserted here.
+`TestNeighbourFloorSweep` records `testdata/neighbour-sweep.golden`.
+
+| Floor | Precision | Recall | F1 | Median links/query | Queries with none |
+|---|---|---|---|---|---|
+| 0.100 | 0.478 | 0.741 | 0.581 | 6 | 0 |
+| **0.125** | **0.548** | **0.690** | **0.611** | **4** | **0** |
+| 0.150 | 0.600 | 0.569 | 0.584 | 3 | 0 |
+| 0.175 | 0.643 | 0.466 | 0.540 | 2 | 0 |
+| 0.300 (old) | 0.900 | 0.155 | 0.265 | 1 | **6** |
+
+The old floor's numbers are the finding: precision 0.900 looks excellent and is an
+artifact of emitting ten links across fifteen queries, six of which got none at all.
+
+Three things chose 0.125, in order. **It is the only swept value that fixes the case this
+entry was opened for** — the five Storybook notes cluster at 0.131–0.323, and every floor
+at 0.150 and up emits the top one and nothing else, no better than the status quo on that
+row. **F1 peaks there** (0.611), within 0.011 of F₂'s peak, and F₂ is the right weighting
+given the cost asymmetry: a missed neighbour orphans a note silently, a spurious one is a
+wrong wikilink a reviewer deletes. §2.2 already set the precedent of preferring F₂ in this
+scorer. **Volume stays reviewable:** median 4 links per query, none empty until 0.200.
+
+Verified end to end — `forge recall "Storybook interaction testing with play functions"`
+against `examples/vault` now emits seven neighbours, five of them the Storybook family,
+where before it emitted zero.
+
+**Precision 0.548 is a lower bound and was deliberately not improved.** Several counted
+false positives are defensible links the labels did not name (`food-ordering-system-course-
+architecture-index` on the saga and DDD queries). Re-labelling after seeing the scores is
+how a derivation becomes a fit, so the labels were left exactly as written.
+
+**Two of this entry's own assumptions did not survive.** The "before" state is not
+uniformly zero neighbours — three of §3.1's nine emitted none, the other six emitted one
+to five; the entry generalised from the Storybook row. And `pkg/recall`'s
+`TestNeighbourBandEdges` spelled `0.30` into its fixture, so it failed on the change as if
+the band had broken; it now expresses both edges in terms of `DefaultThresholds`, because
+what belongs in a unit test is which side of an edge is included, not what number the edge
+sits at.
+
+**The intent gate got the opposite answer, and that is the point.** This entry said the
+two numbers "are one question, not two." True of the root cause, false of the answer:
+`printIntent` interrupts a live session on a hook contracted never to disturb it, so it is
+derived for precision first, and for recall only inside what precision leaves free.
+`testdata/intent-gate-labels.txt` labels 25 prompts FIRE/QUIET (ten of the QUIET ones
+adjacent-topic hard negatives) and `TestIntentGateSeparation` pins both directions.
+Measured: **0.7 admitted 3 of 10 FIRE prompts**, dropping one at 0.652 that matches a note
+title almost verbatim. But the classes separate at 0.402/0.407 — a **0.005** margin — so
+every value from 0.405 to 0.7 is false-positive-free on that set and *the labels cannot
+choose the replacement*. The gate is **0.50**: the lowest value still a clear step above
+the QUIET ceiling (~24% headroom) that admits every FIRE prompt whose phrasing tracks a
+note title, recovering three the old gate dropped at 0.546, 0.533 and 0.517. 8 of 10, and
+`minFireAdmitted` is set to exactly 8 rather than to something comfortably below it — a
+tripwire with slack would have let 0.7's silent decay happen again, more slowly.
+
+**`DefaultThresholds.Update` was tried first and rejected, which is worth recording
+because it is the more elegant-looking answer.** The argument for it was that below Update
+the verdict is CREATE, so `emitIntentHit`'s "may already answer this" would contradict the
+scorer. Checked against the code, that argument is false: `printIntent` computes no
+verdict — it reads `cands[0].Score` — and the message hedges with "may". Binding to Update
+would have cost 3 of 10 FIRE prompts, all near-verbatim title matches, for an alignment
+nothing in the function asserts, and coupled hook behaviour to a config key this path
+never reads. It is the same failure as `TestNeighbourBandEdges` above, inverted: that test
+pinned a *number* while claiming to test a *rule*; this would have pinned the gate to a
+*rule* that does not govern it. It stays a plain constant — `printIntent` runs under a
+50ms budget and loads no config, and that half of the argument does survive.
+
+**`DESIGN:257` still says "0.3–0.55" and was deliberately not edited** — a decision
+superseded by a later ruling is exactly what AUDIT §8.4 governs. The ruling is **D-9**,
+the first §8.4 entry with no C-number. `config/presets/` restates neither threshold, so
+the two default sites (`pkg/recall/doc.go`, `config/forge.config.example.md`) are the whole
+surface. Spec §3, §3.1 and §3.2 were updated; §4's `"neighbours": []` example is on an
+ANSWER verdict and is still correct.
+
+**Opened in its place: B-036** — §3.1's broadest queries now emit ten neighbours, because
+two general Spring notes score on every Spring question. No floor separates them.
+
 ---
 
 ## B-034 — D6 (code↔knowledge) is specified but not built
@@ -1456,3 +1640,52 @@ the datasheet will have to say so.
 Related: **B-032** is the other place D1's features are thinner than they look (an untagged
 note escapes the absent-term penalty), and **B-031** is the coverage side of the same
 scoring surface.
+
+---
+
+## B-036 — a broad query links ten neighbours, and no floor can separate them
+
+**Owner: unassigned. Status: open — opened 2026-08-23 while closing B-033.**
+
+Closing B-033 lowered the neighbour floor to 0.125 and the calibration golden now shows
+what that costs at the broad end. Three of §3.1's nine queries emit **ten** neighbours —
+the maximum `forge recall` returns at all — and the tenth is not a near miss but a cliff:
+the list is truncated, so a broader query would emit more.
+
+Measured, `examples/vault`, at floor 0.125:
+
+| Query | Neighbours | Of which are the two general Spring notes |
+|---|---|---|
+| Redis caching in Spring Boot | 10 | 2 |
+| Spring Boot 4 configuration properties binding | 10 | 2 |
+| Java virtual threads with Spring Boot | 10 | 2 |
+| Storybook interaction testing with play functions | 7 | 0 |
+| JPA entity graph to avoid N+1 | 0 | 0 |
+
+`meterreadingsservice-spring-boot-4-x-project` and `spring-cli-and-maven-commands-for-
+spring-boot` appear on every Spring question regardless of what it asks. They are broad
+notes about a broad ecosystem and they score legitimately; nothing in the ranking is
+wrong. **That is why the floor cannot fix it** — admission is a single scalar cut, and
+these notes sit above every note the same query genuinely needs. B-033 measured four
+narrower floors and each one that removed them also removed the Storybook family.
+
+**Why it matters rather than being cosmetic.** DESIGN §5.3's band feeds a new note's link
+list. Ten links in a 91-note vault attaches a note to 11% of the graph, and `pkg/graph`'s
+hub and centrality reports are where that shows up — as a hub that is an artifact of the
+linking rule, not of the knowledge. The failure is the mirror of the orphan B-033 fixed,
+and both come from treating one scalar as the whole answer.
+
+**Shape when someone picks it up.** A cap on neighbour count is the obvious move and the
+least interesting one; a cap alone keeps the same ten and truncates arbitrarily, since
+they are already score-ordered. The question worth answering first is whether a note that
+scores on *every* query in an ecosystem should be admitted as a neighbour at all — which
+is a document-frequency property the scorer already computes for terms (§2.3.1) and does
+not compute for notes. Measure before building: `TestNeighbourFloorSweep`'s harness
+already stages the corpus, and a per-note "appears in N of M query results" column is an
+addition to it, not new machinery.
+
+**Do not respond to this by raising the floor.** B-033's sweep is in its closure note and
+every floor that drops these two notes also drops the case B-033 was opened to fix.
+
+Related: **B-031** is the coverage side of the same scoring surface, and **B-032** moves
+`blend`'s denominator, which will change every number above — re-measure after it lands.

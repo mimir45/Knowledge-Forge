@@ -758,7 +758,7 @@ Yedi not tipi, DESIGN §7'nin beş-dizinli ağacına karşı **B-005**'in karar�
 | `forge recall` iyi bir notu bulmuyor | Bilinen açık defekt **B-008**. | **Eşikleri oynatma.** §3.1 kalibrasyonu yeniden türetilmeli — kendi oturumunu hak ediyor. |
 | D2 yakalama hiç çift üretmiyor | **B-024 kapandı** (2026-08-21): `D2Tag` artık `"d2"`, paketlenmiş config'le eşleşiyor. Hâlâ çift yoksa sebep başka: D2 yalnızca gerçek bir advisor çağrısından sonra yazar. | `engines`'te advisor tier'ının yapılandırıldığını ve bütçenin tükenmediğini doğrula. |
 | `dataset.capture`'dan `d3`'ü sildim ama yakalama devam ediyor | **B-030**: `d3` için kapı yok — post-commit hook listeye hiç bakmıyor. `d1`/`d5` de okunmuyor; yalnızca `d2` ve `d4` gerçek kapı. | Açık backlog kaydı. Durdurmak için hook'u kaldır: `rm <vault>/.git/hooks/post-commit`. |
-| `.forge/code-index-<repo>.json` bekliyordum ama doküman `code-index.json` diyor | **B-027**: davranış doğru (tek isim repolar arası çakışırdı). Kod yorumları ve `forge-codebase-scout` düzeltildi; tasarım dokümanları bilerek eski hâlde. | Kodu esas al: ad her zaman `-<repo>` ekli. |
+| `.forge/code-index-<repo>.json` bekliyordum ama doküman `code-index.json` diyor | **B-027** (kapandı 2026-08-23): davranış doğru (tek isim repolar arası çakışırdı). Kod yorumları ve `forge-codebase-scout` 2026-08-21'de, tasarım dokümanlarındaki sekiz satır 2026-08-23'te düzeltildi. | Kodu esas al: ad her zaman `-<repo>` ekli. |
 
 ---
 

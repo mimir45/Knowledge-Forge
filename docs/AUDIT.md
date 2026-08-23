@@ -545,6 +545,31 @@ for SQLite, but frames SQLite as a *derived cache* rebuildable from markdown —
 spend is durable state that is not. The reindex path must preserve the budget tables. This
 is the one documented exception to "SQLite is purely derived"; note it in `pkg/store`.
 
+**D-9 — The neighbour band's floor is 0.125, not DESIGN §5.3's 0.3. (BACKLOG B-033)**
+
+Added 2026-08-23, and it is the first entry here that does not come from §8.1's audit
+pass: no doc contradicted another. `DESIGN:257` was simply overtaken by a later measured
+ruling, which is the case this record exists to carry.
+
+`DESIGN:257` reads "CREATE (new note, then link to the 0.3–0.55 neighbours)". That 0.3
+predates B-008's IDF change, which moved the scale two of the four channels are measured
+on. On the post-B-008 scale it left six of fifteen adjacent-topic queries emitting **no
+neighbours at all** — a CREATE verdict that writes an orphan into a vault whose graph
+report already tracks 21 of 94. The floor was re-derived to **0.125** against a labelled
+query set built for the purpose (`cmd/forge/testdata/neighbour-labels.txt`,
+`TestNeighbourFloorSweep`); the argument is in `references/recall-spec.md` §3.2 and
+`docs/BACKLOG.md`'s B-033 closure.
+
+**`DESIGN:257` is deliberately not edited** — it is a decision superseded by a later
+ruling, which is exactly what this record governs, and B-027's closure was careful to say
+the rule still stands for decisions even where a wrong *filename* could be corrected in
+place. Follow §8.4. The live values are `recall.DefaultThresholds` and
+`config/forge.config.example.md`'s `neighbour_min_score`.
+
+**`answer_threshold` 0.85 and `update_threshold` 0.55 do not move**, here or anywhere.
+B-008 forbids it by name and this entry does not reopen it; `neighbour_min_score` is a
+different knob, named nowhere in that prohibition.
+
 ---
 
 ### 8.5 What is still open after §8.4
@@ -558,6 +583,11 @@ find. 7 + 6 = 13.
 
 Phase 3 is unblocked (C-7, C-9 decided; C-13 decided for 3b). Phase 6's deliverable list
 grows by one package (D-6).
+
+**D-9 has no C-number and that is not an omission.** D-1 … D-8 each resolve a §8.1
+contradiction between two docs. D-9 records a doc line no other doc contradicted and
+measurement later overtook. §8.4 is the binding record for both kinds; only §8.1's
+thirteen-finding count is closed.
 
 ---
 

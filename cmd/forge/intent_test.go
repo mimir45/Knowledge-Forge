@@ -62,7 +62,7 @@ func setStdin(t *testing.T, body string) func() {
 	if err != nil {
 		t.Fatal(err)
 	}
-	go func() { w.WriteString(body); w.Close() }()
+	go func() { _, _ = w.WriteString(body); w.Close() }()
 	old := os.Stdin
 	os.Stdin = r
 	return func() { os.Stdin = old }

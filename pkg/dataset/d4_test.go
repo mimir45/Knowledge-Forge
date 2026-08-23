@@ -58,8 +58,12 @@ func TestAppendD4WritesAJSONLLine(t *testing.T) {
 func TestAppendD4NeverDeduplicates(t *testing.T) {
 	root := t.TempDir()
 	p := D4Pair{Kind: D4Kind, Stage: "gate", FailingDraft: "x", GateError: "y", FixedDraft: "z"}
-	AppendD4(root, p)
-	AppendD4(root, p)
+	if err := AppendD4(root, p); err != nil {
+		t.Fatal(err)
+	}
+	if err := AppendD4(root, p); err != nil {
+		t.Fatal(err)
+	}
 	out, _ := os.ReadFile(filepath.Join(root, D4Path))
 	if n := strings.Count(string(out), "\n"); n != 2 {
 		t.Errorf("got %d lines, want 2", n)
