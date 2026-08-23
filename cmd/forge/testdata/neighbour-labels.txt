@@ -1,0 +1,103 @@
+# Neighbour ground truth — the query set B-033's floor is derived from.
+#
+# NOT recall-spec.md §3.1's nine queries. Re-deriving the neighbour floor against the
+# same rows that validated B-008 would be circular: the number would be chosen to make
+# those rows produce links. These fifteen are a separate set, and every label below was
+# written from the corpus slug list alone, before any score was measured — the git
+# history is the evidence, since this file lands in the same commit as the "before"
+# golden and one commit ahead of the sweep that reads it.
+#
+# A label answers DESIGN §5.3's question — "what should a NEW note on this topic link
+# to" — not "what does the scorer rank highly". Queries are deliberately adjacent-topic:
+# a note that would be created, near notes that already exist.
+#
+# Format: a Q: line, then one "- <slug>" per expected neighbour. Slug is the note's
+# filename without .md, matching recall.Candidate.Slug. Blank lines and # are ignored.
+
+Q: Spring Data JPA pagination with sorting on multiple columns
+- keyset-pagination-compound-or-predicate
+- keyset-cursor-pagination-requires-a-compound-or-predicate
+- jpaspecificationexecutor-dynamic-queries-with-specification-pattern
+
+Q: Testcontainers reuse across test classes in Spring Boot
+- testcontainers-docker-based-integration-testing
+- docker-desktop-has-two-socket-types-testcontainers-must-use-the-daemon-socket
+- issue-testcontainers-http-400-from-docker-desktop-cli-socket
+- decision-set-tc-host-to-var-run-docker-sock
+- issue-spring-boot-4-x-testcontainers-2-x-artifact-renames
+
+Q: Keycloak client scopes and custom claim mappers
+- keycloak-realm-export-json-keycloak-realm-definition
+- keycloak-google-social-login-plus-nimbus-jwt-flow
+- til-demoing-keycloak-plus-google-login-in-a-presentation
+- issue-keycloak-master-realm-sslrequired-external
+- decision-keycloak-init-docker-init-container-for-ssl-fix
+
+Q: Storybook accessibility addon for component checks
+- storybook-isolated-component-development-and-visual-documentation
+- storybook-decorator-pattern-provider-wrappers-for-redux-and-context
+- storybook-plus-next-js-app-router-requires-appdirectory-true-parameter
+- issue-11-components-missing-storybook-stories
+- decision-skip-storybook-stories-for-page-level-wrapper-components
+
+Q: Liquibase rollback strategy for a failed migration
+- liquibase-database-migration-conventions
+- decision-liquibase-migration-over-column-alias-for-column-rename
+- issue-liquibase-yaml-flow-mapping-comma-parse-error
+
+Q: Running a local embedding model for code search
+- local-ai-stack-architecture-overview
+- rag-server-port-5001
+- decision-rag-embedding-model-loaded-eagerly-at-startup
+- rag-provider-continue-dev-rag-context-provider-protocol
+- llama-server-sh-llama-cpp-startup-script
+
+Q: Kafka consumer group rebalancing in an event driven system
+- cqrs-and-event-driven-messaging
+- saga-pattern-choreography-based
+- transactional-outbox-pattern
+
+Q: Maven multi module build with a shared parent pom
+- pom-xml-meterreadingsservice-maven-project-descriptor
+- build-helper-maven-plugin-adding-generated-sources-to-compile-path
+- openapi-code-generation-contract-first-with-openapi-generator-maven-plugin
+- maven-surefire-auto-detects-test-framework-from-classpath-scope
+- spring-cli-and-maven-commands-for-spring-boot
+
+Q: React hook for detecting clicks outside a dropdown
+- usefocusonmount-shared-react-focus-hook
+- decision-extract-usefocusonmount-hook
+- loader-component-pattern-react-frontend-conventions
+
+Q: Docker Compose healthcheck for a Postgres service
+- docker-compose-init-container-pattern-with-health-gated-sequencing
+- docker-compose-local-yaml-local-development-docker-compose
+- decision-keycloak-init-docker-init-container-for-ssl-fix
+
+Q: Spring Security method security with a custom permission evaluator
+- preauthorize-spring-security-method-level-access-control
+- decision-separate-endpoint-for-admin-user-creation
+- keycloak-google-social-login-plus-nimbus-jwt-flow
+
+Q: Binding a nested YAML list into a Spring Boot configuration record
+- configurationproperties-vs-value-yaml-list-binding
+- value-doesn-t-work-for-yaml-lists-use-configurationproperties
+- decision-use-configurationproperties-for-cors-allowed-origins-list
+- yaml-flow-mappings-use-comma-as-a-field-separator
+
+Q: Soft delete with Hibernate entity filters
+- soft-delete-flag-based-record-deletion-pattern
+- hibernate-orm-patterns-and-gotchas
+- issue-hibernate-ddl-auto-validate-note-notes-column-mismatch
+
+Q: Testing a React component that renders nothing until data loads
+- a-test-that-queries-the-dom-without-rendering-always-passes-vacuously
+- decision-rewrite-tests-to-assert-tobedisabled-not-click
+- mui-disabled-state-html-disabled-vs-aria-disabled
+- loader-component-pattern-react-frontend-conventions
+
+Q: Domain events in a hexagonal architecture
+- hexagonal-architecture-ports-and-adapters
+- ddd-aggregates-value-objects-domain-events-domain-services
+- cqrs-and-event-driven-messaging
+- saga-pattern-choreography-based

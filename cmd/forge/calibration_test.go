@@ -79,8 +79,8 @@ func TestCalibration(t *testing.T) {
 func calibrationTable(t *testing.T) string {
 	docs := calibrationCorpus(t)
 	var b strings.Builder
-	b.WriteString("| Query | Top-1 slug | Top score | Verdict |\n")
-	b.WriteString("|---|---|---|---|\n")
+	b.WriteString("| Query | Top-1 slug | Top score | Verdict | Neighbours |\n")
+	b.WriteString("|---|---|---|---|---|\n")
 	for _, q := range calibrationQueries {
 		b.WriteString(calibrationRow(docs, q))
 	}
@@ -90,6 +90,11 @@ func calibrationTable(t *testing.T) string {
 // calibrationRow scores one query. The Top-1 slug column is the one §3.1's original table
 // lacked: it recorded what the winner scored but never which note won, so a fix that
 // changed the winner while holding the score would have read as a no-op.
+//
+// The Neighbours column is B-033's. The verdict says a note gets created; this column
+// says whether it gets created linked or orphaned, which is the whole of what the
+// neighbour floor controls. A floor change must move this column and nothing else —
+// score and verdict are functions of Rank and Decide, which the floor does not enter.
 func calibrationRow(docs []recall.Doc, question string) string {
 	q := recall.Query{Question: question}
 	res := recall.DefaultThresholds.Result(q, recall.Rank(q, docs, calibrationNow))
@@ -98,7 +103,22 @@ func calibrationRow(docs []recall.Doc, question string) string {
 		slug = res.Candidates[0].Slug
 		score = fmt.Sprintf("%.3f", res.TopScore)
 	}
-	return fmt.Sprintf("| %s | %s | %s | %s |\n", question, slug, score, res.Verdict)
+	return fmt.Sprintf("| %s | %s | %s | %s | %s |\n",
+		question, slug, score, res.Verdict, neighbourCell(res.Neighbours))
+}
+
+// neighbourCell renders the neighbour set as "n: slug, slug". The slugs travel with the
+// count because a floor that emits three links is only defensible if they are the right
+// three; a bare count would hide a floor that admits noise.
+func neighbourCell(ns []recall.Candidate) string {
+	if len(ns) == 0 {
+		return "0"
+	}
+	slugs := make([]string, len(ns))
+	for i, n := range ns {
+		slugs[i] = n.Slug
+	}
+	return fmt.Sprintf("%d: %s", len(ns), strings.Join(slugs, ", "))
 }
 
 // calibrationCorpus stages the vault in a temp dir and loads it. Copying is not
