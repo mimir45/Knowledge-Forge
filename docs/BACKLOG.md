@@ -4,6 +4,11 @@ Work that came up outside the current phase's scope. Per `CLAUDE.md`, things lan
 instead of getting built. Nothing in this file is scheduled; each entry names the phase
 that should own it.
 
+**Plans live in `docs/TODO.md`.** This file is *why* an item exists; TODO is *how to close
+it* — step-by-step, with verified `file:line` anchors, a verification command, and the
+prohibitions each entry carries. Nine items have a full plan; the rest have an index row
+or an unblock condition. Written 2026-08-23.
+
 ---
 
 ## B-001 — The design docs have never been audited for internal coherence
