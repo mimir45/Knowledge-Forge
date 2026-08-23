@@ -235,15 +235,48 @@ rule cannot resurrect a channel the note-side rule switched off — with no quer
 the vocabulary there is no weight to take a mean of, every weight stays zero, and the
 channel deactivates exactly as it did before.
 
-**One asymmetry the two rules produce together, recorded rather than corrected.** An
-untagged note escapes the absent-term penalty entirely — its tags channel is inactive and
-drops out of the denominator — while a tagged note pays it in full. Measured on
-`examples/vault`: "Redis caching in Spring Boot" is now topped by a note carrying
-`tags: []`, at 0.500 against the tagged note's 0.415, and 9 of 91 notes are untagged.
-This is the effect §2.5 was written to prevent, running the other way round. It does not
-change the verdict here — 0.500 is CREATE, and the note that had to stop winning did stop
-winning — but it is a live consequence of curating tags at all, and it is on file as
-**BACKLOG B-032**.
+**The asymmetry above was real and is fixed (BACKLOG B-032, closed 2026-08-23).** An
+untagged note escaped the absent-term penalty entirely — its tags channel went inactive
+and dropped out of the denominator — while a tagged note with no relevant tags paid the
+same penalty in full, active at a hard 0.000. The note that carried nothing relevant was
+worse off than the note that carried nothing at all, which is the effect this section was
+written to prevent, running the other way round.
+
+Activation is now decided on the **hit**, not on field presence: `tagsChannel` and
+`stackChannel` activate on `len(hits) > 0` rather than `len(tags) > 0` / `len(stack) > 0`.
+A note whose tags don't overlap the query is now inactive exactly like a note with no tags
+at all — parity, not a new exemption. The table above still holds as the *note-carries-
+the-field* row: what changed is that "carries the field" now means "carries something the
+query could match." This is the same principle §2.5 already argues for the corpus-wide
+case (a query outside the vault's vocabulary entirely must not activate a channel and
+score every note 0.0) generalized to the per-note case.
+
+**Measured on `examples/vault`, "Redis caching in Spring Boot":** `meterreadingsservice-
+spring-boot-4-x-project` (still untagged) stays at 0.500, and `spring-cli-and-maven-
+commands-for-spring-boot` (the one note with a genuinely matching tag) stays at 0.415 —
+neither of the two notes the entry named moves, and B-008's false positive does not
+return to first place. What moves is every note in between that carried an *irrelevant*
+tag: across the corpus, 128 active tags/stack channels drop to 84, and all 43 that scored
+a hard 0.000 are gone. One calibration row's winner changes as a result — the Docker
+query's top-1 moves from `docker-compose-init-container-pattern…` (0.163, one real
+`docker` tag hit) to `docker-compose-local-yaml…` (0.170, no relevant tags at all) — which
+is the same shape of trade recurring one level down: a channel that can only ever manage
+a low value (three of six query terms have vault-wide df 0 here) still drags an active
+note below where exclusion would leave it. That is `weighted`'s documented behavior
+operating as designed, not a new mechanism, and it is why this fix is scoped to
+activation and does not touch `weightsOver`'s weighting formula.
+
+**Consequence for §3.2's floor and `forge intent`'s gate, both re-measured rather than
+re-tuned.** Every score in the corpus moved by some amount, so both of B-033's derivations
+were re-run against their original, unedited label files. The neighbour floor's F1 peak
+moved from 0.125 to **0.150** — §3.2 below carries the new sweep. `forge intent`'s gate
+derivation (`cmd/forge/testdata/intent-gate.golden`) still holds mechanically — the gate
+stays 0.50, no QUIET prompt is admitted, and 8 of 10 FIRE prompts still are — but the
+measured separation margin between the two classes went from +0.005 to **-0.036**: the
+lowest admitted-at-gate FIRE prompt and the highest QUIET prompt now overlap in score
+between 0.407 and 0.443. The gate itself sits safely above both, so nothing is broken
+today, but the classes are no longer cleanly separable everywhere, which is a real finding
+and not something this fix corrects — see **BACKLOG B-037**.
 
 ```
 score = Σ(w_c · v_c) / Σ(w_c)   over active c
@@ -443,50 +476,44 @@ measurement rather than a projection.
 
 ### 3.2 Neighbour band
 
-On CREATE, candidates scoring `0.125 – 0.55` are the neighbours the new note links to.
+On CREATE, candidates scoring `0.150 – 0.55` are the neighbours the new note links to.
 They arrive pre-filtered in the `neighbours` array (§4), so the caller never applies a
 threshold itself. The band is not a separate query — it is a slice of the same ranking.
 
-**The floor is 0.125, re-derived 2026-08-23 (BACKLOG B-033).** It was 0.30, chosen before
-§2.3.1's IDF change moved the scale under it, and at 0.30 six of fifteen adjacent-topic
-queries emitted no neighbours at all — a CREATE verdict that writes an orphan.
+**The floor is 0.150, re-derived 2026-08-23 (BACKLOG B-032), on top of B-033's 0.125.**
+0.30 was chosen before §2.3.1's IDF change moved the scale under it (BACKLOG B-033); 0.125
+was F1's maximum on that scale. B-032's activation fix (§2.5) then moved every note whose
+tags or stack didn't overlap the query — the exact population sitting in the neighbour
+band — which shifted F1's peak again.
 
-Deriving it from §3.1's nine queries would have been circular, so it was derived from a
-separate set: `cmd/forge/testdata/neighbour-labels.txt`, fifteen adjacent-topic questions
-with 58 expected neighbours written from the corpus file list **before any score was
-measured**, and committed one commit ahead of the sweep that reads them so the ordering is
-checkable. `TestNeighbourFloorSweep` re-runs the sweep and records
+The same label file, unedited, was re-swept: `cmd/forge/testdata/neighbour-labels.txt`,
+fifteen adjacent-topic questions with 58 expected neighbours, written before any score was
+measured and re-used as-is — re-labelling after seeing new scores is how a derivation
+becomes a fit. `TestNeighbourFloorSweep` re-runs the sweep and records
 `testdata/neighbour-sweep.golden`; the number without that sweep is tuning.
 
 | Floor | Precision | Recall | F1 | Median links/query | Queries with none |
 |---|---|---|---|---|---|
-| 0.100 | 0.478 | 0.741 | 0.581 | 6 | 0 |
-| **0.125** | **0.548** | **0.690** | **0.611** | **4** | **0** |
-| 0.150 | 0.600 | 0.569 | 0.584 | 3 | 0 |
-| 0.175 | 0.643 | 0.466 | 0.540 | 2 | 0 |
-| 0.200 | 0.655 | 0.328 | 0.437 | 2 | 1 |
-| 0.300 | 0.900 | 0.155 | 0.265 | 1 | 6 |
+| 0.100 | 0.406 | 0.741 | 0.524 | 7 | 0 |
+| 0.125 | 0.451 | 0.707 | 0.550 | 5 | 0 |
+| **0.150** | **0.506** | **0.672** | **0.578** | **5** | **0** |
+| 0.175 | 0.531 | 0.586 | 0.557 | 3 | 0 |
+| 0.200 | 0.558 | 0.414 | 0.475 | 2 | 1 |
+| 0.300 | 0.857 | 0.207 | 0.333 | 1 | 5 |
 
-Three things decided it, in order:
+F1 peaks at 0.150 (0.578, up from 0.125's now-0.550) and no query is left empty until
+0.200 — the same shape of decision B-033 made, re-run on the new scale rather than
+re-argued from scratch.
 
-1. **It is the only swept value that fixes the case B-033 was opened for.** The five
-   Storybook notes cluster at 0.131–0.323. Every floor at 0.150 and above emits the top
-   one and nothing else — no better than the status quo on that row.
-2. **F1 peaks there** (0.611), and it is within 0.011 of F₂'s peak. F₂ is the right
-   weighting given the cost asymmetry — a missed neighbour orphans a note silently, a
-   spurious one is a wrong wikilink a reviewer deletes — and §2.2 already sets the
-   precedent of preferring F₂ in this scorer.
-3. **Link volume stays reviewable:** median 4 per query, and no query returns empty until
-   0.200.
-
-Precision 0.548 is a **lower bound**, not the true rate: several counted false positives
-are defensible links the labels simply did not name (`food-ordering-system-course-
-architecture-index` on the saga and DDD queries, for one). They were left uncorrected on
-purpose — re-labelling after seeing the scores is how a derivation becomes a fit.
+Precision 0.506 is, as before, a **lower bound**: several counted false positives are
+defensible links the labels simply did not name. Left uncorrected on purpose, same
+reasoning as B-033.
 
 The cost is on file as **B-036**: §3.1's broadest queries now emit ten neighbours, because
 two general Spring notes score on every Spring question. That is a corpus property no
-floor can separate, and a cap on the neighbour count is a different change.
+floor can separate, and a cap on the neighbour count is a different change. B-036's own
+note said to re-measure this after B-032 landed rather than respond to it by raising the
+floor — done: still three of nine queries at the ten-neighbour cap, unchanged in kind.
 
 ---
 

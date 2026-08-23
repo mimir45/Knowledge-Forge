@@ -205,17 +205,23 @@ func f2(hits, queryTerms, titleTokens int) float64 {
 // vault. Dividing by the note's count would score a note tagged
 // [goroutines] at 1.0 and one tagged [goroutines, concurrency, runtime] at 0.33 on the
 // same match — ranking the better-curated note lower. See spec §2.3.
-// A note with no tags at all leaves the channel inactive rather than scoring zero. Tag
-// *mismatch* is evidence against relevance; tag *absence* is no evidence either way, and
-// 31 of this vault's 91 notes are missing tags or stack after the Phase 1 migration. See
-// recall-spec.md §2.5 for why zeroing them ranked an under-curated note below a
-// well-tagged irrelevant one.
+//
+// Activation requires an actual hit, not merely a non-empty tag list (B-032). Before,
+// "the note carries the field" was tested as len(tags) > 0, so a note tagged [issue]
+// against a Redis question paid the absent-term penalty in full — active, scoring
+// 0.000 — while an untagged note skipped the channel entirely. That is the same mistake
+// weighted's own comment argues against for a query outside the vault's vocabulary
+// altogether: scoring 0.0 on an active channel drags a note down for a reason that has
+// nothing to do with relevance. len(hits) > 0 makes "carries the field" mean "carries
+// something the query could match," so a note with no relevant tags is inactive whether
+// it has irrelevant ones or none — 31 of this vault's 91 notes are missing tags or stack
+// after the Phase 1 migration. See recall-spec.md §2.5.
 func (s scope) tagsChannel(d Doc) Channel {
 	tags := setOf(d.Tags)
 	hits := intersect(s.tagTerms, tags)
 	c := Channel{Name: "tags", Weight: wTags, Hits: hits, Terms: s.tagIDF, DF: s.tagDF}
 	value, ok := weighted(s.tagTerms, hits, s.tagIDF)
-	if c.Active = ok && len(tags) > 0; c.Active {
+	if c.Active = ok && len(hits) > 0; c.Active {
 		c.Value = value
 	}
 	return c
@@ -223,12 +229,16 @@ func (s scope) tagsChannel(d Doc) Channel {
 
 // stackChannel is containment over the query's hints: a note listing extra technologies
 // is not thereby less relevant, so a superset scores full marks.
+//
+// Activation requires an actual hit, not merely a non-empty stack list — the same B-032
+// fix as tagsChannel, for the same reason: a note listing stack entries none of which the
+// query touches must be inactive, not active-and-zero.
 func (s scope) stackChannel(d Doc) Channel {
 	stack := setOf(d.Stack)
 	hits := intersect(s.stackTerms, stack)
 	c := Channel{Name: "stack", Weight: wStack, Hits: hits, Terms: s.stackIDF, DF: s.stackDF}
 	value, ok := weighted(s.stackTerms, hits, s.stackIDF)
-	if c.Active = ok && len(stack) > 0; c.Active {
+	if c.Active = ok && len(hits) > 0; c.Active {
 		c.Value = value
 	}
 	return c
