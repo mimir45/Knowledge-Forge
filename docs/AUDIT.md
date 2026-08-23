@@ -570,6 +570,22 @@ place. Follow §8.4. The live values are `recall.DefaultThresholds` and
 B-008 forbids it by name and this entry does not reopen it; `neighbour_min_score` is a
 different knob, named nowhere in that prohibition.
 
+**D-10 — The neighbour band's floor is 0.150, not D-9's 0.125. (BACKLOG B-032)**
+
+Added 2026-08-23, superseding D-9 in turn — the same kind of ruling D-9 itself was, not a
+correction of it. D-9's 0.125 was correct on the scale it was measured against; BACKLOG
+B-032 then changed `pkg/recall/score.go`'s tags/stack activation from field-presence to
+hit-presence, which moves the score of every note whose tags or stack didn't overlap the
+query — the exact population the neighbour band sits in. Re-swept against the same,
+unedited `cmd/forge/testdata/neighbour-labels.txt`, F1's maximum moved from 0.125 (0.550 on
+the new scale) to **0.150** (0.578). The argument is in `references/recall-spec.md` §3.2
+and `docs/BACKLOG.md`'s B-032 closure.
+
+D-9's text above is left as it was written — it was correct when D-9 landed, and this
+entry is what supersedes it, the same relationship D-9 has to `DESIGN:257`. The live values
+are, again, `recall.DefaultThresholds.Neighbour` and `config/forge.config.example.md`'s
+`neighbour_min_score`, both now 0.150.
+
 ---
 
 ### 8.5 What is still open after §8.4
@@ -588,6 +604,12 @@ grows by one package (D-6).
 contradiction between two docs. D-9 records a doc line no other doc contradicted and
 measurement later overtook. §8.4 is the binding record for both kinds; only §8.1's
 thirteen-finding count is closed.
+
+**D-10 has no C-number either, and it supersedes D-9 itself rather than a design doc.**
+Same mechanism as D-9, one link further down the chain: a later measurement (BACKLOG
+B-032) overtook an earlier one (BACKLOG B-033) once B-032 moved the scale D-9 was measured
+against. Follow the newest entry that resolves a given knob — for the neighbour floor,
+that is D-10, not D-9 or `DESIGN:257`.
 
 ---
 

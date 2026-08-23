@@ -33,14 +33,21 @@ type Thresholds struct {
 // against the pre-B-008 scale, and after that change it left 6 of 15 adjacent-topic
 // queries with zero neighbours, i.e. writing a new note orphaned in a vault whose graph
 // report already tracks 21 orphans of 94. Swept over labelled ground truth
-// (cmd/forge/testdata/neighbour-labels.txt, TestNeighbourFloorSweep), 0.125 is F1's
-// maximum and the only value that recovers the case B-033 was opened for. The full
-// argument is in docs/BACKLOG.md's B-033 closure note; changing this number without
-// re-running that sweep is tuning.
+// (cmd/forge/testdata/neighbour-labels.txt, TestNeighbourFloorSweep), 0.125 was F1's
+// maximum at the time.
+//
+// Moved again, 0.125 -> 0.150, closing BACKLOG B-032: that fix changed tagsChannel's and
+// stackChannel's activation from "the note carries the field" to "the note carries a hit,"
+// which moves the score of every note whose tags or stack didn't overlap the query — the
+// exact population the neighbour floor sits in. Re-swept against the same label file
+// (unedited — re-labelling after seeing new scores is how a derivation becomes a fit),
+// 0.150 is F1's new maximum (0.578, up from 0.125's now-0.550). The full argument is in
+// docs/BACKLOG.md's B-032 closure note; changing this number without re-running that sweep
+// is tuning.
 //
 // This is the Go default and every un-configured install sees it. It has a twin in
 // config/forge.config.example.md's neighbour_min_score, which must move with it.
-var DefaultThresholds = Thresholds{Answer: 0.85, Update: 0.55, Neighbour: 0.125}
+var DefaultThresholds = Thresholds{Answer: 0.85, Update: 0.55, Neighbour: 0.150}
 
 // Decision is what stage 2 does with the top candidate.
 type Decision string
