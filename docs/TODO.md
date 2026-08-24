@@ -22,8 +22,8 @@ up in BACKLOG.
 Not every open backlog item can take a plan, and the absence of steps below is a decision,
 not an oversight:
 
-- **PLANNED** — workable, has a full six-field section in this file. Three now: B-015,
-  B-034, B-035. B-029, B-027, B-033, B-032, B-023 and B-031 closed 2026-08-23/24; B-033's
+- **PLANNED** — workable, has a full six-field section in this file. Two now: B-034,
+  B-035. B-029, B-027, B-033, B-032, B-023, B-031 and B-015 closed 2026-08-23/24; B-033's
   closure opened B-036 and B-032's opened B-037, both NO STEPS by their own argument —
   each names a measurement to run before any design is chosen, not a fix to apply.
 - **NO STEPS** — open but not actionable by an implementation session: blocked on external
@@ -34,98 +34,32 @@ not an oversight:
 
 ```
 B-029  →  B-033  →  B-032  →  B-023  →  B-031  →  B-015  →  B-035  →  B-034  →  B-027
- done     done      done      done      done      head     run_id    D6       done
+ done     done      done      done      done      done     head      D6       done
 ```
 
-**B-029, B-027, B-033, B-032, B-023 and B-031 all closed** (the first four 2026-08-23,
-B-023 2026-08-24, B-031 2026-08-24). B-031 closed with no code change — see its BACKLOG
-entry's closing section: neither of its two shapes survives measurement against the corpus.
-**B-015 is now the head.**
+**B-029, B-027, B-033, B-032, B-023, B-031 and B-015 all closed** (the first four
+2026-08-23, B-023/B-031/B-015 2026-08-24). B-031 closed with no code change — see its
+BACKLOG entry's closing section: neither of its two shapes survives measurement against
+the corpus. **B-035 is now the head.**
 
 B-029 was first because it is independent of everything else and was the largest single item.
 B-027 was last because it is documentation with no code consequence left.
 
 ---
 
-## Index — 10 open items (28 closed/recorded IDs live in BACKLOG only)
+## Index — 9 open items (29 closed/recorded IDs live in BACKLOG only)
 
 | ID | Subject | Class | Section |
 |---|---|---|---|
 | B-003 | Repo directory still named `TIL` | NO STEPS — user decision | [below](#no-steps) |
 | B-004 | Module path has no VCS host prefix | NO STEPS — deferred by decision | [below](#no-steps) |
 | B-012 | `code_refs` has no live producer | NO STEPS — blocked on packaging | [below](#no-steps) |
-| B-015 | `CodeGroup.DependsOn` never populated | **PLANNED** | [§B-015](#b-015--populate-codegroupdependson) |
 | B-025 | `PostToolUse`/WebFetch payload shape | NO STEPS — **BLOCKED** | [below](#no-steps) |
 | B-034 | D6 (code↔knowledge) not built | **PLANNED** | [§B-034](#b-034--build-d6-as-an-export-view) |
 | B-035 | D1 has no outcome label | **PLANNED** | [§B-035](#b-035--mint-a-run_id-so-d1-can-carry-an-outcome) |
 | B-036 | Broad query links ten neighbours | NO STEPS — measure first | [below](#no-steps) |
 | B-037 | Intent gate FIRE/QUIET margin now negative | NO STEPS — measure first | [below](#no-steps) |
 | B-038 | `bodyPass` window allocated by path, not relevance | NO STEPS — measure first | [below](#b-038--bodypasss-top-20-window-is-allocated-by-path-not-by-relevance) |
-
----
-
-# B-015 — populate `CodeGroup.DependsOn`
-
-**Why it's open.** ADDENDUM §B.5 asks the codebase map to show what depends on what. The
-struct field exists and the renderer handles it; nothing fills it, because
-`codeindex.File` captures declarations only and no import edges. So `moc/codebase.md`
-groups by directory and ranks by churn but draws no arrows.
-
-**Anchors.**
-
-- `pkg/report/codebase.go:16` — `DependsOn []string`, declared.
-- `pkg/report/codebase.go:89-90` — the renderer, already handling a non-empty value.
-- `pkg/report/knowledgemap.go:18` — the doc comment recording that nothing populates it.
-- `pkg/codeindex/index.go:28` `Symbol`, `:37` `File` — `File` has `Path`, `Lang`, `Symbols`
-  and no imports field.
-- `pkg/codeindex/index.go:52` — `const Extractor = 2`.
-
-**Prerequisites.**
-
-- `pkg/codeindex` is the **only cgo package** and is build-tag gated. Work on it needs
-  `CGO_ENABLED=1` and a host toolchain, and every change must be checked in both lanes.
-- "Module = directory" is an **honest limitation, not a placeholder** — nothing in the
-  index knows about Maven modules or Go packages, and inventing a grouping the code does
-  not declare would file code under modules its authors never wrote. Do not "fix" it as
-  part of this item.
-
-**Steps.**
-
-1. Add an `Imports []string` field to `codeindex.File`. Extract it in the tree-sitter pass
-   for both supported languages — Java `import` declarations, TypeScript `import` /
-   `export … from`.
-2. **Bump `codeindex.Extractor` to 3.** This is the step nobody guesses and the one that
-   costs a wrong answer if skipped: its doc comment (`index.go:44-51`) says explicitly to
-   bump it whenever `Symbol` or `File`'s *serialized shape* changes, not only when
-   extraction logic changes, because `json.Unmarshal` would otherwise load an old cache
-   "successfully" into a struct it was never written for. B-013 exists for this.
-3. Resolve import strings to repo-relative paths, then fold paths up to their directory —
-   that is the grouping `CodeGroup` already uses. Unresolvable imports (third-party,
-   stdlib) drop out; do not invent nodes for them.
-4. Populate `DependsOn` in whatever builds `CodeGroup`, deduped and **sorted** — the
-   codebase report must render deterministically, and a `sort.Slice` comparator here needs
-   a tiebreak unique in its collection (B-020's rule, four instances of the same bug were
-   fixed in 2b).
-5. Remove the "nothing populates it" note at `pkg/report/knowledgemap.go:18`.
-
-**Verification.**
-
-- `CGO_ENABLED=1 go test ./pkg/codeindex/...` → green. `CGO_ENABLED=0 go build ./...` →
-  still builds (the nocgo lane must not break).
-- Determinism: render `moc/codebase.md` six consecutive times, md5-identical. That is the
-  standard 2b set for every report and this one is no exception.
-- Cache invalidation: run against a repo with a pre-existing
-  `.forge/code-index-<repo>.json` written by Extractor 2, confirm it is treated as a **miss**
-  and rebuilt, not unmarshalled.
-- `forge drift --since-commit` still under its 100ms budget — it is the binding latency
-  constraint and it reads this index on the git-hook path.
-
-**Done when** `moc/codebase.md` draws arrows, the report is byte-stable across runs, and
-the Extractor bump is in the same commit as the shape change.
-
-**Do not.** Do not introduce Maven/Go module awareness. Do not let the extractor change
-land without the version bump — a stale cache silently missing symbols is exactly what
-drift reads as BROKEN.
 
 ---
 

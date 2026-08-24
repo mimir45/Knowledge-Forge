@@ -351,6 +351,25 @@ func TestCodebaseRanksUndocumentedChurnFirst(t *testing.T) {
 	}
 }
 
+// TestCodebaseRendersDependsOn: B-015 populated CodeGroup.DependsOn (cmd/forge), and this
+// was the render's own untested half — writeGroup's "Depends on:" line existed since it
+// was declared but nothing before B-015 ever gave it a non-empty slice to prove out.
+func TestCodebaseRendersDependsOn(t *testing.T) {
+	got := string(RenderCodebase(CodebaseInput{
+		Repo: "leprecoin", Days: 90, Now: at,
+		Groups: []CodeGroup{
+			{Name: "order", Files: 3, DependsOn: []string{"repo", "util"}},
+			{Name: "widgets", Files: 2}, // no dependency: the line must not appear at all
+		},
+	}))
+	if !strings.Contains(got, "Depends on: repo, util") {
+		t.Errorf("missing dependency line:\n%s", got)
+	}
+	if strings.Count(got, "Depends on:") != 1 {
+		t.Errorf("a group with no DependsOn rendered the line anyway:\n%s", got)
+	}
+}
+
 // TestUncoveredTiesBreakOnPath: a symbol name is not unique in a tree — the vault's own
 // `Builder` citation matches 44 declarations — so two entries can agree on churn, size and
 // name and still be different files. sort.Slice is not stable, so an unbroken tie would put

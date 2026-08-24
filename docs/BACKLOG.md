@@ -511,7 +511,8 @@ index rather than of the vault.
 
 ## B-015 — `CodeGroup.DependsOn` is declared and never populated
 
-**Owner: whichever phase makes `moc/codebase.md` a dependency map. Status: open.**
+**Owner: whichever phase makes `moc/codebase.md` a dependency map. Status: closed
+2026-08-24 — see the closure note below.**
 
 ADDENDUM §B.5 asks the codebase map to show what depends on what. The struct field exists;
 nothing fills it, because `codeindex.File` captures declarations only and no import edges. So
@@ -521,6 +522,88 @@ Adding imports to the extractor is the real work; the grouping is the smaller pr
 also that "module = directory" is an honest limitation, not a placeholder: nothing in the
 index knows about Maven modules or Go packages, and inventing a grouping the code does not
 declare would file code under modules its authors never wrote.
+
+### Closed 2026-08-24, out-of-phase, on `feat/b-015-codegroup-dependson` — TODO.md's plan
+followed as written, with two verified assumptions the plan flagged as unchecked.
+
+`codeindex.File` gained `Imports []string` (Extractor bumped **2 → 3**, in the same commit
+as the shape change per B-013); Java and TypeScript both extract it in `parse_cgo.go`'s
+existing `walk`. Resolution and folding-to-directory happen together in the new
+`cmd/forge/check_codebase_deps.go`'s `dependsOn`, called from both `check_codebase.go`'s
+`oneCodebase` and `logback_map.go`'s `buildGroups` — the two existing places that build a
+`[]report.CodeGroup`, unchanged otherwise.
+
+Two things TODO.md's plan named as risks and asked to be checked before writing the
+resolver, both verified rather than assumed: **(a)** the tree-sitter node shapes — a
+throwaway probe (deleted before commit) confirmed Java's `import_declaration` exposes the
+qualified name as a `scoped_identifier`/`identifier` child with `static` and a trailing
+`.*` already excluded by the grammar itself (a wildcard import and a class import are
+structurally identical strings, which `resolveJavaImport`'s right-to-left trim-and-retry
+is built around), and TypeScript's `import_statement`/`export_statement` both expose the
+specifier as field `source`, absent exactly on a plain declaration (`export function X`).
+**(b)** `coderef.ScanRepo`'s file list — confirmed filtered to `sourceExt` (six code
+extensions), not a full tree listing, which is why `dependsOn` matches TypeScript imports
+against an exact `fileSet` (extension-tried candidates) rather than a directory-existence
+guess: the advisor's flagged false-edge case (`../other/Nonexistent` resolving to `src/
+other` merely because the parent directory exists) does not reproduce, because the
+resolver requires a real matching file, not just a real matching directory.
+
+Java resolution has no source root to anchor from (Maven's `src/main/java`, or nothing at
+all), so it matches a file path by **suffix** — the plan's own words, "resolve then fold to
+directory" — trying the full dotted import as a class file first, then one segment
+shorter, to cover a static member import (`import static a.b.C.FIELD`) the same way as a
+plain class import; a wildcard import (star already stripped) falls through to matching
+the untouched string as a directory suffix. Suffix matches are deterministic by
+construction — the lexicographically first candidate wins (B-020's rule) — for the case
+TODO.md called out as genuinely ambiguous: two modules sharing a package fragment under
+different source roots.
+
+Verified: both build lanes (`CGO_ENABLED=0/1 go build ./... && go test ./...`) green, `go
+vet` clean on both. `TestGitSourceRebuildsFromScratchOnStaleExtractor` (`pkg/drift`) is the
+plan's own stronger ask honored — not `codeindex.Load` in isolation, but the real hook path
+(`GitSource.build`) proven to take the full-rebuild branch, not `Patch` a bogus stale entry
+forward, against a cache file stamped by `Extractor - 1`.
+`TestGroupsOfPopulatesDependsOnEndToEnd` drives the real pipeline (a temp git repo, two
+Java packages and a TypeScript pages/widgets pair, `codeindex.Build` then `dependsOn` then
+`groupsOf`) rather than a hand-built `Index`, per the advisor's point that the unit tests
+alone would pass even if the grammar assumption were wrong.
+`TestDependsOnIsDeterministicAcrossRuns` guards the map-iteration-order bug B-020 named
+four times over in 2b, run 20 times against a directory with four ambiguous-looking
+imports — that is what was actually checked; the plan's own verification line asked for
+`moc/codebase.md` rendered six times and diffed, which was not run. The substitution is
+sound (`sortGroups` predates this item and `RenderCodebase` is a pure function of its
+input, so a deterministic `dependsOn` is sufficient), but it is a substitution, not the
+literal check. Not re-measured, not claimed: `forge drift`'s <100ms hook budget — this item
+adds no work to that path at all (`DependsOn` is `forge check`/`forge logback` only), so
+there is nothing to re-measure, but B-029's precedent is to say so rather than imply it.
+
+`Patch` (`store.go`) copies a persisted index's untouched `Files` forward wholesale and
+re-stamps `Extractor` unconditionally on its output — traced rather than assumed: its one
+caller, `GitSource.build`, only reaches it after a `Load` that already rejected any
+`ix.Extractor != Extractor`, so every entry `Patch` carries forward was itself written by
+the current extractor. `Patch` does not re-check this itself; `store.go`'s doc comment now
+says so, for whichever future caller might skip that gate.
+
+One honest limitation this item did not close, named rather than silently accepted: a
+TypeScript barrel file (an `index.ts` that only re-exports, no declarations of its own)
+has imports but zero symbols, and `build.go`'s `parseAll` drops any file with zero symbols
+from `ix.Files` entirely — pre-existing behavior, out of this item's scope to change. Such
+a file is still *resolvable as a dependency target* (`resolveTSImport` matches
+`joined+"/index"+ext` without needing the barrel itself indexed), but it is invisible as a
+*dependent* — its own re-exported imports never appear in any `DependsOn`, because the
+file that would carry them was never parsed into the index in the first place.
+
+One real, one-time cost worth naming because nothing else records it: the Extractor bump
+forces a full re-parse on the first hook run after upgrade, on every repo with a persisted
+`.forge/code-index-<repo>.json` — `store.go`'s own comment says a full build "takes
+seconds" against the very budget that cache exists to protect. That is a one-time cost at
+upgrade, not a standing one, but it is real and unmeasured on any of the three repos the
+vault's citations name (none are on this machine, per B-029's closure).
+
+`pkg/report/knowledgemap.go`'s stale "nothing populates it" comment was replaced, not
+deleted per TODO.md's own instruction — `RenderKnowledgeMap` still omits the column, now
+for a surviving reason (`moc/codebase.md` already renders it; this map is deliberately that
+report's notes-join minus everything else), not because the column would always be empty.
 
 ---
 

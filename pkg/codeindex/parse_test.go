@@ -105,6 +105,67 @@ func TestBodyHashIgnoresWhitespace(t *testing.T) {
 	}
 }
 
+const javaImportSrc = `package com.food.order;
+
+import com.food.repo.Repo;
+import static com.food.util.Const.MAX;
+import com.food.repo.*;
+
+public class OrderConsumer {
+    public void receive(String id) {}
+}
+`
+
+func TestParseJavaImports(t *testing.T) {
+	requireCgo(t)
+	f, err := Parse("src/main/java/com/food/order/OrderConsumer.java", []byte(javaImportSrc))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"com.food.repo.Repo", "com.food.util.Const.MAX", "com.food.repo"}
+	if !slicesEqual(f.Imports, want) {
+		t.Fatalf("Imports = %v, want %v", f.Imports, want)
+	}
+}
+
+const tsImportSrc = `import { Button } from '../widgets/Button';
+import Foo from './foo';
+import bare from 'react';
+export { Bar } from './bar';
+export * from './baz';
+
+export function LoginPage() {
+  return Foo();
+}
+`
+
+// A re-export (`export ... from`) is a real dependency edge — it is exactly how a barrel
+// file works — but a plain `export function` declares nothing to resolve and must not
+// show up as an import of itself.
+func TestParseTypeScriptImports(t *testing.T) {
+	requireCgo(t)
+	f, err := Parse("src/pages/LoginPage.tsx", []byte(tsImportSrc))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"../widgets/Button", "./foo", "react", "./bar", "./baz"}
+	if !slicesEqual(f.Imports, want) {
+		t.Fatalf("Imports = %v, want %v", f.Imports, want)
+	}
+}
+
+func slicesEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 func TestLangCoverage(t *testing.T) {
 	for _, c := range [][2]string{
 		{"A.java", "java"}, {"a.ts", "typescript"}, {"a.tsx", "typescript"},

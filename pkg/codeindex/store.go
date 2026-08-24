@@ -45,6 +45,12 @@ func Load(path string) (Index, bool) {
 //
 // It stays a pure function of tree state because every re-parsed blob is read at rev — the
 // patched index is byte-identical to a full build at that revision.
+//
+// Patch trusts ix's untouched Files wholesale and re-stamps Extractor unconditionally —
+// that is only safe because Patch has one caller (GitSource.build), which reaches it only
+// through a Load that already rejected any ix.Extractor != Extractor. Patch itself does
+// not re-check, so a second caller that skipped Load's gate would carry a stale extractor's
+// entries forward under today's stamp.
 func Patch(ix Index, root, rev string, changed []string) (Index, error) {
 	out := Index{Repo: ix.Repo, Commit: rev, Extractor: Extractor,
 		Files: map[string]File{}, Deps: Deps(root)}

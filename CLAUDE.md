@@ -410,6 +410,32 @@ not its content) reproduces on any query, not just this one. Filed as **B-038**.
 diff on B-031 itself; `TestCalibration` unchanged. See BACKLOG.md's B-031 closing section
 for the measurement table and B-038 for the general defect.
 
+**B-015 closed 2026-08-24, same worktree, out-of-phase.** `codeindex.File` gained
+`Imports []string` (Extractor bumped 2 → 3, same commit as the shape change), extracted in
+`parse_cgo.go`'s existing `walk` for both languages; a new `cmd/forge/
+check_codebase_deps.go` resolves each import to a repo directory and folds it into
+`CodeGroup.DependsOn`, called from both places that build one (`check_codebase.go`,
+`logback_map.go`). Two assumptions TODO.md's plan flagged as unverified were checked
+against real tree-sitter output before the resolver was written, not assumed: Java's
+`import_declaration` exposes the qualified name pre-stripped of `static` and a trailing
+`.*` (a wildcard and a class import are the same shape of string, which is why
+`resolveJavaImport` trims one dotted segment at a time rather than branching on which kind
+it is), and `coderef.ScanRepo`'s file list is filtered to six source extensions, not a full
+tree — so TypeScript resolution matches an exact file set, not directory existence, which
+closes a false-edge case the plan's own review raised (a nonexistent sibling file
+resolving anyway because its parent directory happens to exist for an unrelated reason).
+Suffix matches (Java has no known source root to resolve from) pick the
+lexicographically-first candidate on a tie, per B-020's determinism rule. Verified: both
+build lanes green; `TestGitSourceRebuildsFromScratchOnStaleExtractor` (`pkg/drift`) proves
+the real hook path takes the full-rebuild branch on an `Extractor`-mismatched cache rather
+than patching a stale entry forward; `TestGroupsOfPopulatesDependsOnEndToEnd` drives a real
+temp git repo through `Build → dependsOn → groupsOf` rather than a hand-built `Index`. One
+real, one-time, unmeasured cost recorded rather than hidden: the Extractor bump forces a
+full re-parse on the first hook run after upgrade on any repo with a persisted
+`.forge/code-index-<repo>.json`, against a cache whose whole purpose is avoiding exactly
+that under `forge drift`'s hook-path budget — not re-measured on this machine, per B-029's
+precedent for repos it doesn't have. See BACKLOG.md's B-015 closing section.
+
 **B-022 closed in Phase 4**
 (the schema pattern now covers all nine `cfg.Pipeline` stages minus `critique`); **B-007
 closed in Phase 4** (`agents/forge-librarian.md`'s prompt stamps `Forge-Write: true` on
@@ -537,8 +563,9 @@ halves still open); **B-008 on 2026-08-22**, which opened B-031/B-032/B-033 in i
 B-032 all on 2026-08-23** (see the notes below), B-033 opening **B-036** and B-032 opening
 **B-037** in their place; **B-023's behaviour half on 2026-08-24**, closing it fully;
 **B-031 also on 2026-08-24**, closed with no code change and opening **B-038** in its
-place (see the Status note above).
-**The head of the queue is now B-015**, and `docs/TODO.md` fixes the order from there.
+place (see the Status note above). **B-015 also on 2026-08-24**, populating
+`CodeGroup.DependsOn` (see the Status note above).
+**The head of the queue is now B-035**, and `docs/TODO.md` fixes the order from there.
 
 **`docs/TODO.md` is the execution half of that file** (written 2026-08-23). BACKLOG records
 *why* an item exists; TODO records *how to close it* — a six-field plan (anchors,

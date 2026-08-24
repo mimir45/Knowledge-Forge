@@ -4,6 +4,7 @@ package codeindex
 
 import (
 	"context"
+	"strings"
 
 	sitter "github.com/smacker/go-tree-sitter"
 	"github.com/smacker/go-tree-sitter/java"
@@ -94,9 +95,58 @@ func walk(n *sitter.Node, src []byte, prefix string, f *File) {
 			f.Symbols = append(f.Symbols, symbolOf(n, src, scope, kind))
 		}
 	}
+	if imp, ok := importOf(n, src); ok {
+		f.Imports = append(f.Imports, imp)
+	}
 	for i := 0; i < int(n.NamedChildCount()); i++ {
 		walk(n.NamedChild(i), src, scope, f)
 	}
+}
+
+// importPathKinds are the node types that can name something a file depends on. Kept
+// separate from declKinds: those record what a file declares, this records what it
+// imports, and DependsOn (cmd/forge) is the only reader of the latter.
+var importPathKinds = map[string]bool{
+	"import_declaration": true, // java: import [static] a.b.C[.*];
+	"import_statement":   true, // typescript: import ... from '...'
+	"export_statement":   true, // typescript re-export: export ... from '...'
+}
+
+// importOf extracts one import's raw target, or reports the node names no import at all
+// (an `export class Foo {}` is an export_statement with no source to re-export from).
+func importOf(n *sitter.Node, src []byte) (string, bool) {
+	if !importPathKinds[n.Type()] {
+		return "", false
+	}
+	if n.Type() == "import_declaration" {
+		return javaImportPath(n, src)
+	}
+	return tsImportSource(n, src)
+}
+
+// javaImportPath reads the qualified name out of `import [static] <name>[.*];`. The
+// grammar's scoped_identifier already excludes both "static" and a trailing ".*" — a
+// wildcard import comes out as the bare package name, a class import as package+class,
+// and a static member import as package+class+member, all of which resolveJavaImport
+// (cmd/forge) handles by trimming from the right.
+func javaImportPath(n *sitter.Node, src []byte) (string, bool) {
+	for i := 0; i < int(n.NamedChildCount()); i++ {
+		c := n.NamedChild(i)
+		if c.Type() == "scoped_identifier" || c.Type() == "identifier" {
+			return string(src[c.StartByte():c.EndByte()]), true
+		}
+	}
+	return "", false
+}
+
+// tsImportSource reads the module specifier off import_statement/export_statement's
+// "source" field, quotes stripped. A plain export (no re-export) has no source field.
+func tsImportSource(n *sitter.Node, src []byte) (string, bool) {
+	f := n.ChildByFieldName("source")
+	if f == nil {
+		return "", false
+	}
+	return strings.Trim(string(src[f.StartByte():f.EndByte()]), `"'`), true
 }
 
 func symbolOf(n *sitter.Node, src []byte, name, kind string) Symbol {
