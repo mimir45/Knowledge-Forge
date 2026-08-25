@@ -22,25 +22,32 @@ up in BACKLOG.
 Not every open backlog item can take a plan, and the absence of steps below is a decision,
 not an oversight:
 
-- **PLANNED** — workable, has a full six-field section in this file. **None open right
-  now.** B-034 (2026-08-25) was the last of the eight: B-029, B-027, B-033, B-032,
-  B-023, B-031, B-015 and B-035 closed 2026-08-23/24/25 before it. B-033's closure
-  opened B-036 and B-032's opened B-037; neither is PLANNED — both are NO STEPS by their
-  own argument, each naming a measurement to run before any design is chosen, not a fix
-  to apply.
+- **PLANNED** — workable, has a full six-field section in this file. Two now: B-034,
+  B-035. B-029, B-027, B-033, B-032, B-023, B-031 and B-015 closed 2026-08-23/24; B-033's
+  closure opened B-036 and B-032's opened B-037, both NO STEPS by their own argument —
+  each names a measurement to run before any design is chosen, not a fix to apply.
 - **NO STEPS** — open but not actionable by an implementation session: blocked on external
   observation, or a user decision, or "record, don't fix" by standing rule. Listed with
   its unblock condition instead of steps.
 
-The execution-order chain this file tracked through B-034 (`B-029 → B-033 → B-032 →
-B-023 → B-031 → B-015 → B-035 → B-034 → B-027`) is fully closed and dropped along with
-the plan sections below, per this file's own rule — the sequencing rationale (why B-033
-had to land before B-032, why B-029 went first) is recorded in each item's BACKLOG
-closing note, not restated here.
+## Execution order
+
+```
+B-029  →  B-033  →  B-032  →  B-023  →  B-031  →  B-015  →  B-035  →  B-034  →  B-027
+ done     done      done      done      done      done     head      D6       done
+```
+
+**B-029, B-027, B-033, B-032, B-023, B-031 and B-015 all closed** (the first four
+2026-08-23, B-023/B-031/B-015 2026-08-24). B-031 closed with no code change — see its
+BACKLOG entry's closing section: neither of its two shapes survives measurement against
+the corpus. **B-035 is now the head.**
+
+B-029 was first because it is independent of everything else and was the largest single item.
+B-027 was last because it is documentation with no code consequence left.
 
 ---
 
-## Index — 7 open items (31 closed/recorded IDs live in BACKLOG only)
+## Index — 9 open items (29 closed/recorded IDs live in BACKLOG only)
 
 | ID | Subject | Class | Section |
 |---|---|---|---|
@@ -51,6 +58,130 @@ closing note, not restated here.
 | B-036 | Broad query links ten neighbours | NO STEPS — measure first | [below](#no-steps) |
 | B-037 | Intent gate FIRE/QUIET margin now negative | NO STEPS — measure first | [below](#no-steps) |
 | B-038 | `bodyPass` window allocated by path, not relevance | NO STEPS — measure first | [below](#b-038--bodypasss-top-20-window-is-allocated-by-path-not-by-relevance) |
+
+---
+
+# B-035 — mint a `run_id` so D1 can carry an outcome
+
+**Why it's open.** ADDENDUM §D.1 describes D1's pair as "question → verdict + topic +
+stack, auto-labelled by recall **+ outcome**". Phase 6b built the first half. There is no
+outcome, because nothing in the system correlates a recall call to the note write that may
+follow it minutes later in a different process.
+
+**Anchors.**
+
+- `pkg/dataset/d1.go` — `D1Pair` (Kind, QHash, Topic, Decision, Stack, RecallTopScore,
+  Candidates, CapturedAt) and the doc comment already naming this item.
+- `pkg/telemetry/event.go:11-21` — `Event`, which has no run id either.
+- `cmd/forge/recall.go` — `runRecall`, where D1 captures beside `logAsk`.
+- `cmd/forge/recall.go:145` — the JSON envelope's contract comment.
+- `cmd/forge/gate.go:45` `cmdGate`, `:62` `runGate` — the write path that would stamp it.
+- `skills/forge/SKILL.md` — invokes `forge gate`; the id has to survive this hand-off.
+
+**Prerequisites.**
+
+- **The blocker is structural, not effort.** Adding an outcome field without a key produces
+  a column nothing can ever populate. The key comes first.
+- The join **will be partial** — a skill that forgets to pass the id degrades to today's
+  behaviour rather than failing. That is the right degradation, and the datasheet must say
+  so. Decide this before building, not after measuring.
+
+**Steps.**
+
+1. Mint a `run_id` in `runRecall`. Opaque, collision-resistant, no timestamp semantics
+   leaking into it. Emit it in the JSON envelope — that is an addition to a documented
+   contract (`recall.go:145`), so update the comment in the same edit.
+2. Carry it on `telemetry.Event` (new field, `json:"run_id"`) and on `D1Pair`. Both are
+   append-only JSONL; a new field is backward-compatible for readers, but check
+   `pkg/dataset/read.go`'s strict reader — it refuses lines it cannot parse, by design.
+3. Accept `--run-id` as an **optional** flag on `forge gate`. Absent → today's behaviour,
+   no error.
+4. Add the outcome record. Decide whether it is a new field on `D1Pair` (requires a
+   rewrite of an append-only file — probably wrong) or a **separate outcome record** keyed
+   by `run_id` that the export path joins. The second is almost certainly right; state the
+   reason either way.
+5. Thread the id through `skills/forge/SKILL.md`'s dispatch. This hop decides the item's
+   real size.
+6. Update every D1 datasheet: the corpus stops being purely supervision-on-its-own-output,
+   *for the subset that joined*. Say what fraction joined; do not imply it is a census.
+
+**Verification.**
+
+- `go test ./pkg/dataset/... ./pkg/telemetry/... ./cmd/forge/...` → green.
+- `forge recall` JSON carries `run_id`; `forge gate` without `--run-id` still exits 0 and
+  behaves identically to today (assert this with a test — it is the degradation contract).
+- `forge export-dataset --set d1` renders the outcome for joined records and omits it for
+  unjoined ones, without a shape error from the strict reader.
+
+**Done when** a recall call and the note write that followed it can be joined, and the
+datasheet states the join rate honestly.
+
+**Do not.** Do not add an outcome field before the key exists. Do not make `--run-id`
+required — it would turn a skill omission into a failed write.
+
+---
+
+# B-034 — build D6 as an export view
+
+**Why it's open.** ADDENDUM §D.1's table lists **six** datasets; Phase 6b built five. D6
+"Code↔knowledge" — (repo symbol or module → the note explaining it) — was scoped out by
+explicit decision, because ROADMAP and both phase prompts say five and only §D.1 says six,
+and AUDIT never flagged the disagreement so precedence gives no ruling.
+
+**Anchors.**
+
+- `pkg/dataset/tier.go` — `Tier{Tag, Kind, Path}`, the registry `D1…D5`, `Tiers()`,
+  `Enabled()`, `Append()`.
+- `pkg/dataset/export.go:111` `resolve`, `:120` `checkFormat`, `:131` `prepare`,
+  `:149` `since`, `:162` `anonymizeAll`, `:179` `commit`.
+- `pkg/dataset/anonymize.go` — the note-path answer (hash the slug, keep the type).
+- `pkg/report/knowledgemap.go` `RenderKnowledgeMap`, `cmd/forge/logback_map.go` — the
+  existing (symbol → note) mapping.
+- `pkg/coderef` — the citation registry. `.forge/code-index-<repo>.json` — the symbol table.
+
+**Prerequisites.**
+
+- **D6 is a derivation, not a capture tier.** D1–D5 each have a write path on a live
+  command and accumulate forward, which is the whole argument for building capture early.
+  D6 has no capture path and needs none — `forge logback` already builds exactly the
+  mapping D6 wants. Nothing is lost by deriving it late.
+- Ship it as `.forge/datasets/d6.jsonl`? **No.** An export *view*, not a sixth capture file.
+
+**Steps.**
+
+1. Resolve the struct problem first — it is the one real design question. `Tier` has a
+   `Path` field and D6 has no file. Either make `Path` optional with an explicit
+   `Derived bool`, or give `Tier` a loader function instead of a path. Whichever: `Tiers()`
+   is iterated by both export and `dataset-stats`, so a derived tier must not break
+   `dataset-stats`' per-file counting.
+2. Add a `--set d6` case whose `loadTier` reads the code index and citation registry
+   instead of a JSONL file.
+3. **Refuse `--since` for d6** with a clear error. There is no per-record timestamp on a
+   derived set, so silently ignoring the flag would report a filtered export that never
+   filtered. Per Phase 6b's own precedent, an undefined `(set, format)` combination exits
+   **2, not 3** — 3 promises "a real attempt was made"; this is rejected before a record
+   is read.
+4. Solve anonymisation, and expect it to be harder than D1–D5. **The symbol and module
+   names are the feature, and they are also the most employer-identifying strings in the
+   system.** `anonymize.go`'s note-path answer (hash the slug, keep the type) has no
+   equivalent that leaves D6 useful. Do not assume the existing scrubber covers it. If no
+   acceptable answer exists, the honest outcome is `--anonymize` refusing d6 rather than
+   producing a corpus that looks scrubbed and is not.
+5. Write the datasheet. State the derivation source and the anonymisation limit.
+6. Record the five-vs-six decision's resolution in B-034 and, if D6 ships, in ROADMAP.
+
+**Verification.**
+
+- `go test ./pkg/dataset/...` → green, including a case asserting `--since` on d6 exits 2.
+- `forge dataset-stats` still reports D1–D5 correctly with a derived tier in the registry.
+- `TestAnonymizeRemovesEverySeededSecret`-style coverage for whatever D6's redaction is —
+  that test is D-6's regression guard and the only thing that proves no secret escaped.
+  Neither buffer-then-commit nor the per-record re-decode proves that.
+
+**Done when** `--set d6` exports a (symbol → note) corpus with a datasheet that states its
+anonymisation limit plainly, or the item closes with a written decision not to build it.
+
+**Do not.** Do not add a sixth capture path. Do not let `--since` through silently.
 
 ---
 
