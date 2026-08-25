@@ -48,13 +48,22 @@ func loadD1(root, path string) ([]any, error) {
 // no RunID (captured before B-035) and a pair whose gate call never received --run-id
 // both stay unjoined — Outcome is left nil, which the renderers read as "no outcome
 // recorded", not "not published".
+//
+// Two outcomes can legitimately share a RunID: a quarantine followed by a fixed retry
+// that passes --run-id back through the same --previous-draft repair loop (see
+// SKILL.md's Stage 4). The map assignment below is last-wins in append order — outs is
+// read straight off the JSONL file, so "last" means "most recently appended" — which is
+// deliberately the retry's outcome, not the original quarantine's. That is the final
+// disposition of the routing decision; recording "quarantined" forever because the first
+// gate call happened to fail would bias the label in exactly the direction a repair loop
+// exists to fix.
 func joinD1Outcomes(pairs []D1Pair, outs []D1Outcome) []D1Pair {
 	if len(outs) == 0 {
 		return pairs
 	}
 	published := make(map[string]bool, len(outs))
 	for _, o := range outs {
-		published[o.RunID] = o.Published
+		published[o.RunID] = o.Published // last write for a RunID wins, see doc comment
 	}
 	for i := range pairs {
 		if pairs[i].RunID == "" {

@@ -248,7 +248,10 @@ thresholds:
 On a quarantine, `forge gate` prints a `--previous-draft` path to stderr. If you fix the
 draft and re-run `forge gate` with that flag, a passing retry captures the (failing,
 error, fixed) triple as training data (dataset D4) — pass it through when retrying
-rather than starting a fresh invocation.
+rather than starting a fresh invocation. **Pass `--run-id` again too, if you had one.**
+The retry is still the same routing decision from Stage 1; dropping `--run-id` on the
+retry leaves D1's outcome pinned at the first call's `quarantined` verdict forever, even
+though the note went on to publish.
 
 ---
 

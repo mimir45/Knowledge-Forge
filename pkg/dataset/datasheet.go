@@ -115,6 +115,12 @@ func tierLimits(rep ExportReport) []string {
 				"unjoined case silently, it does not fail, so do not read this share as a "+
 				"census of how often the routing decision was right.",
 				share(rep.D1Joined, rep.Records), rep.D1Joined, rep.Records),
+			"**A joined outcome is the last one reported, not the first.** A quarantine " +
+				"followed by a `--previous-draft` repair that re-passes `--run-id` (SKILL.md's " +
+				"Stage 4) appends a second D1Outcome for the same run_id; export keeps the " +
+				"later record. A repair that forgets `--run-id` leaves the pair labelled " +
+				"`quarantined` even though the note went on to publish — that pair is " +
+				"indistinguishable from a real quarantine in this export.",
 			"**Recall calls only, not every ranking.** ADDENDUM §D.1 says \"every run\", but " +
 				"`forge intent` also ranks the vault on every prompt submission and is " +
 				"deliberately excluded: it has a 50ms budget and a passive hint is not a " +

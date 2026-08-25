@@ -311,6 +311,32 @@ func TestD1ExportJoinsOutcomeByRunID(t *testing.T) {
 	}
 }
 
+// TestD1ExportLastOutcomeWinsOnRepair pins joinD1Outcomes's documented last-wins rule:
+// a quarantine-then-repair sequence (forge gate --previous-draft, re-passing --run-id per
+// SKILL.md's Stage 4) writes two D1Outcome records sharing one RunID, and export must
+// report the later one — the retry's actual disposition, not the original quarantine.
+func TestD1ExportLastOutcomeWinsOnRepair(t *testing.T) {
+	now := time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC)
+	pair := D1Pair{Kind: D1Kind, RunID: "run-repaired", QHash: "ddd", Topic: "kafka",
+		Decision: "CREATE", CapturedAt: now}
+	root := seedVault(t, D1, pair)
+	// Quarantine first, repair second — the order forge gate would actually append them.
+	if err := AppendD1Outcome(root, D1Outcome{Kind: D1OutcomeKind, RunID: "run-repaired",
+		Published: false, CapturedAt: now}); err != nil {
+		t.Fatal(err)
+	}
+	if err := AppendD1Outcome(root, D1Outcome{Kind: D1OutcomeKind, RunID: "run-repaired",
+		Published: true, CapturedAt: now.Add(time.Minute)}); err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(t.TempDir(), "export")
+	_, body := exportTo(t, root, ExportOptions{Set: D1Tag, Format: FormatSFT, Out: out})
+	if !strings.Contains(body, `"outcome":true`) {
+		t.Errorf("expected the repair's outcome (true) to win over the original "+
+			"quarantine (false):\n%s", body)
+	}
+}
+
 // TestD1ExportOutcomeInCSV pins the CSV lane's outcome column alongside the SFT lane's.
 func TestD1ExportOutcomeInCSV(t *testing.T) {
 	now := time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC)
