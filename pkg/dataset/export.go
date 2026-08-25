@@ -67,8 +67,12 @@ type ExportReport struct {
 	To          time.Time      `json:"to"`
 	Stacks      map[string]int `json:"stacks,omitempty"`
 	EngineTrail map[string]int `json:"engine_trail,omitempty"`
-	OutFile     string         `json:"out_file"`
-	Datasheet   string         `json:"datasheet"`
+	// D1Joined is D1-only (BACKLOG B-035): how many of Records joined a gate outcome by
+	// run_id, so the datasheet can say what fraction of the corpus is genuinely
+	// outcome-labelled rather than implying the whole export is.
+	D1Joined  int    `json:"d1_joined,omitempty"`
+	OutFile   string `json:"out_file"`
+	Datasheet string `json:"datasheet"`
 }
 
 // Export reads one tier, filters, anonymizes, renders, and writes — in that order, with

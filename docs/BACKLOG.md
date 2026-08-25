@@ -1842,7 +1842,7 @@ it.
 
 ## B-035 — D1 has no outcome label, because nothing correlates a recall call to what followed
 
-**Owner: unassigned. Status: open — opened 2026-08-22 by Phase 6b.**
+**Owner: unassigned. Status: closed 2026-08-25 — see the closure note below.**
 
 `ADDENDUM §D.1` describes D1's pair as "question → `ANSWER`/`UPDATE`/`CREATE` + topic +
 stack", sourced from "every run, **auto-labelled by recall + outcome**". Phase 6b built the
@@ -1878,6 +1878,55 @@ the datasheet will have to say so.
 Related: **B-032** is the other place D1's features are thinner than they look (an untagged
 note escapes the absent-term penalty), and **B-031** is the coverage side of the same
 scoring surface.
+
+### Closed 2026-08-25, out-of-phase, on `feat/b-035-run-id` — built to TODO.md's plan as
+written; every step landed, nothing dropped.
+
+`telemetry.NewRunID` mints the key (16 random bytes, hex — no counter, no timestamp
+semantics), called once in `runRecall`. It rides on three surfaces: `telemetry.Event.RunID`
+(new, `omitempty`, additive to DESIGN §14's schema), `D1Pair.RunID` (new, `omitempty`), and
+the JSON envelope `forge recall` prints — `recall.Result` itself stays untouched (a
+zero-model-call scoring package has no business knowing about dataset capture), so
+`cmd/forge/recall.go` wraps it in a local `recallEnvelope{recall.Result; RunID}` purely at
+the emit layer. `forge gate` takes an optional `--run-id`; when set, and only when D1's own
+tier is enabled — an outcome with no corresponding pair is dead weight no export can ever
+join — `captureD1Outcome` appends a `D1Outcome{RunID, Published}` record to a **second
+file**, `.forge/datasets/d1-outcomes.jsonl`, not a rewrite of the D1 line: that line is
+already on disk and immutable by the time the gate call happens, sometimes minutes later in
+a different process. `Published` is `true` on the accept branch and `false` on the
+quarantine branch — both are join-worthy outcomes, not just the success case.
+
+**The join happens at export, not at capture**, per the plan's own steps 4 and 6.
+`pkg/dataset/export_records.go`'s `loadD1` reads both files and matches by `RunID` before
+boxing, so `since`/`anonymizeAll`/`roundTripAll` all see the already-joined shape and needed
+no changes. The join result lives on `D1Pair` itself as an export-time-only `Outcome *bool`
+field (`omitempty`, never written by `AppendD1`) — a pointer so "never joined" (nil) and
+"joined, quarantined" (non-nil `false`) stay distinguishable, which is what let the SFT and
+CSV renderers add one field/column each (`outcome`, or `published`/`quarantined`/empty in
+CSV) without inventing a second record shape. `ExportReport.D1Joined` and the D1 datasheet's
+first Limitations bullet now state the actual join fraction (`N%, M of K records`) rather
+than repeating "no outcome label" verbatim — the plan's own instruction not to imply a
+census.
+
+**`--run-id` is optional everywhere and the degradation is the tested case, not an
+afterthought**: `TestCaptureD1OutcomeSkipsOnEmptyRunID` pins that an empty id writes
+nothing, and `TestRecallEmitsRunID` pins that two calls never collide. `skills/forge/
+SKILL.md` was updated at both hops — Stage 1 tells the caller to hold onto `run_id`, Stage 4
+shows `--run-id` on the gate invocation — which is TODO.md step 5, "thread it through the
+skill", done as a doc edit since the flag itself is the mechanism; nothing in Go enforces a
+skill actually passes it, same posture as D5's gate-is-a-skill-invariant note already on
+file. `references/recall-spec.md` §4 got the new field in its worked example plus a
+paragraph, per step 1's "that is an addition to a documented contract."
+
+Verified: both build lanes (`CGO_ENABLED=0` and `=1`) green, `go vet` clean. New tests:
+`pkg/telemetry`'s `TestNewRunIDLength`/`TestNewRunIDIsUnique`; `cmd/forge`'s
+`TestRecallEmitsRunID` (envelope, non-colliding) and four `captureD1Outcome` cases
+(published, quarantined, empty-run-id no-op, D1-disabled no-op); `pkg/dataset`'s
+`TestD1ExportJoinsOutcomeByRunID`, `TestD1ExportOutcomeInCSV`, and
+`TestD1ExportSurvivesAnUnreadableOutcomeFile` (the strict reader refuses a torn outcome
+line exactly like every other capture file, naming file and line). `TestCalibration` and
+the neighbour/intent-gate goldens are untouched by this item — nothing here reaches
+`pkg/recall`'s scoring — confirmed by an unchanged `go test ./...` result, no `-update` run.
 
 ---
 

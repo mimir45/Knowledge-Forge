@@ -71,6 +71,11 @@ pre-summarizing it into keywords throws away the terms the scoring depends on. P
 Recall is deterministic and makes **zero model calls**. It costs ~5 ms. There is no
 budget argument for skipping it.
 
+**Hold onto `run_id` from the JSON output.** It correlates this recall call to whatever
+note write follows it (BACKLOG B-035) — pass it back as Stage 4's `forge gate --run-id`
+if you reach a write for this same question. Dropping it costs nothing beyond that one
+join; every other behavior is unaffected.
+
 ### Read the verdict, do not re-derive it
 
 ```json
@@ -209,8 +214,12 @@ above ran or how.
 
 ```bash
 forge gate --file <rendered draft> --rel <intended vault-relative path> \
-           [--mode create|update] [--target-slug <slug>]
+           [--mode create|update] [--target-slug <slug>] [--run-id <id from Stage 1>]
 ```
+
+Pass `--run-id` when Stage 1's recall call led to this write — it joins the routing
+decision to whether the note actually got published (BACKLOG B-035). Omit it for any
+write that did not start from a recall call; the gate behaves identically either way.
 
 Read the JSON `Report` it prints. Branch on `Report.Quarantine` and the individual gate
 outcomes — do not re-derive gate logic from this prose; the seven DESIGN §12 gates

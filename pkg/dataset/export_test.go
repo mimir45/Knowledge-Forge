@@ -273,6 +273,82 @@ func appendRaw(t *testing.T, path, line string) {
 	}
 }
 
+// TestD1ExportJoinsOutcomeByRunID is BACKLOG B-035's export-side regression guard: a pair
+// whose run_id matches an outcome record renders that outcome; one that doesn't stays
+// unjoined, and the strict reader must not choke on either shape.
+func TestD1ExportJoinsOutcomeByRunID(t *testing.T) {
+	now := time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC)
+	joined := D1Pair{Kind: D1Kind, RunID: "run-joined", QHash: "aaa", Topic: "kafka",
+		Decision: "CREATE", RecallTopScore: 0.3, Candidates: 2, CapturedAt: now}
+	unjoined := D1Pair{Kind: D1Kind, RunID: "run-orphan", QHash: "bbb", Topic: "docker",
+		Decision: "CREATE", RecallTopScore: 0.2, Candidates: 1, CapturedAt: now}
+
+	root := seedVault(t, D1, joined, unjoined)
+	if err := AppendD1Outcome(root, D1Outcome{Kind: D1OutcomeKind, RunID: "run-joined",
+		Published: true, CapturedAt: now}); err != nil {
+		t.Fatal(err)
+	}
+
+	out := filepath.Join(t.TempDir(), "export")
+	rep, body := exportTo(t, root, ExportOptions{Set: D1Tag, Format: FormatSFT, Out: out})
+	if rep.D1Joined != 1 {
+		t.Errorf("D1Joined = %d, want 1", rep.D1Joined)
+	}
+	lines := strings.Split(strings.TrimSpace(body), "\n")
+	if len(lines) != 2 {
+		t.Fatalf("got %d lines, want 2:\n%s", len(lines), body)
+	}
+	if !strings.Contains(lines[0], `"outcome":true`) {
+		t.Errorf("joined record missing outcome:true:\n%s", lines[0])
+	}
+	if strings.Contains(lines[1], `"outcome"`) {
+		t.Errorf("unjoined record rendered an outcome field:\n%s", lines[1])
+	}
+
+	sheet := readFile(t, filepath.Join(out, rep.Datasheet))
+	if !strings.Contains(sheet, "50% (1 of 2 records)") {
+		t.Errorf("datasheet does not state the join rate:\n%s", sheet)
+	}
+}
+
+// TestD1ExportOutcomeInCSV pins the CSV lane's outcome column alongside the SFT lane's.
+func TestD1ExportOutcomeInCSV(t *testing.T) {
+	now := time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC)
+	quarantined := D1Pair{Kind: D1Kind, RunID: "run-q", QHash: "ccc", Topic: "docker",
+		Decision: "CREATE", CapturedAt: now}
+	root := seedVault(t, D1, quarantined)
+	if err := AppendD1Outcome(root, D1Outcome{Kind: D1OutcomeKind, RunID: "run-q",
+		Published: false, CapturedAt: now}); err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(t.TempDir(), "export")
+	_, body := exportTo(t, root, ExportOptions{Set: D1Tag, Format: FormatCSV, Out: out})
+	if !strings.Contains(body, "outcome") || !strings.Contains(body, "quarantined") {
+		t.Errorf("CSV export missing the outcome column or value:\n%s", body)
+	}
+}
+
+// TestD1ExportSurvivesAnUnreadableOutcomeFile checks the strict reader is wired the same
+// way for d1-outcomes.jsonl as it is for every capture file: a torn line aborts the
+// export rather than silently dropping the join.
+func TestD1ExportSurvivesAnUnreadableOutcomeFile(t *testing.T) {
+	root := seedVault(t, D1, sampleFor(D1))
+	now := time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC)
+	if err := AppendD1Outcome(root, D1Outcome{Kind: D1OutcomeKind, RunID: "x",
+		Published: true, CapturedAt: now}); err != nil {
+		t.Fatal(err)
+	}
+	appendRaw(t, filepath.Join(root, D1OutcomePath), "{\"kind\":\n")
+	out := filepath.Join(t.TempDir(), "export")
+	_, err := Export(root, ExportOptions{Set: D1Tag, Format: FormatSFT, Out: out})
+	if err == nil {
+		t.Fatal("Export succeeded over a torn outcome line, want failure")
+	}
+	if !strings.Contains(err.Error(), "d1-outcomes.jsonl:2") {
+		t.Errorf("error must name the file and line, got: %v", err)
+	}
+}
+
 func readFile(t *testing.T, path string) string {
 	t.Helper()
 	b, err := os.ReadFile(path)

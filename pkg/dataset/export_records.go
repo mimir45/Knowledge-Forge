@@ -15,7 +15,7 @@ func loadTier(root string, t Tier) ([]any, error) {
 	path := filepath.Join(root, t.Path)
 	switch t.Tag {
 	case D1Tag:
-		return boxed(readStrict[D1Pair](path))
+		return loadD1(root, path)
 	case D2Tag:
 		return boxed(readStrict[D2Pair](path))
 	case D3Tag:
@@ -26,6 +26,46 @@ func loadTier(root string, t Tier) ([]any, error) {
 		return boxed(readStrict[D5Pair](path))
 	}
 	return nil, fmt.Errorf("tier %q has no reader", t.Tag)
+}
+
+// loadD1 reads D1's own pairs plus the separate outcome file BACKLOG B-035 added
+// (d1_outcome.go) and joins them by RunID before boxing. The join happens here, not in
+// render, so `since`, anonymizeAll and roundTripAll all see the already-joined shape —
+// Outcome is an export-time-only field and never round-trips back into the capture file.
+func loadD1(root, path string) ([]any, error) {
+	pairs, err := readStrict[D1Pair](path)
+	if err != nil {
+		return nil, err
+	}
+	outs, err := readStrict[D1Outcome](filepath.Join(root, D1OutcomePath))
+	if err != nil {
+		return nil, err
+	}
+	return boxed(joinD1Outcomes(pairs, outs), nil)
+}
+
+// joinD1Outcomes matches each pair to the outcome sharing its RunID, if any. A pair with
+// no RunID (captured before B-035) and a pair whose gate call never received --run-id
+// both stay unjoined — Outcome is left nil, which the renderers read as "no outcome
+// recorded", not "not published".
+func joinD1Outcomes(pairs []D1Pair, outs []D1Outcome) []D1Pair {
+	if len(outs) == 0 {
+		return pairs
+	}
+	published := make(map[string]bool, len(outs))
+	for _, o := range outs {
+		published[o.RunID] = o.Published
+	}
+	for i := range pairs {
+		if pairs[i].RunID == "" {
+			continue
+		}
+		if pub, ok := published[pairs[i].RunID]; ok {
+			v := pub
+			pairs[i].Outcome = &v
+		}
+	}
+	return pairs
 }
 
 func boxed[T any](recs []T, err error) ([]any, error) {

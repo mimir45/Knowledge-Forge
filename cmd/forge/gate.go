@@ -17,6 +17,7 @@ import (
 
 const gateUsage = `usage: forge gate --file PATH --rel VAULT/RELATIVE/PATH.md [--vault DIR]
                    [--mode create|update] [--target-slug SLUG] [--previous-draft FILE]
+                   [--run-id ID]
 
 Runs the seven DESIGN §12 quality gates (pkg/qualitygate.Run) against one candidate
 note and prints the JSON Report to stdout. --file is the rendered draft to check — it
@@ -36,6 +37,13 @@ slug-based auto-pairing, so a stale or unrelated draft can never pair silently.
 CREATE/UPDATE split: an UPDATE's target note is never touched, but the proposed edit is
 not silently dropped either — it lands in _inbox/ for a human to find and apply.
 
+--run-id is optional and pairs with the run_id a preceding forge recall call emitted
+(BACKLOG B-035): when set and dataset capture includes "d1", this write's outcome
+(published or quarantined) is recorded keyed by that id, so export can join a routing
+decision to whether the note it led to was actually published. Omitted --run-id is the
+normal case for any write that did not originate from a recall call, and costs nothing —
+today's behaviour exactly.
+
 Exit 0 = Quarantine false (published cleanly). Exit 1 = Quarantine true (still not an
 error — the note was handled correctly, just not published). Exit 2 = usage error.
 Exit 3 = internal error: gate execution or the quarantine write itself failed, so the
@@ -50,14 +58,15 @@ func cmdGate(args []string) int {
 	mode := fs.String("mode", "create", "create or update")
 	targetSlug := fs.String("target-slug", "", "update mode: slug of the note being extended")
 	prevDraft := fs.String("previous-draft", "", "path from a prior quarantine, to pair for D4")
+	runID := fs.String("run-id", "", "run_id from the preceding forge recall call (BACKLOG B-035); optional")
 	fs.Usage = func() { fmt.Fprint(os.Stderr, gateUsage); fs.PrintDefaults() }
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
-	return runGate(gateArgs{*file, *rel, *vaultDir, *mode, *targetSlug, *prevDraft})
+	return runGate(gateArgs{*file, *rel, *vaultDir, *mode, *targetSlug, *prevDraft, *runID})
 }
 
-type gateArgs struct{ file, rel, vaultDir, mode, targetSlug, previousDraft string }
+type gateArgs struct{ file, rel, vaultDir, mode, targetSlug, previousDraft, runID string }
 
 func runGate(a gateArgs) int {
 	root, m, code := resolveGateInputs(a)
@@ -129,6 +138,7 @@ func reportAndQuarantine(root string, cfg *config.Config, draft *vault.Note, s *
 	if !rep.Quarantine {
 		captureRepairIfRetry(cfg, root, draft, a.previousDraft)
 		captureAccepted(cfg, root, draft)
+		captureD1Outcome(cfg, root, a.runID, true)
 		return 0
 	}
 	if err := qualitygate.Quarantine(root, draft, s, rep, m, a.targetSlug); err != nil {
@@ -136,8 +146,26 @@ func reportAndQuarantine(root string, cfg *config.Config, draft *vault.Note, s *
 		return 3
 	}
 	fmt.Fprintf(os.Stderr, "forge gate: quarantined to %s\n", draft.Path)
+	captureD1Outcome(cfg, root, a.runID, false)
 	saveForRetry(root, draft, qualitygate.OpenQuestions(rep))
 	return reindexAfterQuarantine(root, cfg.Paths.Index)
+}
+
+// captureD1Outcome closes B-035's join: a --run-id passed back from the recall call that
+// led to this write gets a D1Outcome record, so export can later join a routing decision
+// to whether the note it led to was actually published. Gated on D1's own tier switch,
+// not a new consent surface — an outcome with no corresponding pair (D1 capture off) is
+// dead weight no export can ever join. An empty runID (the normal case for any write that
+// did not originate from a recall call) is a silent no-op, not an error.
+func captureD1Outcome(cfg *config.Config, root, runID string, published bool) {
+	if runID == "" || cfg == nil || !dataset.D1.Enabled(cfg.Dataset) {
+		return
+	}
+	o := dataset.D1Outcome{Kind: dataset.D1OutcomeKind, RunID: runID, Published: published,
+		CapturedAt: time.Now()}
+	if err := dataset.AppendD1Outcome(root, o); err != nil {
+		fmt.Fprintf(os.Stderr, "forge gate: d1 outcome capture: %v\n", err)
+	}
 }
 
 // captureRepairIfRetry closes the loop --previous-draft opened: this run just passed, so
