@@ -72,7 +72,8 @@ func (d *checkData) oneCodebase(name, root string, cited map[string][]string,
 	st := gitsig.Analyze(commits)
 	ix := src.Index(name, "HEAD")
 	return report.CodebaseInput{Repo: name, Days: d.cfg.days, Now: d.now,
-		Groups: groupsOf(files, st, cited), Uncovered: uncoveredOf(ix, st, cited)}, nil
+		Groups:    groupsOf(files, st, cited, dependsOn(ix, files)),
+		Uncovered: uncoveredOf(ix, st, cited)}, nil
 }
 
 // symbolFinder is the single question coverage asks of drift's symbol table. Naming it
@@ -126,14 +127,16 @@ func locate(ref coderef.Ref, rg *coderef.Registry, src symbolFinder) (repo, p st
 // and inventing a grouping the code does not declare would put files in modules their
 // authors never wrote. Only the busiest maxGroups survive — a map of 400 directories is
 // not a map.
-func groupsOf(files []string, st *gitsig.Stats, cited map[string][]string) []report.CodeGroup {
+func groupsOf(files []string, st *gitsig.Stats, cited map[string][]string,
+	deps map[string][]string) []report.CodeGroup {
+
 	byDir := map[string][]string{}
 	for _, f := range files {
 		byDir[path.Dir(f)] = append(byDir[path.Dir(f)], f)
 	}
 	out := make([]report.CodeGroup, 0, len(byDir))
 	for dir, fs := range byDir {
-		out = append(out, groupOf(dir, fs, st, cited))
+		out = append(out, groupOf(dir, fs, st, cited, deps[dir]))
 	}
 	sortGroups(out)
 	if len(out) > maxGroups {
@@ -142,8 +145,10 @@ func groupsOf(files []string, st *gitsig.Stats, cited map[string][]string) []rep
 	return out
 }
 
-func groupOf(dir string, files []string, st *gitsig.Stats, cited map[string][]string) report.CodeGroup {
-	g := report.CodeGroup{Name: dir, Files: len(files)}
+func groupOf(dir string, files []string, st *gitsig.Stats, cited map[string][]string,
+	dependsOn []string) report.CodeGroup {
+
+	g := report.CodeGroup{Name: dir, Files: len(files), DependsOn: dependsOn}
 	owners := map[string]int{}
 	slugs := map[string]bool{}
 	for _, f := range files {

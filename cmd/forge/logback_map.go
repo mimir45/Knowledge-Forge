@@ -27,7 +27,8 @@ func buildGroups(vaultRoot string, r drift.Repo, rg *coderef.Registry, src symbo
 		return nil, err
 	}
 	cited := citedPathsFree(notes, slugsOf(notes), rg, src)
-	return groupsOf(scanned.Files, gitsig.Analyze(nil), cited[r.Name]), nil
+	ix := src.Index(r.Name, "HEAD")
+	return groupsOf(scanned.Files, gitsig.Analyze(nil), cited[r.Name], dependsOn(ix, scanned.Files)), nil
 }
 
 // citedPathsFree is check_codebase.go's citedPaths without the *checkData receiver — the

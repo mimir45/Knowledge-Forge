@@ -4,6 +4,7 @@ import (
 	"math/rand"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sort"
 	"testing"
 
@@ -92,6 +93,39 @@ func sameOrder(got, want []loc) bool {
 		}
 	}
 	return true
+}
+
+// TestGitSourceRebuildsFromScratchOnStaleExtractor is B-015's own cache-invalidation
+// check, over the real hook path rather than codeindex.Load in isolation: a cache file
+// stamped by an older Extractor must make GitSource.build take the full-rebuild branch,
+// not Patch the bogus stale entry forward as if it still described the tree.
+func TestGitSourceRebuildsFromScratchOnStaleExtractor(t *testing.T) {
+	if !codeindex.Available() {
+		t.Skip("built without cgo: no symbol table to rebuild")
+	}
+	repo, cacheDir := t.TempDir(), t.TempDir()
+	writeRepo(t, repo, orderV1)
+	commit(t, repo, "add Order")
+
+	stale := codeindex.Index{Repo: "app", Commit: "not-a-real-commit", Extractor: codeindex.Extractor - 1,
+		Files: map[string]codeindex.File{"src/main/java/Order.java": {Path: "bogus.java"}}}
+	if err := codeindex.Save(filepath.Join(cacheDir, "code-index-app.json"), stale); err != nil {
+		t.Fatal(err)
+	}
+
+	gs := NewGitSource([]Repo{{Name: "app", Root: repo}}, cacheDir)
+	ix := gs.Index("app", "HEAD")
+	if ix.Extractor != codeindex.Extractor {
+		t.Fatalf("Extractor = %d, want current %d — stale cache was not discarded",
+			ix.Extractor, codeindex.Extractor)
+	}
+	f, ok := ix.Files["src/main/java/Order.java"]
+	if !ok {
+		t.Fatalf("files = %v, want a fresh parse of src/main/java/Order.java", ix.Files)
+	}
+	if _, ok := f.Lookup("Order.place"); !ok {
+		t.Errorf("symbols = %+v, want the real Order.place — got the stale cache's shape", f.Symbols)
+	}
 }
 
 // TestLessLocIsATotalOrder: a comparator that reports two distinct declarations equal is

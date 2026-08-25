@@ -38,6 +38,12 @@ type File struct {
 	Path    string   `json:"path"` // repo-relative, forward slashes
 	Lang    string   `json:"lang"`
 	Symbols []Symbol `json:"symbols"`
+	// Imports is each import/re-export this file declares, in the source language's own
+	// shape — a dotted Java package+class name, or a TypeScript module specifier exactly
+	// as written (relative, bare, or aliased). Resolving one to a repo path is a whole-
+	// repo question this package cannot answer per file, so it is left raw: the caller
+	// building CodeGroup.DependsOn (cmd/forge) is where the resolution happens.
+	Imports []string `json:"imports,omitempty"`
 }
 
 // Extractor doubles as this cache's format version (BACKLOG B-013): Load rejects any
@@ -47,7 +53,7 @@ type File struct {
 // File's serialized shape changes, even if extraction logic itself doesn't. Go's
 // json.Unmarshal is lenient about missing/added fields, so a shape change alone would
 // otherwise unmarshal an old cache "successfully" into a struct it was never written for.
-const Extractor = 2
+const Extractor = 3
 
 // Index is the serialized form Save writes. One Index describes one repo at one commit;
 // the file it lands in is the caller's choice, not this package's (see Save).

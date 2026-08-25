@@ -15,9 +15,10 @@ import (
 // index of what exists, and CodebaseInput.Uncovered / reports/coverage.md already carry
 // the "nothing written here yet" signal for the vault-side audience.
 //
-// DependsOn is in CodeGroup but nothing in this codebase populates it (see
-// cmd/forge/check_codebase.go), so it is omitted here too rather than rendering a column
-// that would always read empty.
+// DependsOn is populated since BACKLOG B-015 (cmd/forge/check_codebase_deps.go), but it
+// stays out of this render on purpose: moc/codebase.md is the report that already carries
+// it, and this map is deliberately the notes join minus everything else that report adds
+// (churn, owners) — adding the dependency graph back here would just duplicate that one.
 func RenderKnowledgeMap(groups []CodeGroup) []byte {
 	var b strings.Builder
 	b.WriteString("# Knowledge map\n\n")

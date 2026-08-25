@@ -9,8 +9,9 @@ derived from it and deliberately do not restate its argument. Where a backlog en
 `###` closing section, that section is more current than its `Status:` line.
 
 Written 2026-08-23 from a full scan of B-001…B-035; B-036 and B-037 added the same day as
-B-033 and B-032 closed. Anchors were verified against the tree at that date; re-grep
-before trusting a line number. **Closed and recorded items are dropped from this file
+B-033 and B-032 closed; B-038 added 2026-08-24 when B-031 closed and split it out. Anchors
+were verified against the tree at that date; re-grep before trusting a line number.
+**Closed and recorded items are dropped from this file
 entirely, not just their plan sections** — `docs/BACKLOG.md` is the full census (every ID,
 closed or open, with the reasoning) and the durable record of *why*; this file exists only
 to track *how to close* whatever is still open. If an ID isn't below, it's done — look it
@@ -55,7 +56,6 @@ B-027 was last because it is documentation with no code consequence left.
 | B-012 | `code_refs` has no live producer | NO STEPS — blocked on packaging | [below](#no-steps) |
 | B-015 | `CodeGroup.DependsOn` never populated | **PLANNED** | [§B-015](#b-015--populate-codegroupdependson) |
 | B-025 | `PostToolUse`/WebFetch payload shape | NO STEPS — **BLOCKED** | [below](#no-steps) |
-| B-031 | Kafka/Testcontainers coverage miss | **PLANNED** | [§B-031](#b-031--the-coverage-side-of-the-scoring-surface) |
 | B-034 | D6 (code↔knowledge) not built | **PLANNED** | [§B-034](#b-034--build-d6-as-an-export-view) |
 | B-035 | D1 has no outcome label | **PLANNED** | [§B-035](#b-035--mint-a-run_id-so-d1-can-carry-an-outcome) |
 | B-036 | Broad query links ten neighbours | NO STEPS — measure first | [below](#no-steps) |
@@ -392,6 +392,26 @@ alone cannot say.
 labelled prompt on file; a margin turning negative in a data slice the gate doesn't
 actually sit inside is a reason to get more data, not a reason to re-derive a number that
 isn't failing.
+
+## B-038 — `bodyPass`'s top-20 window is allocated by path, not by relevance
+
+**Measure before designing — see BACKLOG's entry for the full derivation, split out of
+B-031's closure.** `bodyPass` opens `cands[:20]` after sorting by frontmatter score then
+**path ascending**; on any query where more candidates tie at 0.000 frontmatter than fit
+the window, which directory a note lives in (not its content) decides whether its body is
+ever read. Confirmed for one pair: `transactional-outbox-pattern.md` and
+`cqrs-and-event-driven-messaging.md` (`notes/howto/`) carry heavy body signal for a real
+query and are never opened, because `notes/concept/*` fills the window first.
+
+**Unblock condition:** run `TestCalibration`'s corpus staging at a widened or removed
+`BodyPassSize` across more than the nine-query calibration set (the entry's own check
+found no change on those nine) to see whether the window ever changes a real verdict —
+that answers question (a) in the BACKLOG entry. If it does, question (b) — what the
+tie-break should be instead of path — needs its own design pass, not a default guess.
+
+**Do not respond to this by simply raising `BodyPassSize`.** The cost (a file open per
+window slot) is real and unmeasured at corpus scale; DESIGN §8 sized "top 20" for latency,
+and nothing here shows a wider window changes an actual verdict yet.
 
 ## B-003 — repo directory still named `TIL`
 

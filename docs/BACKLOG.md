@@ -511,7 +511,8 @@ index rather than of the vault.
 
 ## B-015 — `CodeGroup.DependsOn` is declared and never populated
 
-**Owner: whichever phase makes `moc/codebase.md` a dependency map. Status: open.**
+**Owner: whichever phase makes `moc/codebase.md` a dependency map. Status: closed
+2026-08-24 — see the closure note below.**
 
 ADDENDUM §B.5 asks the codebase map to show what depends on what. The struct field exists;
 nothing fills it, because `codeindex.File` captures declarations only and no import edges. So
@@ -521,6 +522,88 @@ Adding imports to the extractor is the real work; the grouping is the smaller pr
 also that "module = directory" is an honest limitation, not a placeholder: nothing in the
 index knows about Maven modules or Go packages, and inventing a grouping the code does not
 declare would file code under modules its authors never wrote.
+
+### Closed 2026-08-24, out-of-phase, on `feat/b-015-codegroup-dependson` — TODO.md's plan
+followed as written, with two verified assumptions the plan flagged as unchecked.
+
+`codeindex.File` gained `Imports []string` (Extractor bumped **2 → 3**, in the same commit
+as the shape change per B-013); Java and TypeScript both extract it in `parse_cgo.go`'s
+existing `walk`. Resolution and folding-to-directory happen together in the new
+`cmd/forge/check_codebase_deps.go`'s `dependsOn`, called from both `check_codebase.go`'s
+`oneCodebase` and `logback_map.go`'s `buildGroups` — the two existing places that build a
+`[]report.CodeGroup`, unchanged otherwise.
+
+Two things TODO.md's plan named as risks and asked to be checked before writing the
+resolver, both verified rather than assumed: **(a)** the tree-sitter node shapes — a
+throwaway probe (deleted before commit) confirmed Java's `import_declaration` exposes the
+qualified name as a `scoped_identifier`/`identifier` child with `static` and a trailing
+`.*` already excluded by the grammar itself (a wildcard import and a class import are
+structurally identical strings, which `resolveJavaImport`'s right-to-left trim-and-retry
+is built around), and TypeScript's `import_statement`/`export_statement` both expose the
+specifier as field `source`, absent exactly on a plain declaration (`export function X`).
+**(b)** `coderef.ScanRepo`'s file list — confirmed filtered to `sourceExt` (six code
+extensions), not a full tree listing, which is why `dependsOn` matches TypeScript imports
+against an exact `fileSet` (extension-tried candidates) rather than a directory-existence
+guess: the advisor's flagged false-edge case (`../other/Nonexistent` resolving to `src/
+other` merely because the parent directory exists) does not reproduce, because the
+resolver requires a real matching file, not just a real matching directory.
+
+Java resolution has no source root to anchor from (Maven's `src/main/java`, or nothing at
+all), so it matches a file path by **suffix** — the plan's own words, "resolve then fold to
+directory" — trying the full dotted import as a class file first, then one segment
+shorter, to cover a static member import (`import static a.b.C.FIELD`) the same way as a
+plain class import; a wildcard import (star already stripped) falls through to matching
+the untouched string as a directory suffix. Suffix matches are deterministic by
+construction — the lexicographically first candidate wins (B-020's rule) — for the case
+TODO.md called out as genuinely ambiguous: two modules sharing a package fragment under
+different source roots.
+
+Verified: both build lanes (`CGO_ENABLED=0/1 go build ./... && go test ./...`) green, `go
+vet` clean on both. `TestGitSourceRebuildsFromScratchOnStaleExtractor` (`pkg/drift`) is the
+plan's own stronger ask honored — not `codeindex.Load` in isolation, but the real hook path
+(`GitSource.build`) proven to take the full-rebuild branch, not `Patch` a bogus stale entry
+forward, against a cache file stamped by `Extractor - 1`.
+`TestGroupsOfPopulatesDependsOnEndToEnd` drives the real pipeline (a temp git repo, two
+Java packages and a TypeScript pages/widgets pair, `codeindex.Build` then `dependsOn` then
+`groupsOf`) rather than a hand-built `Index`, per the advisor's point that the unit tests
+alone would pass even if the grammar assumption were wrong.
+`TestDependsOnIsDeterministicAcrossRuns` guards the map-iteration-order bug B-020 named
+four times over in 2b, run 20 times against a directory with four ambiguous-looking
+imports — that is what was actually checked; the plan's own verification line asked for
+`moc/codebase.md` rendered six times and diffed, which was not run. The substitution is
+sound (`sortGroups` predates this item and `RenderCodebase` is a pure function of its
+input, so a deterministic `dependsOn` is sufficient), but it is a substitution, not the
+literal check. Not re-measured, not claimed: `forge drift`'s <100ms hook budget — this item
+adds no work to that path at all (`DependsOn` is `forge check`/`forge logback` only), so
+there is nothing to re-measure, but B-029's precedent is to say so rather than imply it.
+
+`Patch` (`store.go`) copies a persisted index's untouched `Files` forward wholesale and
+re-stamps `Extractor` unconditionally on its output — traced rather than assumed: its one
+caller, `GitSource.build`, only reaches it after a `Load` that already rejected any
+`ix.Extractor != Extractor`, so every entry `Patch` carries forward was itself written by
+the current extractor. `Patch` does not re-check this itself; `store.go`'s doc comment now
+says so, for whichever future caller might skip that gate.
+
+One honest limitation this item did not close, named rather than silently accepted: a
+TypeScript barrel file (an `index.ts` that only re-exports, no declarations of its own)
+has imports but zero symbols, and `build.go`'s `parseAll` drops any file with zero symbols
+from `ix.Files` entirely — pre-existing behavior, out of this item's scope to change. Such
+a file is still *resolvable as a dependency target* (`resolveTSImport` matches
+`joined+"/index"+ext` without needing the barrel itself indexed), but it is invisible as a
+*dependent* — its own re-exported imports never appear in any `DependsOn`, because the
+file that would carry them was never parsed into the index in the first place.
+
+One real, one-time cost worth naming because nothing else records it: the Extractor bump
+forces a full re-parse on the first hook run after upgrade, on every repo with a persisted
+`.forge/code-index-<repo>.json` — `store.go`'s own comment says a full build "takes
+seconds" against the very budget that cache exists to protect. That is a one-time cost at
+upgrade, not a standing one, but it is real and unmeasured on any of the three repos the
+vault's citations name (none are on this machine, per B-029's closure).
+
+`pkg/report/knowledgemap.go`'s stale "nothing populates it" comment was replaced, not
+deleted per TODO.md's own instruction — `RenderKnowledgeMap` still omits the column, now
+for a surviving reason (`moc/codebase.md` already renders it; this map is deliberately that
+report's notes-join minus everything else), not because the column would always be empty.
 
 ---
 
@@ -1416,7 +1499,8 @@ which is the trap a third tier would have fallen into, and `d4.go`'s own comment
 
 ## B-031 — the Kafka/Testcontainers miss is a coverage defect, not a precision one
 
-**Owner: unassigned. Status: open — split out of B-008 on 2026-08-22, deliberately.**
+**Owner: unassigned. Status: closed 2026-08-24, `worktree-b-008-recall-recalibration` —
+out-of-phase work, not a phase. Recorded 2026-08-22 while closing B-008.**
 
 B-008 carried two cases in one item: a false positive that had to fall, and a miss that had
 to rise. Absent-term admission is **strictly decreasing** for every positive weight, so one
@@ -1443,6 +1527,67 @@ its own argument, not a coefficient nudged until this row passes.
 
 Do not respond to this by moving the thresholds either. The same argument B-008 makes
 applies: 0.311 and 0.315 sit next to notes that should not be admitted.
+
+### Closed 2026-08-24: neither shape survives contact with the corpus
+
+TODO.md's own step 1 said write the choice down before coding. Doing that first surfaced
+that **shape 1 was mischaracterized** and **shape 2 was measured, not assumed** — and both
+findings point the same way.
+
+**Shape 1 is not "under-curated," it's wrong.** `grep -i kafka` against
+`testcontainers-docker-based-integration-testing.md` — title, frontmatter, and body — comes
+back empty. So does `consumer`. The note does not mention Kafka anywhere, not just in its
+frontmatter. Tagging it `kafka` would not be honest curation of an under-tagged note; it
+would assert the note covers something it does not discuss. Shape 1 is off the table for a
+different reason than "does not generalise."
+
+**Shape 2's own premise — "the body channel is the only one that sees `kafka` here" — is
+true of the *system*, not of this row, and that distinction is what makes the fix a
+no-op for this query.** `kafka` does appear heavily in the corpus: `cqrs-and-event-driven-
+messaging.md` (44 hits) and `transactional-outbox-pattern.md` (28 hits), both
+`notes/howto/`. Neither ever reached a body pass, for a structural reason worth recording
+on its own: `bodyPass` opens `cands[:20]` after sorting by frontmatter score then **path
+ascending** (`rank.go`'s `sortByScore`), and on this query ~84 of 92 docs tie at 0.000
+frontmatter — `notes/concept/*` sorts before `notes/howto/*`, so the tie-break alone fills
+the 20-wide window with `concept/` notes before any kafka-heavy `howto/` note is reached.
+
+Measured directly (`BodyPassSize` bumped 20 → 200 locally, rebuilt, re-run against
+`examples/vault`, reverted — not committed):
+
+| Note | Body match | Score | ≥ 0.150 floor? | ≥ winner's 0.311? |
+|---|---|---|---|---|
+| `testcontainers-docker-based-integration-testing` (today's winner) | `testcontainers` only | 0.311 | — | — |
+| `transactional-outbox-pattern` | `kafka`, `consumers` (no `testcontainers`) | 0.111 | no | no |
+| `cqrs-and-event-driven-messaging` | `kafka`, `consumers` (no `testcontainers`) | 0.089 | no | no |
+
+Both kafka-bearing notes score *below the neighbour floor* even with the `BodyPassSize` cap
+removed entirely — the most permissive version of shape 2 imaginable. They have zero
+title/tags/stack signal (they are architecture notes that use Kafka as an example service,
+not testing-infrastructure notes), so `wBody = 0.1` cannot lift them past a winner that
+carries partial frontmatter signal too. This is TODO.md step 2's "measure which one is
+binding" answered directly: **neither `wBody` nor `BodyPassSize` is binding for this row** —
+raising either would not change the top-1, the verdict, or the neighbour set, so there is no
+DESIGN §8 argument to build here against this row.
+
+**Conclusion for this row: today's behavior is correct, not a miss.** `testcontainers-
+docker-based-integration-testing` — a testing-infrastructure note — is the closer topical
+match to "Kafka consumers with Testcontainers" than an architecture note that mentions
+Kafka in passing; CREATE with four testcontainers-family neighbours (populated since
+B-033) is the right answer for a question the vault has no dedicated note for. No code
+change, no corpus edit, no golden diff. `go test ./cmd/forge -run TestCalibration` was
+re-run unmodified and still passes.
+
+**This closes the row, not the general question.** TODO.md's own "done when" offered two
+outs: a corpus fix, or "the body-channel question is answered with an argument that stands
+without reference to this one query." Neither happened here — this entry only establishes
+that neither shape moves *this* row. The general question the row surfaced — should a term
+the body carries strongly and the frontmatter carries nowhere ever lift a candidate, when
+the reason it doesn't today is which of the seven type directories the note happens to
+live in — stands on its own and generalizes past Kafka: `transactional-outbox-pattern`
+(kafka + consumers in body, zero frontmatter) is invisible to `bodyPass` for a reason that
+has nothing to do with `wBody`'s value. Filed separately as **B-038**, because it is a
+defect in the ranker, not a coverage gap in one note, and closing B-031 must not be read
+as having settled it.
 
 ---
 
@@ -1782,3 +1927,58 @@ every floor that drops these two notes also drops the case B-033 was opened to f
 
 Related: **B-031** is the coverage side of the same scoring surface, and **B-032** moves
 `blend`'s denominator, which will change every number above — re-measure after it lands.
+
+---
+
+## B-038 — `bodyPass`'s top-20 window is allocated by path, not by relevance
+
+**Owner: unassigned. Status: open — split out of B-031 on 2026-08-24, deliberately.**
+
+Closing B-031 measured, rather than assumed, whether the 0.1 `wBody` weight or the
+`BodyPassSize = 20` cap was binding for the "Kafka consumers with Testcontainers" row —
+and found neither was, for a reason with nothing to do with either constant's *value*.
+`bodyPass` (`pkg/recall/rank.go`) opens `cands[:20]` after `sortByScore` orders by score
+descending, tie-broken by **path ascending**. On this query ~84 of `examples/vault`'s 92
+docs tie at 0.000 frontmatter score, so the tie-break alone decides which zero-scoring
+notes get a body pass at all — and `notes/concept/*` sorts before `notes/howto/*`
+lexically, so a `concept/` note with an incidental one-word body hit gets read before an
+`howto/` note that discusses the query's actual subject at length.
+
+Measured directly (`BodyPassSize` bumped 20 → 200 locally, rebuilt, re-run, not
+committed): `transactional-outbox-pattern.md` (kafka × ~28, "consumers" present, zero
+title/tags/stack signal) and `cqrs-and-event-driven-messaging.md` (kafka × 44, same) both
+sit in `notes/howto/` and are never opened at `BodyPassSize = 20`, because the window's
+20 slots are consumed by `notes/concept/*` first. This is not specific to Kafka or to this
+one query — it reproduces on **any** query where more candidates tie at 0.000 frontmatter
+than fit in the window, which the calibration table's other adjacent-topic rows suggest is
+common, not rare.
+
+**Why this is a defect and not just a cap that's too small.** A wider window (or no window
+at all) would fix it by brute force, but the actual bug is that *which* notes lose the
+tie-break is decided by an accident of `pkg/vault`'s directory layout (B-005's seven note
+types) rather than by anything about the note's content. A vault that renamed
+`notes/concept/` to `notes/aardvark/` would silently change which notes get read, with the
+scoring logic untouched.
+
+**Owner note:** for B-031's own row, this defect turns out not to matter — even a
+`BodyPassSize` of 200 leaves both kafka-bearing notes below the 0.150 neighbour floor and
+below B-031's winning candidate, because they carry zero frontmatter signal. So fixing
+this item would not have changed B-031's calibration row. It matters for whatever query
+*does* have a genuinely-relevant, frontmatter-silent note sitting past slot 20 in
+path order — which this investigation did not go looking for and has not found.
+
+**Shape when someone picks it up — measure before designing.** Two questions, not one:
+(a) does raising or removing `BodyPassSize` move `calibration.golden` on the current
+nine-query set at all (this entry's own measurement says no, but that is nine queries,
+not the corpus); (b) if a tie-break has to exist, should it favor something about the
+note (recency, verified date, a document-frequency signal per §2.3.1) over an arbitrary
+path sort. `TestCalibration`'s harness already stages the corpus and is the cheapest place
+to run (a) at scale before touching (b).
+
+**Do not respond to this by simply raising `BodyPassSize`.** Cost is real and unmeasured
+at corpus scale — `bodyPass` opens a file per candidate in the window, and DESIGN §8's
+"top 20" was sized for latency, not correctness; widening it moves a performance
+constraint before anyone has shown the wider window changes an actual verdict.
+
+Related: split from **B-031**, which established the row that surfaced this but is closed
+on its own terms — see its BACKLOG closing section.
