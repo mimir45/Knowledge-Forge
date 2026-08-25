@@ -436,6 +436,36 @@ full re-parse on the first hook run after upgrade on any repo with a persisted
 that under `forge drift`'s hook-path budget — not re-measured on this machine, per B-029's
 precedent for repos it doesn't have. See BACKLOG.md's B-015 closing section.
 
+**B-035 closed 2026-08-25, out-of-phase, on `feat/b-035-run-id`.** `telemetry.NewRunID`
+mints the correlation key (16 random bytes, hex; no counter, no timestamp semantics) once
+per `forge recall` call in `runRecall`. It rides `telemetry.Event.RunID` and `D1Pair.RunID`
+(both new, `omitempty`) and the JSON envelope `forge recall` prints — `recall.Result`
+itself stays untouched, so `cmd/forge/recall.go` wraps it in a local `recallEnvelope` only
+at the emit layer, keeping the zero-model-call scoring package ignorant of dataset capture.
+`forge gate` takes an optional `--run-id`; when set and D1's own tier is enabled,
+`captureD1Outcome` appends a `D1Outcome{RunID, Published}` record to a **second file**,
+`.forge/datasets/d1-outcomes.jsonl`, not a rewrite of the D1 line — that line is already on
+disk and immutable by the time the gate call happens, sometimes minutes later in a
+different process. The join happens at export: `loadD1` matches the two files by `RunID`
+before `since`/`anonymizeAll`/`roundTripAll` run, landing on `D1Pair` as an export-time-only
+`Outcome *bool` (nil = never joined, distinguishable from non-nil `false` = joined and
+quarantined). `ExportReport.D1Joined` and the D1 datasheet now state the actual join
+fraction rather than repeating "no outcome label" verbatim. `--run-id` is optional
+everywhere and the empty-id no-op is a tested case, not an afterthought
+(`TestCaptureD1OutcomeSkipsOnEmptyRunID`); `skills/forge/SKILL.md` and
+`references/recall-spec.md` were updated at both hops. Verified: both build lanes green,
+`go vet` clean, new tests in `pkg/telemetry`, `cmd/forge` and `pkg/dataset` covering
+minting/uniqueness, the envelope, both outcome branches, both no-op paths, and the export
+join in SFT and CSV. Nothing here touches `pkg/recall`'s scoring — `TestCalibration` and
+the neighbour/intent-gate goldens are unchanged, no `-update` run. See BACKLOG.md's B-035
+closing section. **This session also found and closed a doc-sync gap from the prior
+session**: B-031's and B-015's doc closures (`CLAUDE.md`, `docs/TODO.md`) had never been
+pushed/merged to `main` — PR #8 squash-merged B-015's code without its doc hunks, and
+B-031's/B-003's doc-only commits were never opened as a PR at all. Recovered on
+`docs/catchup-b031-b003` (PR #9), cherry-picked from the stranded local commits (code
+hunks came back empty — already identical on `main`); this branch is rebased on top of it
+so B-035 lands on a correct base once #9 merges.
+
 **B-022 closed in Phase 4**
 (the schema pattern now covers all nine `cfg.Pipeline` stages minus `critique`); **B-007
 closed in Phase 4** (`agents/forge-librarian.md`'s prompt stamps `Forge-Write: true` on
@@ -554,7 +584,7 @@ time runs out the cut order is `6b → 5b → advisor tier`. If work comes up ou
 current phase's scope, write it to `docs/BACKLOG.md` rather than building it.
 
 **Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004,
-**B-034**, **B-035**, **B-036**, **B-037**, **B-038** and most of the twelve findings 2b recorded are
+**B-034**, **B-036**, **B-037**, **B-038** and most of the twelve findings 2b recorded are
 open; **B-025 is blocked**, not open. B-001 (doc coherence), B-005 (seven note types) and
 B-006 (link rewrite) closed on 2026-08-09; B-007 and B-022 in Phase 4; B-009 and B-024 on
 2026-08-21, when B-023 and B-027 were also half-closed (docs synced, the behavior/design-doc
@@ -564,8 +594,9 @@ B-032 all on 2026-08-23** (see the notes below), B-033 opening **B-036** and B-0
 **B-037** in their place; **B-023's behaviour half on 2026-08-24**, closing it fully;
 **B-031 also on 2026-08-24**, closed with no code change and opening **B-038** in its
 place (see the Status note above). **B-015 also on 2026-08-24**, populating
-`CodeGroup.DependsOn` (see the Status note above).
-**The head of the queue is now B-035**, and `docs/TODO.md` fixes the order from there.
+`CodeGroup.DependsOn` (see the Status note above). **B-035 on 2026-08-25**, minting the
+`run_id` correlation key (see the Status note above).
+**The head of the queue is now B-034**, and `docs/TODO.md` fixes the order from there.
 
 **`docs/TODO.md` is the execution half of that file** (written 2026-08-23). BACKLOG records
 *why* an item exists; TODO records *how to close it* — a six-field plan (anchors,

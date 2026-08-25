@@ -79,7 +79,7 @@ func share(n, total int) string {
 // rather than guessed at afterwards.
 func writeLimitations(b *strings.Builder, rep ExportReport) {
 	b.WriteString("\n## Limitations\n\n")
-	for _, l := range append(commonLimits(rep), tierLimits(rep.Set)...) {
+	for _, l := range append(commonLimits(rep), tierLimits(rep)...) {
 		fmt.Fprintf(b, "- %s\n", l)
 	}
 }
@@ -102,14 +102,25 @@ func commonLimits(rep ExportReport) []string {
 	return out
 }
 
-func tierLimits(set string) []string {
-	switch set {
+func tierLimits(rep ExportReport) []string {
+	switch rep.Set {
 	case D1Tag:
 		return []string{
-			"**No outcome label.** A pair is (question features → the routing decision), " +
-				"with nothing recording whether that decision was right — there is no run_id " +
-				"joining a recall call to the note that followed it (BACKLOG B-035). This is " +
-				"supervision on the router's own output, not evidence the router is correct.",
+			fmt.Sprintf("**Outcome label is partial: %s (%d of %d records).** A joined pair "+
+				"carries whether the note it led to was actually published or quarantined "+
+				"(BACKLOG B-035, closed 2026-08-25); the rest are (question features → routing "+
+				"decision) pairs only — supervision on the router's own output, not evidence "+
+				"the router is correct. A pair joins only when the caller threaded recall's "+
+				"run_id back through `forge gate --run-id`; forgetting it degrades to the "+
+				"unjoined case silently, it does not fail, so do not read this share as a "+
+				"census of how often the routing decision was right.",
+				share(rep.D1Joined, rep.Records), rep.D1Joined, rep.Records),
+			"**A joined outcome is the last one reported, not the first.** A quarantine " +
+				"followed by a `--previous-draft` repair that re-passes `--run-id` (SKILL.md's " +
+				"Stage 4) appends a second D1Outcome for the same run_id; export keeps the " +
+				"later record. A repair that forgets `--run-id` leaves the pair labelled " +
+				"`quarantined` even though the note went on to publish — that pair is " +
+				"indistinguishable from a real quarantine in this export.",
 			"**Recall calls only, not every ranking.** ADDENDUM §D.1 says \"every run\", but " +
 				"`forge intent` also ranks the vault on every prompt submission and is " +
 				"deliberately excluded: it has a 50ms budget and a passive hint is not a " +

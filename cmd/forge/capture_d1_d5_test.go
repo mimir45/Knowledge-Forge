@@ -28,7 +28,7 @@ func TestRecallCapturesD1WhenEnabled(t *testing.T) {
 	}
 	line := readOneLine(t, filepath.Join(root, dataset.D1Path))
 	for _, want := range []string{`"kind":"d1-routing"`, `"decision":`, `"candidates":`,
-		`"stack":["java","spring-boot"]`} {
+		`"stack":["java","spring-boot"]`, `"run_id":"`} {
 		if !strings.Contains(line, want) {
 			t.Errorf("d1.jsonl missing %s:\n%s", want, line)
 		}
@@ -97,6 +97,48 @@ func TestGateD5SurvivesAMissingProfile(t *testing.T) {
 	line := readOneLine(t, filepath.Join(root, dataset.D5Path))
 	if strings.Contains(line, `"profile"`) {
 		t.Errorf("expected profile omitted with no me.md:\n%s", line)
+	}
+}
+
+// TestCaptureD1OutcomeWhenRunIDGiven pins BACKLOG B-035's join half: a --run-id passed
+// back from a recall call records the write's actual outcome, keyed by that id.
+func TestCaptureD1OutcomeWhenRunIDGiven(t *testing.T) {
+	root := t.TempDir()
+	captureD1Outcome(datasetCfg(true), root, "abc123", true)
+	line := readOneLine(t, filepath.Join(root, dataset.D1OutcomePath))
+	for _, want := range []string{`"kind":"d1-outcome"`, `"run_id":"abc123"`, `"published":true`} {
+		if !strings.Contains(line, want) {
+			t.Errorf("d1-outcomes.jsonl missing %s:\n%s", want, line)
+		}
+	}
+}
+
+func TestCaptureD1OutcomeQuarantined(t *testing.T) {
+	root := t.TempDir()
+	captureD1Outcome(datasetCfg(true), root, "abc123", false)
+	line := readOneLine(t, filepath.Join(root, dataset.D1OutcomePath))
+	if !strings.Contains(line, `"published":false`) {
+		t.Errorf("d1-outcomes.jsonl missing published:false:\n%s", line)
+	}
+}
+
+// TestCaptureD1OutcomeSkipsOnEmptyRunID is the degradation contract gate.go's usage text
+// promises: a write with no --run-id (the normal case for anything that did not originate
+// from a recall call) must cost nothing, not just "cost nothing visible on stdout".
+func TestCaptureD1OutcomeSkipsOnEmptyRunID(t *testing.T) {
+	root := t.TempDir()
+	captureD1Outcome(datasetCfg(true), root, "", true)
+	if _, err := os.Stat(filepath.Join(root, dataset.D1OutcomePath)); !os.IsNotExist(err) {
+		t.Fatalf("expected no d1-outcomes.jsonl, got err = %v", err)
+	}
+}
+
+func TestCaptureD1OutcomeSkipsWhenD1Disabled(t *testing.T) {
+	root := t.TempDir()
+	cfg := &config.Config{Dataset: config.Dataset{Enabled: true, Capture: []string{"d4"}}}
+	captureD1Outcome(cfg, root, "abc123", true)
+	if _, err := os.Stat(filepath.Join(root, dataset.D1OutcomePath)); !os.IsNotExist(err) {
+		t.Fatalf("expected no d1-outcomes.jsonl, got err = %v", err)
 	}
 }
 

@@ -22,10 +22,11 @@ up in BACKLOG.
 Not every open backlog item can take a plan, and the absence of steps below is a decision,
 not an oversight:
 
-- **PLANNED** — workable, has a full six-field section in this file. Two now: B-034,
-  B-035. B-029, B-027, B-033, B-032, B-023, B-031 and B-015 closed 2026-08-23/24; B-033's
-  closure opened B-036 and B-032's opened B-037, both NO STEPS by their own argument —
-  each names a measurement to run before any design is chosen, not a fix to apply.
+- **PLANNED** — workable, has a full six-field section in this file. One now: B-034.
+  B-029, B-027, B-033, B-032, B-023, B-031, B-015 and B-035 closed 2026-08-23/24/25;
+  B-033's closure opened B-036 and B-032's opened B-037, both NO STEPS by their own
+  argument — each names a measurement to run before any design is chosen, not a fix to
+  apply.
 - **NO STEPS** — open but not actionable by an implementation session: blocked on external
   observation, or a user decision, or "record, don't fix" by standing rule. Listed with
   its unblock condition instead of steps.
@@ -34,20 +35,20 @@ not an oversight:
 
 ```
 B-029  →  B-033  →  B-032  →  B-023  →  B-031  →  B-015  →  B-035  →  B-034  →  B-027
- done     done      done      done      done      done     head      D6       done
+ done     done      done      done      done      done      done     head      done
 ```
 
-**B-029, B-027, B-033, B-032, B-023, B-031 and B-015 all closed** (the first four
-2026-08-23, B-023/B-031/B-015 2026-08-24). B-031 closed with no code change — see its
-BACKLOG entry's closing section: neither of its two shapes survives measurement against
-the corpus. **B-035 is now the head.**
+**B-029, B-027, B-033, B-032, B-023, B-031, B-015 and B-035 all closed** (the first four
+2026-08-23, B-023/B-031/B-015 2026-08-24, B-035 2026-08-25). B-031 closed with no code
+change — see its BACKLOG entry's closing section: neither of its two shapes survives
+measurement against the corpus. **B-034 is now the head.**
 
 B-029 was first because it is independent of everything else and was the largest single item.
 B-027 was last because it is documentation with no code consequence left.
 
 ---
 
-## Index — 9 open items (29 closed/recorded IDs live in BACKLOG only)
+## Index — 8 open items (30 closed/recorded IDs live in BACKLOG only)
 
 | ID | Subject | Class | Section |
 |---|---|---|---|
@@ -56,70 +57,9 @@ B-027 was last because it is documentation with no code consequence left.
 | B-012 | `code_refs` has no live producer | NO STEPS — blocked on packaging | [below](#no-steps) |
 | B-025 | `PostToolUse`/WebFetch payload shape | NO STEPS — **BLOCKED** | [below](#no-steps) |
 | B-034 | D6 (code↔knowledge) not built | **PLANNED** | [§B-034](#b-034--build-d6-as-an-export-view) |
-| B-035 | D1 has no outcome label | **PLANNED** | [§B-035](#b-035--mint-a-run_id-so-d1-can-carry-an-outcome) |
 | B-036 | Broad query links ten neighbours | NO STEPS — measure first | [below](#no-steps) |
 | B-037 | Intent gate FIRE/QUIET margin now negative | NO STEPS — measure first | [below](#no-steps) |
 | B-038 | `bodyPass` window allocated by path, not relevance | NO STEPS — measure first | [below](#b-038--bodypasss-top-20-window-is-allocated-by-path-not-by-relevance) |
-
----
-
-# B-035 — mint a `run_id` so D1 can carry an outcome
-
-**Why it's open.** ADDENDUM §D.1 describes D1's pair as "question → verdict + topic +
-stack, auto-labelled by recall **+ outcome**". Phase 6b built the first half. There is no
-outcome, because nothing in the system correlates a recall call to the note write that may
-follow it minutes later in a different process.
-
-**Anchors.**
-
-- `pkg/dataset/d1.go` — `D1Pair` (Kind, QHash, Topic, Decision, Stack, RecallTopScore,
-  Candidates, CapturedAt) and the doc comment already naming this item.
-- `pkg/telemetry/event.go:11-21` — `Event`, which has no run id either.
-- `cmd/forge/recall.go` — `runRecall`, where D1 captures beside `logAsk`.
-- `cmd/forge/recall.go:145` — the JSON envelope's contract comment.
-- `cmd/forge/gate.go:45` `cmdGate`, `:62` `runGate` — the write path that would stamp it.
-- `skills/forge/SKILL.md` — invokes `forge gate`; the id has to survive this hand-off.
-
-**Prerequisites.**
-
-- **The blocker is structural, not effort.** Adding an outcome field without a key produces
-  a column nothing can ever populate. The key comes first.
-- The join **will be partial** — a skill that forgets to pass the id degrades to today's
-  behaviour rather than failing. That is the right degradation, and the datasheet must say
-  so. Decide this before building, not after measuring.
-
-**Steps.**
-
-1. Mint a `run_id` in `runRecall`. Opaque, collision-resistant, no timestamp semantics
-   leaking into it. Emit it in the JSON envelope — that is an addition to a documented
-   contract (`recall.go:145`), so update the comment in the same edit.
-2. Carry it on `telemetry.Event` (new field, `json:"run_id"`) and on `D1Pair`. Both are
-   append-only JSONL; a new field is backward-compatible for readers, but check
-   `pkg/dataset/read.go`'s strict reader — it refuses lines it cannot parse, by design.
-3. Accept `--run-id` as an **optional** flag on `forge gate`. Absent → today's behaviour,
-   no error.
-4. Add the outcome record. Decide whether it is a new field on `D1Pair` (requires a
-   rewrite of an append-only file — probably wrong) or a **separate outcome record** keyed
-   by `run_id` that the export path joins. The second is almost certainly right; state the
-   reason either way.
-5. Thread the id through `skills/forge/SKILL.md`'s dispatch. This hop decides the item's
-   real size.
-6. Update every D1 datasheet: the corpus stops being purely supervision-on-its-own-output,
-   *for the subset that joined*. Say what fraction joined; do not imply it is a census.
-
-**Verification.**
-
-- `go test ./pkg/dataset/... ./pkg/telemetry/... ./cmd/forge/...` → green.
-- `forge recall` JSON carries `run_id`; `forge gate` without `--run-id` still exits 0 and
-  behaves identically to today (assert this with a test — it is the degradation contract).
-- `forge export-dataset --set d1` renders the outcome for joined records and omits it for
-  unjoined ones, without a shape error from the strict reader.
-
-**Done when** a recall call and the note write that followed it can be joined, and the
-datasheet states the join rate honestly.
-
-**Do not.** Do not add an outcome field before the key exists. Do not make `--run-id`
-required — it would turn a skill omission into a failed write.
 
 ---
 

@@ -63,8 +63,9 @@ func thresholdsFrom(cfg *config.Config) recall.Thresholds {
 const recallUsage = `usage: forge recall --question "..." [--stack a,b] [--vault DIR] [--explain]
 
 Scores the vault against a question and prints the top 10 candidates as JSON on
-stdout, highest first. Deterministic and model-free; see references/recall-spec.md
-for the scoring blend and DESIGN 5.3's decision tree.
+stdout, highest first, plus a run_id correlating this call to a later
+"forge gate --run-id" write (BACKLOG B-035). Deterministic and model-free; see
+references/recall-spec.md for the scoring blend and DESIGN 5.3's decision tree.
 
 `
 
@@ -85,9 +86,10 @@ func runRecall(vaultDir, question, stack string, explain bool, th recall.Thresho
 	if explain {
 		printExplain(os.Stderr, q, res)
 	}
-	logAsk(root, cfg, q, res)
-	captureD1(root, cfg, q, res)
-	return emit(res)
+	runID := telemetry.NewRunID()
+	logAsk(root, cfg, q, res, runID)
+	captureD1(root, cfg, q, res, runID)
+	return emit(res, runID)
 }
 
 // logAsk records DESIGN §14's ask event when telemetry is enabled. Sources and
@@ -98,13 +100,13 @@ func runRecall(vaultDir, question, stack string, explain bool, th recall.Thresho
 // field has existed on Event since Phase 5 and production never wrote it, which quietly
 // starved two real readers: pkg/report/index.go:67 and coverage.go:43 both fan out over
 // e.Stack. DESIGN §14's own example line carries a stack.
-func logAsk(root string, cfg *config.Config, q recall.Query, res recall.Result) {
+func logAsk(root string, cfg *config.Config, q recall.Query, res recall.Result, runID string) {
 	if cfg == nil || !cfg.Telemetry.Enabled {
 		return
 	}
 	ev := telemetry.Event{TS: time.Now().UTC(), Event: "ask", QHash: telemetry.QHash(q.Question),
 		Topic: vault.Slug(q.Question), Stack: q.Stack, Decision: string(res.Verdict),
-		RecallTopScore: res.TopScore}
+		RecallTopScore: res.TopScore, RunID: runID}
 	if err := telemetry.Append(root, ev); err != nil {
 		fmt.Fprintf(os.Stderr, "forge recall: telemetry: %v\n", err)
 	}
@@ -119,11 +121,11 @@ func logAsk(root string, cfg *config.Config, q recall.Query, res recall.Result) 
 // A capture error only reaches stderr. Recall has already scored the vault correctly at
 // this point and the caller is waiting on that answer; a side-channel write must not cost
 // it. Same posture as captureD2 (engine_run.go) and captureRepairIfRetry (gate.go).
-func captureD1(root string, cfg *config.Config, q recall.Query, res recall.Result) {
+func captureD1(root string, cfg *config.Config, q recall.Query, res recall.Result, runID string) {
 	if cfg == nil || !dataset.D1.Enabled(cfg.Dataset) {
 		return
 	}
-	p := dataset.D1Pair{Kind: dataset.D1Kind, QHash: telemetry.QHash(q.Question),
+	p := dataset.D1Pair{Kind: dataset.D1Kind, RunID: runID, QHash: telemetry.QHash(q.Question),
 		Topic: vault.Slug(q.Question), Decision: string(res.Verdict), Stack: q.Stack,
 		RecallTopScore: res.TopScore, Candidates: len(res.Candidates), CapturedAt: time.Now()}
 	if err := dataset.AppendD1(root, p); err != nil {
@@ -141,14 +143,26 @@ func splitStack(s string) []string {
 	return out
 }
 
+// recallEnvelope adds run_id to recall.Result's JSON shape without teaching pkg/recall —
+// a zero-model-call, deterministic scoring package — anything about dataset capture or
+// telemetry. Embedding promotes Result's own fields, so this is purely additive to the
+// documented envelope (recall-spec.md §4); RunID is the only field this package adds.
+type recallEnvelope struct {
+	recall.Result
+	RunID string `json:"run_id"`
+}
+
 // emit writes the output contract from recall-spec.md §4: one object carrying the
-// verdict and the candidates. `candidates` and `neighbours` are always arrays, never
-// `null` — a vault that matches nothing prints `[]` for both, so no consumer has to
-// special-case the empty case it will hit on every genuinely new topic.
-func emit(res recall.Result) int {
+// verdict, the candidates, and — since BACKLOG B-035 — a run_id a caller can thread back
+// through `forge gate --run-id` to join this call to the note write it led to. A caller
+// that ignores the field gets exactly today's behaviour; the join is optional on both
+// ends. `candidates` and `neighbours` are always arrays, never `null` — a vault that
+// matches nothing prints `[]` for both, so no consumer has to special-case the empty case
+// it will hit on every genuinely new topic.
+func emit(res recall.Result, runID string) int {
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
-	if err := enc.Encode(res); err != nil {
+	if err := enc.Encode(recallEnvelope{Result: res, RunID: runID}); err != nil {
 		fmt.Fprintf(os.Stderr, "forge recall: %v\n", err)
 		return 1
 	}
