@@ -384,58 +384,6 @@ cover all three values against both the exhausted and non-exhausted branch. The 
 sites were not touched — they only ever named the three values, never claimed a behaviour
 for `stop`, so there was nothing wrong to fix. See BACKLOG.md's B-023 closure note.
 
-**B-031 closed 2026-08-24, same worktree, out-of-phase — the head of the queue closed with
-no code change.** Its own TODO.md plan asked for the choice between its two shapes to be
-written down before coding; doing that first showed neither survives contact with the
-corpus. Shape 1 ("tag the note `kafka`") is not merely non-generalising as BACKLOG framed
-it — `kafka` and `consumer` appear nowhere in `testcontainers-docker-based-integration-
-testing.md`, title through body, so the tag would misdescribe the note, not under-curate
-it. Shape 2 ("the body channel is the only one that sees `kafka` here") is true of the
-*system* — `cqrs-and-event-driven-messaging.md` (44 hits) and `transactional-outbox-
-pattern.md` (28 hits) carry it heavily — but not of *this row*: both notes sit in
-`notes/howto/`, and `bodyPass`'s top-20 window is filled by `notes/concept/*` first purely
-because ~84 of 92 docs tie at 0.000 frontmatter and the tie-break sorts by path.
-`BodyPassSize` bumped 20→200 locally (not committed) confirmed both kafka-bearing notes
-still score below the 0.150 neighbour floor and below the current winner's 0.311 — they
-carry zero frontmatter signal, being architecture notes that mention Kafka as an example
-rather than testing-infrastructure notes. TODO.md step 2's "measure which one is binding"
-resolves to neither: raising `wBody` or `BodyPassSize` moves nothing for this query without
-a DESIGN §8 ratio change this one row can't justify. Verdict for this row: today's CREATE,
-linking the four testcontainers-family neighbours, is the correct answer to a question the
-vault has no dedicated note for — not a coverage miss. **This closes the row, not the
-general question** — whether a term the body carries strongly and the frontmatter carries
-nowhere should ever lift a candidate is untouched, and the reason it doesn't today (which
-of the seven type directories a note lives in decides its place in `bodyPass`'s tie-break,
-not its content) reproduces on any query, not just this one. Filed as **B-038**. No golden
-diff on B-031 itself; `TestCalibration` unchanged. See BACKLOG.md's B-031 closing section
-for the measurement table and B-038 for the general defect.
-
-**B-015 closed 2026-08-24, same worktree, out-of-phase.** `codeindex.File` gained
-`Imports []string` (Extractor bumped 2 → 3, same commit as the shape change), extracted in
-`parse_cgo.go`'s existing `walk` for both languages; a new `cmd/forge/
-check_codebase_deps.go` resolves each import to a repo directory and folds it into
-`CodeGroup.DependsOn`, called from both places that build one (`check_codebase.go`,
-`logback_map.go`). Two assumptions TODO.md's plan flagged as unverified were checked
-against real tree-sitter output before the resolver was written, not assumed: Java's
-`import_declaration` exposes the qualified name pre-stripped of `static` and a trailing
-`.*` (a wildcard and a class import are the same shape of string, which is why
-`resolveJavaImport` trims one dotted segment at a time rather than branching on which kind
-it is), and `coderef.ScanRepo`'s file list is filtered to six source extensions, not a full
-tree — so TypeScript resolution matches an exact file set, not directory existence, which
-closes a false-edge case the plan's own review raised (a nonexistent sibling file
-resolving anyway because its parent directory happens to exist for an unrelated reason).
-Suffix matches (Java has no known source root to resolve from) pick the
-lexicographically-first candidate on a tie, per B-020's determinism rule. Verified: both
-build lanes green; `TestGitSourceRebuildsFromScratchOnStaleExtractor` (`pkg/drift`) proves
-the real hook path takes the full-rebuild branch on an `Extractor`-mismatched cache rather
-than patching a stale entry forward; `TestGroupsOfPopulatesDependsOnEndToEnd` drives a real
-temp git repo through `Build → dependsOn → groupsOf` rather than a hand-built `Index`. One
-real, one-time, unmeasured cost recorded rather than hidden: the Extractor bump forces a
-full re-parse on the first hook run after upgrade on any repo with a persisted
-`.forge/code-index-<repo>.json`, against a cache whose whole purpose is avoiding exactly
-that under `forge drift`'s hook-path budget — not re-measured on this machine, per B-029's
-precedent for repos it doesn't have. See BACKLOG.md's B-015 closing section.
-
 **B-022 closed in Phase 4**
 (the schema pattern now covers all nine `cfg.Pipeline` stages minus `critique`); **B-007
 closed in Phase 4** (`agents/forge-librarian.md`'s prompt stamps `Forge-Write: true` on
@@ -561,11 +509,8 @@ B-006 (link rewrite) closed on 2026-08-09; B-007 and B-022 in Phase 4; B-009 and
 halves still open); **B-008 on 2026-08-22**, which opened B-031/B-032/B-033 in its place;
 **B-030 in Phase 6b the same day**, which opened B-034/B-035; **B-029, B-027, B-033 and
 B-032 all on 2026-08-23** (see the notes below), B-033 opening **B-036** and B-032 opening
-**B-037** in their place; **B-023's behaviour half on 2026-08-24**, closing it fully;
-**B-031 also on 2026-08-24**, closed with no code change and opening **B-038** in its
-place (see the Status note above). **B-015 also on 2026-08-24**, populating
-`CodeGroup.DependsOn` (see the Status note above).
-**The head of the queue is now B-035**, and `docs/TODO.md` fixes the order from there.
+**B-037** in their place; **B-023's behaviour half on 2026-08-24**, closing it fully.
+**The head of the queue is now B-031**, and `docs/TODO.md` fixes the order from there.
 
 **`docs/TODO.md` is the execution half of that file** (written 2026-08-23). BACKLOG records
 *why* an item exists; TODO records *how to close it* — a six-field plan (anchors,
