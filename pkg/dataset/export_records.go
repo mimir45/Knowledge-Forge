@@ -24,6 +24,8 @@ func loadTier(root string, t Tier) ([]any, error) {
 		return boxed(readStrict[D4Pair](path))
 	case D5Tag:
 		return boxed(readStrict[D5Pair](path))
+	case D6Tag:
+		return loadD6(root)
 	}
 	return nil, fmt.Errorf("tier %q has no reader", t.Tag)
 }
@@ -90,7 +92,9 @@ func boxed[T any](recs []T, err error) ([]any, error) {
 
 // stampOf is the field --since filters on. D3 uses EditedAt rather than a capture time:
 // the pair is dated by when the human made the correction, which is the event, not by
-// when the hook happened to harvest it.
+// when the hook happened to harvest it. D6Pair falls through to the zero value on
+// purpose — it has no per-record timestamp, which is exactly why refuseDerivedOptions
+// rejects --since before this function is ever asked about a D6 record.
 func stampOf(rec any) time.Time {
 	switch p := rec.(type) {
 	case D1Pair:
@@ -139,6 +143,8 @@ func roundTrip(rec any) error {
 		return reparse[D4Pair](b)
 	case D5Pair:
 		return reparse[D5Pair](b)
+	case D6Pair:
+		return reparse[D6Pair](b)
 	}
 	return fmt.Errorf("unhandled record type %T", rec)
 }

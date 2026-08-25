@@ -33,6 +33,12 @@ func TestPackagedCaptureListGates(t *testing.T) {
 		t.Fatal("packaged dataset.enabled = false; the gates below are moot")
 	}
 	for _, tier := range Tiers() {
+		// D6 (BACKLOG B-034) has no write path and is deliberately absent from
+		// dataset.capture — Enabled would correctly report false for it forever, which is
+		// not the mismatch this test guards against.
+		if tier.Derived {
+			continue
+		}
 		if !tier.Enabled(c.Dataset) {
 			t.Errorf("packaged dataset.capture %v does not enable %s (want the %q entry)",
 				c.Dataset.Capture, tier.Kind, tier.Tag)

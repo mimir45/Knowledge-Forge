@@ -1803,7 +1803,7 @@ two general Spring notes score on every Spring question. No floor separates them
 
 ## B-034 — D6 (code↔knowledge) is specified but not built
 
-**Owner: unassigned. Status: open — opened 2026-08-22 by Phase 6b, deliberately not built.**
+**Owner: unassigned. Status: closed 2026-08-25 — see the closure note below.**
 
 `ADDENDUM §D.1`'s table lists **six** datasets. Phase 6b built five. The sixth, D6
 "Code↔knowledge" — pairs of (repo symbol or module → the note explaining it), volume
@@ -1837,6 +1837,77 @@ are the feature*, and they are also the most employer-identifying strings in the
 system. `pkg/dataset/anonymize.go`'s current answer for note paths — hash the slug, keep the
 type — has no equivalent that leaves D6 useful. Do not assume the existing scrubber covers
 it.
+
+### Closed 2026-08-25, out-of-phase, on `feat/b-035-run-id` — built to TODO.md's plan; every step landed, and the five-vs-six question resolved the other way from how this entry framed it.
+
+**§D.1's "six" was right all along — nothing is superseded, no AUDIT §8.4 entry is owed.**
+This entry's own "why five and not six" section reasoned from ROADMAP and the phase
+prompts outvoting §D.1 three sources to one. That was the wrong frame: those three are a
+phase-planning snapshot and historical execution prompts, not living specs, and §D.1 is
+the one that was actually correct about the dataset shape from the start. `docs/ROADMAP.md`
+and `docs/CLAUDE-CODE-PROMPT.md` were deliberately **not edited** for the same reason B-027
+left `DESIGN:257` alone before D-9 superseded it — they are dated snapshots of what a past
+phase planned and asked for, not doc sites this closure updates. `docs/BACKLOG.md`,
+`docs/TODO.md`, `CLAUDE.md`, and the two dataset skills are the live surfaces, and all four
+are updated here.
+
+**Shipped as this entry's own plan specified**, with one structural decision the plan
+flagged but didn't resolve: `Tier` gained `Derived bool` (not a loader-function field —
+`Path` stays meaningful for D1–D5 and empty for D6, which is what `loadTier`'s existing
+type-switch pattern wanted) and **D6 is a full member of `Tiers()`**, not a side list —
+`resolve()`'s `--set` matching, `dataset-stats`' iteration, and the tag-uniqueness test all
+see it for free. The cost this decision has: `forge dataset-stats` now re-derives D6 (glob
+`.forge/code-index-*.json`, walk every note, resolve every citation) on **every** call, not
+just on export — previously five file reads. Not measured against a real multi-repo vault
+on this machine, per B-029's and B-015's precedent for repos this machine doesn't have;
+`writeTierCounts`' header wording was changed to say so rather than claiming a uniform
+"captured pairs" table.
+
+**The derivation itself needs no live repo access and no new `--repo` flag anywhere.**
+`.forge/code-index-<repo>.json` already carries a repo's full file list and symbol table
+(`codeindex.Index.Files`), so `pkg/dataset/d6.go`'s `loadD6` builds a `coderef.Registry`
+straight from the cached indexes and resolves each note's citations against it — the same
+`locate()` branch (`cmd/forge/check_codebase.go`) `forge check`'s own coverage numbers use,
+mirrored rather than loosened, so a citation `forge check` already treats as unresolved
+contributes no D6 pair either. Symbol lookup uses `codeindex.File.Lookup` (exact name, then
+trailing member) over each index's files in sorted order — deliberately not
+`codeindex.Index.FindSymbol`, which ranges over a Go map and would pick a different file on
+different runs when two files in one repo declare the same trailing member; sorted iteration
+is BACKLOG B-020's determinism rule applied one layer further out.
+
+**Fail-closed on a cache Load can't read, not silently smaller.** `loadIndexes` treats an
+absent `.forge/code-index-*.json` as "nobody has run `forge logback` here yet" (not an
+error) but a *present and unreadable* one (stale `Extractor`, corrupt JSON) as a hard
+failure naming the file — the same reasoning `pkg/dataset/read.go` already applied to a
+torn capture line, carried to a cache instead of a log. Silently continuing over the
+unreadable file was the design this closure's own first advisor pass caught before it
+shipped: it would have reported export success over a corpus with an unannounced hole.
+
+**Anonymization: refused, not attempted**, exactly as this entry's own "shape when someone
+picks it up" section concluded no acceptable answer exists. `refuseDerivedOptions`
+(`pkg/dataset/export.go`) rejects both `--since` and `--anonymize` on any `Tier.Derived`
+before a record is read — general on the field rather than hardcoded to `d6`, so a future
+derived tier inherits both refusals — and since `dataset.anonymize_on_export` defaults
+`true` in the packaged config, exporting `d6` at all requires `--no-anonymize` explicitly.
+Both refusals are `UsageError` (exit 2, `--out` untouched, no `exports.jsonl` line), pinned
+by `pkg/dataset/d6_test.go` and, at the CLI layer, `cmd/forge/export_dataset_test.go`.
+
+**Two "do not" items from the plan were both honoured.** No sixth capture path — there is
+no `AppendD6`, on purpose. No `d6` entry in `config/forge.config.example.md`'s
+`dataset.capture` list — `Tier.Enabled` is never called for a derived tier by any real call
+site, and `TestPackagedCaptureListGates` now skips `Derived` tiers explicitly rather than
+being satisfied by accident.
+
+**Records ≠ notes**, stated in the D6 datasheet and in both dataset skills: a note citing
+five symbols yields five D6 records, so its count answers "how many citations resolve",
+not §D.1's literal "= note count" line.
+
+Verified: both build lanes (`CGO_ENABLED=0` and `=1`) green, `go vet` clean, new tests in
+`pkg/dataset` (positive derivation over a real fixture code index + note, dedup, both
+refusals, fail-closed on a stale-Extractor cache) and `cmd/forge` (exit-code-2 coverage for
+both refusals). Nothing here touches `pkg/recall`'s scoring or `pkg/report`'s codebase
+rendering — `TestCalibration` and the neighbour/intent-gate goldens are unchanged, no
+`-update` run.
 
 ---
 

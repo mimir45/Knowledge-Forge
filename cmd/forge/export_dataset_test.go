@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"knowledge-forge/pkg/config"
 	"knowledge-forge/pkg/dataset"
@@ -48,6 +49,36 @@ func TestExportExitCodesDistinguishUsageFromFailure(t *testing.T) {
 	if _, err := os.Stat(out); !os.IsNotExist(err) {
 		t.Errorf("--out exists after both failures: %v", err)
 	}
+}
+
+// TestExportDatasetD6RefusesSinceAndAnonymize is the CLI-level half of
+// refuseDerivedOptions' guard: both refusals happen before loadTier ever runs, so an
+// empty vault (no code index, no notes) is enough to exercise the exit code — the
+// pkg/dataset tests cover the guard's own logic and the --out-untouched property.
+func TestExportDatasetD6RefusesSinceAndAnonymize(t *testing.T) {
+	root := t.TempDir()
+	out := filepath.Join(t.TempDir(), "export")
+	since := dataset.ExportOptions{Set: "d6", Format: dataset.FormatSFT, Out: out,
+		Since: mustParseDate(t, "2026-01-01")}
+	if code := runExportDataset(root, since); code != 2 {
+		t.Errorf("d6 --since exited %d, want 2", code)
+	}
+	anon := dataset.ExportOptions{Set: "d6", Format: dataset.FormatSFT, Out: out, Anonymize: true}
+	if code := runExportDataset(root, anon); code != 2 {
+		t.Errorf("d6 --anonymize exited %d, want 2", code)
+	}
+	if _, err := os.Stat(out); !os.IsNotExist(err) {
+		t.Errorf("--out exists after both refusals: %v", err)
+	}
+}
+
+func mustParseDate(t *testing.T, s string) time.Time {
+	t.Helper()
+	tm, err := time.Parse("2006-01-02", s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return tm
 }
 
 func TestExportSucceedsAndWritesBothFiles(t *testing.T) {

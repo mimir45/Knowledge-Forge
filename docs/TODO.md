@@ -22,33 +22,25 @@ up in BACKLOG.
 Not every open backlog item can take a plan, and the absence of steps below is a decision,
 not an oversight:
 
-- **PLANNED** — workable, has a full six-field section in this file. One now: B-034.
-  B-029, B-027, B-033, B-032, B-023, B-031, B-015 and B-035 closed 2026-08-23/24/25;
-  B-033's closure opened B-036 and B-032's opened B-037, both NO STEPS by their own
-  argument — each names a measurement to run before any design is chosen, not a fix to
-  apply.
+- **PLANNED** — workable, has a full six-field section in this file. **None open right
+  now.** B-034 (2026-08-25) was the last of the eight: B-029, B-027, B-033, B-032,
+  B-023, B-031, B-015 and B-035 closed 2026-08-23/24/25 before it. B-033's closure
+  opened B-036 and B-032's opened B-037; neither is PLANNED — both are NO STEPS by their
+  own argument, each naming a measurement to run before any design is chosen, not a fix
+  to apply.
 - **NO STEPS** — open but not actionable by an implementation session: blocked on external
   observation, or a user decision, or "record, don't fix" by standing rule. Listed with
   its unblock condition instead of steps.
 
-## Execution order
-
-```
-B-029  →  B-033  →  B-032  →  B-023  →  B-031  →  B-015  →  B-035  →  B-034  →  B-027
- done     done      done      done      done      done      done     head      done
-```
-
-**B-029, B-027, B-033, B-032, B-023, B-031, B-015 and B-035 all closed** (the first four
-2026-08-23, B-023/B-031/B-015 2026-08-24, B-035 2026-08-25). B-031 closed with no code
-change — see its BACKLOG entry's closing section: neither of its two shapes survives
-measurement against the corpus. **B-034 is now the head.**
-
-B-029 was first because it is independent of everything else and was the largest single item.
-B-027 was last because it is documentation with no code consequence left.
+The execution-order chain this file tracked through B-034 (`B-029 → B-033 → B-032 →
+B-023 → B-031 → B-015 → B-035 → B-034 → B-027`) is fully closed and dropped along with
+the plan sections below, per this file's own rule — the sequencing rationale (why B-033
+had to land before B-032, why B-029 went first) is recorded in each item's BACKLOG
+closing note, not restated here.
 
 ---
 
-## Index — 8 open items (30 closed/recorded IDs live in BACKLOG only)
+## Index — 7 open items (31 closed/recorded IDs live in BACKLOG only)
 
 | ID | Subject | Class | Section |
 |---|---|---|---|
@@ -56,74 +48,9 @@ B-027 was last because it is documentation with no code consequence left.
 | B-004 | Module path has no VCS host prefix | NO STEPS — deferred by decision | [below](#no-steps) |
 | B-012 | `code_refs` has no live producer | NO STEPS — blocked on packaging | [below](#no-steps) |
 | B-025 | `PostToolUse`/WebFetch payload shape | NO STEPS — **BLOCKED** | [below](#no-steps) |
-| B-034 | D6 (code↔knowledge) not built | **PLANNED** | [§B-034](#b-034--build-d6-as-an-export-view) |
 | B-036 | Broad query links ten neighbours | NO STEPS — measure first | [below](#no-steps) |
 | B-037 | Intent gate FIRE/QUIET margin now negative | NO STEPS — measure first | [below](#no-steps) |
 | B-038 | `bodyPass` window allocated by path, not relevance | NO STEPS — measure first | [below](#b-038--bodypasss-top-20-window-is-allocated-by-path-not-by-relevance) |
-
----
-
-# B-034 — build D6 as an export view
-
-**Why it's open.** ADDENDUM §D.1's table lists **six** datasets; Phase 6b built five. D6
-"Code↔knowledge" — (repo symbol or module → the note explaining it) — was scoped out by
-explicit decision, because ROADMAP and both phase prompts say five and only §D.1 says six,
-and AUDIT never flagged the disagreement so precedence gives no ruling.
-
-**Anchors.**
-
-- `pkg/dataset/tier.go` — `Tier{Tag, Kind, Path}`, the registry `D1…D5`, `Tiers()`,
-  `Enabled()`, `Append()`.
-- `pkg/dataset/export.go:111` `resolve`, `:120` `checkFormat`, `:131` `prepare`,
-  `:149` `since`, `:162` `anonymizeAll`, `:179` `commit`.
-- `pkg/dataset/anonymize.go` — the note-path answer (hash the slug, keep the type).
-- `pkg/report/knowledgemap.go` `RenderKnowledgeMap`, `cmd/forge/logback_map.go` — the
-  existing (symbol → note) mapping.
-- `pkg/coderef` — the citation registry. `.forge/code-index-<repo>.json` — the symbol table.
-
-**Prerequisites.**
-
-- **D6 is a derivation, not a capture tier.** D1–D5 each have a write path on a live
-  command and accumulate forward, which is the whole argument for building capture early.
-  D6 has no capture path and needs none — `forge logback` already builds exactly the
-  mapping D6 wants. Nothing is lost by deriving it late.
-- Ship it as `.forge/datasets/d6.jsonl`? **No.** An export *view*, not a sixth capture file.
-
-**Steps.**
-
-1. Resolve the struct problem first — it is the one real design question. `Tier` has a
-   `Path` field and D6 has no file. Either make `Path` optional with an explicit
-   `Derived bool`, or give `Tier` a loader function instead of a path. Whichever: `Tiers()`
-   is iterated by both export and `dataset-stats`, so a derived tier must not break
-   `dataset-stats`' per-file counting.
-2. Add a `--set d6` case whose `loadTier` reads the code index and citation registry
-   instead of a JSONL file.
-3. **Refuse `--since` for d6** with a clear error. There is no per-record timestamp on a
-   derived set, so silently ignoring the flag would report a filtered export that never
-   filtered. Per Phase 6b's own precedent, an undefined `(set, format)` combination exits
-   **2, not 3** — 3 promises "a real attempt was made"; this is rejected before a record
-   is read.
-4. Solve anonymisation, and expect it to be harder than D1–D5. **The symbol and module
-   names are the feature, and they are also the most employer-identifying strings in the
-   system.** `anonymize.go`'s note-path answer (hash the slug, keep the type) has no
-   equivalent that leaves D6 useful. Do not assume the existing scrubber covers it. If no
-   acceptable answer exists, the honest outcome is `--anonymize` refusing d6 rather than
-   producing a corpus that looks scrubbed and is not.
-5. Write the datasheet. State the derivation source and the anonymisation limit.
-6. Record the five-vs-six decision's resolution in B-034 and, if D6 ships, in ROADMAP.
-
-**Verification.**
-
-- `go test ./pkg/dataset/...` → green, including a case asserting `--since` on d6 exits 2.
-- `forge dataset-stats` still reports D1–D5 correctly with a derived tier in the registry.
-- `TestAnonymizeRemovesEverySeededSecret`-style coverage for whatever D6's redaction is —
-  that test is D-6's regression guard and the only thing that proves no secret escaped.
-  Neither buffer-then-commit nor the per-record re-decode proves that.
-
-**Done when** `--set d6` exports a (symbol → note) corpus with a datasheet that states its
-anonymisation limit plainly, or the item closes with a written decision not to build it.
-
-**Do not.** Do not add a sixth capture path. Do not let `--since` through silently.
 
 ---
 

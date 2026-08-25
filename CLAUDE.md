@@ -466,6 +466,46 @@ B-031's/B-003's doc-only commits were never opened as a PR at all. Recovered on
 hunks came back empty — already identical on `main`); this branch is rebased on top of it
 so B-035 lands on a correct base once #9 merges.
 
+**B-034 closed 2026-08-25, out-of-phase, on `feat/b-034-d6-dataset` — and the five-vs-six
+question this entry opened resolved the opposite way from how it was framed.** ADDENDUM
+§D.1's "six" datasets turned out to be right all along; ROADMAP and the phase prompts
+outvoting it three sources to one was the wrong frame, since those three are a dated
+planning snapshot and historical execution prompts, not living specs — so nothing is
+superseded and no AUDIT §8.4 entry is owed, and `docs/ROADMAP.md`/`docs/CLAUDE-CODE-
+PROMPT.md` were deliberately left saying five, same treatment B-027 gave a stale doc
+line before its own ruling existed. D6 shipped as `pkg/dataset/d6.go`, a **derivation**,
+not a sixth capture path: `Tier` gained `Derived bool` (`Path` stays empty for it) and
+D6 is a full `Tiers()` member, so `--set d6`, `dataset-stats`, and the tag-uniqueness
+test all see it without new plumbing — the cost being that `forge dataset-stats` now
+re-derives D6 (glob every `.forge/code-index-<repo>.json`, walk every note, resolve
+every citation) on every call rather than reading a file, not measured against a real
+multi-repo vault on this machine. The derivation needs no live repo access and no new
+`--repo` flag: it builds a `coderef.Registry` straight from the cached code indexes and
+resolves citations through the same branch `locate()` (`cmd/forge/check_codebase.go`)
+uses, so a citation `forge check` already treats as unresolved contributes no D6 pair
+either; symbol lookup goes through `codeindex.File.Lookup` over each index's files in
+sorted order, not `Index.FindSymbol`, whose map iteration would pick a different file on
+different runs when two files share a trailing member. `loadIndexes` fails closed on a
+cache `Load` can't read (stale `Extractor`, corrupt JSON) rather than silently deriving
+a smaller corpus — the same reasoning `read.go` already applied to a torn capture line,
+carried to a cache instead of a log; an *absent* cache is not an error, since it just
+means `forge logback` hasn't run there yet. Anonymization is refused outright rather
+than attempted, via a general `refuseDerivedOptions` guard keyed on `Tier.Derived` (so a
+future derived tier inherits the refusal) that also refuses `--since`, since a derived
+set has no per-record timestamp; both are `UsageError` (exit 2, `--out` untouched, no
+`exports.jsonl` line) before a record is read. Both "do not"s from the original entry
+held: no `AppendD6`, and no `d6` in `config/forge.config.example.md`'s
+`dataset.capture` list. Verified: both build lanes green, `go vet` clean, new
+`pkg/dataset` tests (a real code-index-cache-plus-citing-note fixture, dedup, both
+refusals, fail-closed on a stale-Extractor cache) and a `cmd/forge` exit-code test.
+Nothing here touches `pkg/recall`'s scoring — `TestCalibration` and the neighbour/
+intent-gate goldens are unchanged, no `-update` run. See BACKLOG.md's B-034 closing
+section. **This branch stacks three deep and is not yet mergeable on its own**:
+`docs/catchup-b031-b003` (PR #9) → `feat/b-035-run-id` → `feat/b-034-d6-dataset`. A PR
+for this branch must base on `feat/b-035-run-id`, not `main` — a `main`-based PR would
+show B-035's diff as if this session had authored it. Merge order is #9, then B-035,
+then this one.
+
 **B-022 closed in Phase 4**
 (the schema pattern now covers all nine `cfg.Pipeline` stages minus `critique`); **B-007
 closed in Phase 4** (`agents/forge-librarian.md`'s prompt stamps `Forge-Write: true` on
@@ -584,7 +624,7 @@ time runs out the cut order is `6b → 5b → advisor tier`. If work comes up ou
 current phase's scope, write it to `docs/BACKLOG.md` rather than building it.
 
 **Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004,
-**B-034**, **B-036**, **B-037**, **B-038** and most of the twelve findings 2b recorded are
+**B-036**, **B-037**, **B-038** and most of the twelve findings 2b recorded are
 open; **B-025 is blocked**, not open. B-001 (doc coherence), B-005 (seven note types) and
 B-006 (link rewrite) closed on 2026-08-09; B-007 and B-022 in Phase 4; B-009 and B-024 on
 2026-08-21, when B-023 and B-027 were also half-closed (docs synced, the behavior/design-doc
@@ -595,8 +635,11 @@ B-032 all on 2026-08-23** (see the notes below), B-033 opening **B-036** and B-0
 **B-031 also on 2026-08-24**, closed with no code change and opening **B-038** in its
 place (see the Status note above). **B-015 also on 2026-08-24**, populating
 `CodeGroup.DependsOn` (see the Status note above). **B-035 on 2026-08-25**, minting the
-`run_id` correlation key (see the Status note above).
-**The head of the queue is now B-034**, and `docs/TODO.md` fixes the order from there.
+`run_id` correlation key, and **B-034 the same day**, building D6 as a derived export
+view over `forge logback`'s map rather than a sixth capture tier (see the Status note
+above). **`docs/TODO.md`'s PLANNED class is empty now** — B-036, B-037 and B-038 are all
+NO STEPS by their own argument, so nothing in BACKLOG's open list currently has a
+six-field plan to execute; the next phase or out-of-phase item starts by writing one.
 
 **`docs/TODO.md` is the execution half of that file** (written 2026-08-23). BACKLOG records
 *why* an item exists; TODO records *how to close it* — a six-field plan (anchors,

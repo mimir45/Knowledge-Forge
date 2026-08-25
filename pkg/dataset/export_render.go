@@ -46,8 +46,21 @@ func idOf(rec any) string {
 		return p.Note
 	case D5Pair:
 		return p.Rel
+	case D6Pair:
+		return d6ID(p)
 	}
 	return ""
+}
+
+// d6ID has no single natural key the way the other tiers do — Note alone is not unique,
+// since one note documents many symbols. repo:path is unique per module-level pair;
+// #symbol disambiguates the symbol-level pairs a module citation and a symbol citation
+// of the same file would otherwise collide on.
+func d6ID(p D6Pair) string {
+	if p.Symbol == "" {
+		return p.Repo + ":" + p.Path
+	}
+	return p.Repo + ":" + p.Path + "#" + p.Symbol
 }
 
 func render(t Tier, recs []any, f Format) ([]byte, error) {
@@ -90,6 +103,8 @@ func sftOf(t Tier, rec any) (any, error) {
 		l.Prompt, l.Completion = repairPrompt(p), p.FixedDraft
 	case D5Pair:
 		l.Prompt, l.Completion = d5Prompt(p), p.Note
+	case D6Pair:
+		l.Prompt, l.Completion = d6Prompt(p), p.Note
 	default:
 		return nil, fmt.Errorf("unhandled record type %T", rec)
 	}
@@ -118,6 +133,14 @@ func d1Prompt(p D1Pair) string {
 	return fields("topic", p.Topic, "stack", strings.Join(p.Stack, ", "),
 		"top_score", strconv.FormatFloat(p.RecallTopScore, 'f', 3, 64),
 		"candidates", strconv.Itoa(p.Candidates))
+}
+
+// d6Prompt renders the code side of the pair as a retrieval query; Completion is the
+// note's vault-relative path — a retrieval target, not generated text, matching
+// ADDENDUM §D.1's stated intended use for D6 ("retrieval / RAG eval") rather than the
+// drafting shape D1-D5's prompts share.
+func d6Prompt(p D6Pair) string {
+	return fields("repo", p.Repo, "path", p.Path, "symbol", p.Symbol)
 }
 
 func d5Prompt(p D5Pair) string {

@@ -181,6 +181,15 @@ func TestExportOfAnAbsentTierIsEmptyNotAnError(t *testing.T) {
 // fails here rather than in someone's export.
 func TestEveryTierRendersInEveryDefinedFormat(t *testing.T) {
 	for _, tier := range Tiers() {
+		// D6 has no capture record to seed — seedVault's tier.Append would try to open a
+		// directory as a file, since a derived tier's Path is empty. Its own exhaustiveness
+		// coverage is TestD6RendersFromCodeIndexAndCitations below, over its real fixture
+		// shape (a code index cache plus a citing note) instead of a JSONL sample. A
+		// *second* derived tier would also skip here silently — it owes its own render
+		// test the same way D6 does, this loop cannot discover a missing one for it.
+		if tier.Derived {
+			continue
+		}
 		root := seedVault(t, tier, sampleFor(tier))
 		for _, f := range formatsFor[tier.Tag] {
 			out := filepath.Join(t.TempDir(), "export")

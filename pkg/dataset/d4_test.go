@@ -20,20 +20,21 @@ func TestD4EnabledRequiresTheD4Tag(t *testing.T) {
 }
 
 // TestTiersAreDistinct guards the registry against the copy-paste it exists to prevent:
-// five entries, five tags, five paths, no two sharing either.
+// six entries, six tags, five distinct non-empty paths (D6 is derived and has none), no
+// two tags sharing either.
 func TestTiersAreDistinct(t *testing.T) {
 	tags, paths := map[string]bool{}, map[string]bool{}
 	for _, tier := range Tiers() {
 		if tags[tier.Tag] {
 			t.Errorf("duplicate tier tag %q", tier.Tag)
 		}
-		if paths[tier.Path] {
+		if tier.Path != "" && paths[tier.Path] {
 			t.Errorf("duplicate tier path %q", tier.Path)
 		}
 		tags[tier.Tag], paths[tier.Path] = true, true
 	}
-	if len(tags) != 5 {
-		t.Errorf("Tiers() has %d distinct tags, want 5", len(tags))
+	if len(tags) != 6 {
+		t.Errorf("Tiers() has %d distinct tags, want 6", len(tags))
 	}
 }
 
