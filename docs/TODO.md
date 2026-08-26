@@ -11,11 +11,14 @@ derived from it and deliberately do not restate its argument. Where a backlog en
 Written 2026-08-23 from a full scan of B-001…B-035; B-036 and B-037 added the same day as
 B-033 and B-032 closed; B-038 added 2026-08-24 when B-031 closed and split it out. B-036
 was measured 2026-08-26 against its own named unblock condition — **first read wrongly as
-a rejection (wrong denominator), corrected same day: the hypothesis is confirmed, item
-stays open.** A short-lived B-039, opened on the same wrong pass, was retracted outright —
-see BACKLOG.md's B-036 closing note for the full correction, including why the "no code
-change" and "B-039" text both briefly existed here before being reverted. Anchors were
-verified against the tree at that date; re-grep before trusting a line number.
+a rejection (wrong denominator), corrected same day: the hypothesis was confirmed** — and
+closed the same day, on `worktree-b-036-neighbour-window`: `Rank`'s internal window
+widened (`NeighbourWindow=20`, separate from `BodyPassSize`) so the neighbour band can see
+past the old `TopN=10` cliff. A short-lived B-039, opened on the wrong-denominator pass,
+was retracted outright — see BACKLOG.md's B-036 closing note for the full correction and
+the closure itself, including why the "no code change" and "B-039" text both briefly
+existed here before being reverted. Anchors were verified against the tree at that date;
+re-grep before trusting a line number.
 **Closed and recorded items are dropped from this file
 entirely, not just their plan sections** — `docs/BACKLOG.md` is the full census (every ID,
 closed or open, with the reasoning) and the durable record of *why*; this file exists only
@@ -30,11 +33,13 @@ not an oversight:
 - **PLANNED** — workable, has a full six-field section in this file. **None written yet.**
   B-034 (2026-08-25) was the last of the eight: B-029, B-027, B-033, B-032, B-023, B-031,
   B-015 and B-035 closed 2026-08-23/24/25 before it. B-033's closure opened B-036 and
-  B-032's opened B-037. **B-036's own unblock condition was run 2026-08-26 and now has a
-  real answer** (see its BACKLOG entry) — it is the one item here closest to PLANNED, but
-  the design step is a `pkg/recall` scoring change and deliberately wasn't written in the
-  same pass that corrected the measurement. B-037/B-038 are still NO STEPS by their own
-  argument, each naming a measurement to run before any design is chosen.
+  B-032's opened B-037. **B-036 closed 2026-08-26** (measured, then designed and shipped
+  the same day — see its BACKLOG entry) without ever getting a PLANNED write-up here: the
+  design was scoped and low-risk enough (widen `Rank`'s internal window, one new constant,
+  two new functions, three golden regenerations) to go straight from measurement to
+  implementation once its ecosystem-label prerequisite landed. B-037/B-038 are still NO
+  STEPS by their own argument, each naming a measurement to run before any design is
+  chosen.
 - **NO STEPS** — open but not actionable by an implementation session: blocked on external
   observation, or a user decision, or "record, don't fix" by standing rule. Listed with
   its unblock condition instead of steps.
@@ -47,7 +52,7 @@ closing note, not restated here.
 
 ---
 
-## Index — 7 open items (32 closed/recorded IDs live in BACKLOG only)
+## Index — 6 open items (33 closed/recorded IDs live in BACKLOG only)
 
 | ID | Subject | Class | Section |
 |---|---|---|---|
@@ -55,7 +60,6 @@ closing note, not restated here.
 | B-004 | Module path has no VCS host prefix | NO STEPS — deferred by decision | [below](#no-steps) |
 | B-012 | `code_refs` has no live producer | NO STEPS — blocked on packaging | [below](#no-steps) |
 | B-025 | `PostToolUse`/WebFetch payload shape | NO STEPS — **BLOCKED** | [below](#no-steps) |
-| B-036 | Two general Spring notes admitted on every Spring-flavored query | NO STEPS — measured, needs a design pass | [below](#no-steps) |
 | B-037 | Intent gate FIRE/QUIET margin now negative | NO STEPS — measure first | [below](#no-steps) |
 | B-038 | `bodyPass` window allocated by path, not relevance | NO STEPS — measure first | [below](#b-038--bodypasss-top-20-window-is-allocated-by-path-not-by-relevance) |
 
@@ -92,42 +96,6 @@ Phase 6 but has never been verified from a clean machine.
 **Unblock condition:** a verified plugin install where `forge-librarian` actually
 dispatches. Until then the field is documentation, every note reaches drift through
 `pkg/coderef`'s recovery path, and B-018's ambiguity is the direct consequence.
-
-## B-036 — a broad query links ten neighbours, and no floor can separate them
-
-**Measured 2026-08-26 against its own unblock condition — see BACKLOG.md's B-036 closing
-note for the full number and the correction of a wrong first reading. Still open: the
-hypothesis holds, and what's missing now is a design, not more measurement.**
-
-`cmd/forge/neighbour_frequency_test.go` (`TestNeighbourDocumentFrequency`) ran the "appears
-in N of M query results" column this entry originally asked for, over
-`testdata/neighbour-labels.txt`'s fifteen queries; it now also records *which* queries
-admit each note, not just the count. Reading it needs an ecosystem boundary that didn't
-exist before the measurement ran, so it's picked after the fact here and disclosed as
-such rather than presented as settled — see BACKLOG.md's B-036 closing note for both
-readings (narrow: literal "Spring" in the query, 4 of 15, both notes 4/4; wide: + Maven +
-Hibernate/JPA, 6 of 15, the two notes 5/6 and 4/6). Both readings confirm the same claim:
-these two notes clear a strong majority of an ecosystem-scoped subset while sitting at
-33%/27% of the full fifteen — a note scoring on every query in an ecosystem is being
-admitted as a neighbour regardless of what the question specifically asks.
-
-**Unblock condition (updated): a pre-committed ecosystem label — which queries belong to
-which technology cluster, written before it's used to justify any scoring change, the
-same discipline `neighbour-labels.txt` itself got (written before scores, committed one
-commit ahead of the sweep that reads it).** Picking the boundary post-hoc, as this
-session's own correction had to disclose doing, is not something a scoring change should
-be built on even when the conclusion survives it. Once that label exists, the design step
-this entry always deferred to "after reading it" becomes: `Thresholds.Neighbours`
-(`pkg/recall/rank.go:102-110`) only ever sees `recall.Rank`'s already-truncated top-10
-candidate list, so excluding a universal note there cannot surface an 11th candidate
-`Rank` never computed in the first place — any real fix has to touch `Rank`'s internal
-window, not just `Neighbours`' filtering, which is a bigger, more careful `pkg/recall`
-change than a one-line filter. That design (and its own PLANNED write-up) is the next
-step, not attempted in the same pass that corrected this entry's own measurement.
-
-**Do not respond to this by raising the floor.** Unchanged from the original entry —
-every floor B-033's sweep tried that drops these two notes also drops the Storybook
-family B-033 was opened to fix.
 
 ## B-037 — `forge intent`'s FIRE/QUIET margin went negative under B-032's scale
 

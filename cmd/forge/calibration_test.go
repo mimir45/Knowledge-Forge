@@ -97,7 +97,7 @@ func calibrationTable(t *testing.T) string {
 // score and verdict are functions of Rank and Decide, which the floor does not enter.
 func calibrationRow(docs []recall.Doc, question string) string {
 	q := recall.Query{Question: question}
-	res := recall.DefaultThresholds.Result(q, recall.Rank(q, docs, calibrationNow))
+	res := recall.DefaultThresholds.ResultFrom(q, recall.RankPool(q, docs, calibrationNow))
 	slug, score := "(none)", "—"
 	if len(res.Candidates) > 0 {
 		slug = res.Candidates[0].Slug

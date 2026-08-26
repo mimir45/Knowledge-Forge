@@ -8,14 +8,14 @@ import (
 
 func TestResultPopulatesNeighboursOnCreateOnly(t *testing.T) {
 	band := []Candidate{{Slug: "near", Score: 0.42}}
-	create := DefaultThresholds.Result(Query{Question: "q"}, band)
+	create := DefaultThresholds.ResultFrom(Query{Question: "q"}, band)
 	if create.Verdict != Create || len(create.Neighbours) != 1 {
 		t.Errorf("CREATE: verdict=%s neighbours=%d, want CREATE/1",
 			create.Verdict, len(create.Neighbours))
 	}
 	// Same band, but a strong top candidate. The caller was told to answer from the
 	// vault; handing it link targets invites it to link them anyway.
-	answer := DefaultThresholds.Result(Query{Question: "q"},
+	answer := DefaultThresholds.ResultFrom(Query{Question: "q"},
 		append([]Candidate{{Slug: "hit", Score: 0.9}}, band...))
 	if answer.Verdict != AnswerFromVault || len(answer.Neighbours) != 0 {
 		t.Errorf("ANSWER: verdict=%s neighbours=%d, want ANSWER_FROM_VAULT/0",
@@ -24,7 +24,7 @@ func TestResultPopulatesNeighboursOnCreateOnly(t *testing.T) {
 }
 
 func TestResultEmptyVaultIsCreateNotError(t *testing.T) {
-	res := DefaultThresholds.Result(Query{Question: "how do goroutines work"}, nil)
+	res := DefaultThresholds.ResultFrom(Query{Question: "how do goroutines work"}, nil)
 	if res.Verdict != Create || res.TopScore != 0 {
 		t.Errorf("verdict=%s top_score=%v, want CREATE/0", res.Verdict, res.TopScore)
 	}
@@ -33,7 +33,7 @@ func TestResultEmptyVaultIsCreateNotError(t *testing.T) {
 // Both arrays must marshal as `[]`, never `null`: the empty case is what every
 // genuinely new topic hits, and a null would make each consumer special-case it.
 func TestResultMarshalsEmptyArraysNotNull(t *testing.T) {
-	out, err := json.Marshal(DefaultThresholds.Result(Query{Question: "q"}, nil))
+	out, err := json.Marshal(DefaultThresholds.ResultFrom(Query{Question: "q"}, nil))
 	if err != nil {
 		t.Fatal(err)
 	}
