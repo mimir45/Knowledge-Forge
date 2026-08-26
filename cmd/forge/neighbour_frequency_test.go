@@ -30,11 +30,12 @@ import (
 // It also counts two different things queries can saturate, which are not the same
 // number: how many queries return a full TopN=10 *nonzero-scored* candidates from
 // recall.Rank (rankCapped — recall.Rank returns nonZero(cands) truncated to TopN, so this
-// only says ten notes overlapped at all), and how many queries emit a full TopN=10
-// *neighbours* after Thresholds.Neighbours filters by the 0.150 floor (neighbourCapped —
-// this is the number that actually bears on "did the floor run out of room before the
-// window did"). calibration.golden's JPA row is the proof they diverge: it has a nonzero
-// top score (0.119) and 0 neighbours in the same run.
+// only says ten notes overlapped at all), and, since B-036 widened the neighbour band's
+// pool from TopN=10 to NeighbourWindow=20, how many queries exhaust that wider pool itself
+// (poolSaturated — recall.NeighbourPool(pool) hits all 20 slots, meaning even the widened
+// window ran out of room, not just the floor). calibration.golden's JPA row is the proof
+// rankCapped and neighbour admission diverge: it has a nonzero top score (0.119) and 0
+// neighbours in the same run.
 
 const freqGoldenPath = "testdata/neighbour-frequency.golden"
 const ecosystemsPath = "testdata/query-ecosystems.txt"
@@ -62,6 +63,21 @@ func TestNeighbourDocumentFrequency(t *testing.T) {
 	}
 }
 
+// minOf mirrors neighbour_floor_test.go's maxOf/median — no shared minimum existed there
+// because the sweep never needed one before this file added a per-query summary line.
+func minOf(counts []int) int {
+	if len(counts) == 0 {
+		return 0
+	}
+	m := counts[0]
+	for _, c := range counts[1:] {
+		if c < m {
+			m = c
+		}
+	}
+	return m
+}
+
 // freqRow is one note's frequency plus which queries admitted it — the query list is
 // what lets a reader tell "scattered" from "ecosystem-universal" apart; the count alone
 // cannot.
@@ -77,16 +93,22 @@ func frequencyTable(t *testing.T) string {
 	queries := loadNeighbourLabels(t)
 	eco := loadQueryEcosystems(t)
 	freq := map[string]*freqRow{}
-	rankCapped, neighbourCapped := 0, 0
+	rankCapped, poolSaturated := 0, 0
+	counts := make([]int, 0, len(queries))
 	for _, q := range queries {
-		ranked := recall.Rank(recall.Query{Question: q.question}, docs, calibrationNow)
-		if len(ranked) == recall.TopN {
+		pool := recall.RankPool(recall.Query{Question: q.question}, docs, calibrationNow)
+		// Equivalent to len(recall.Rank(...)) == recall.TopN: Rank is truncate(pool, TopN),
+		// and pool is already nonZero-filtered, so truncation hits TopN iff pool has at
+		// least that many entries.
+		if len(pool) >= recall.TopN {
 			rankCapped++
 		}
-		ns := recall.DefaultThresholds.Neighbours(ranked)
-		if len(ns) == recall.TopN {
-			neighbourCapped++
+		nPool := recall.NeighbourPool(pool)
+		if len(nPool) == recall.NeighbourWindow {
+			poolSaturated++
 		}
+		ns := recall.DefaultThresholds.Neighbours(nPool)
+		counts = append(counts, len(ns))
 		for _, n := range ns {
 			r, ok := freq[n.Slug]
 			if !ok {
@@ -96,7 +118,7 @@ func frequencyTable(t *testing.T) string {
 			r.queries = append(r.queries, q.question)
 		}
 	}
-	return renderFrequencyTable(queries, eco, freq, rankCapped, neighbourCapped)
+	return renderFrequencyTable(queries, eco, freq, rankCapped, poolSaturated, counts)
 }
 
 // loadQueryEcosystems parses testdata/query-ecosystems.txt — B-036's own named
@@ -136,7 +158,7 @@ func loadQueryEcosystems(t *testing.T) map[string]string {
 	return out
 }
 
-func renderFrequencyTable(queries []labelledQuery, eco map[string]string, freq map[string]*freqRow, rankCapped, neighbourCapped int) string {
+func renderFrequencyTable(queries []labelledQuery, eco map[string]string, freq map[string]*freqRow, rankCapped, poolSaturated int, neighbourCounts []int) string {
 	rows := make([]*freqRow, 0, len(freq))
 	for _, r := range freq {
 		rows = append(rows, r)
@@ -148,14 +170,16 @@ func renderFrequencyTable(queries []labelledQuery, eco map[string]string, freq m
 		return rows[i].slug < rows[j].slug
 	})
 	var b strings.Builder
-	fmt.Fprintf(&b, "Neighbour document frequency over %s — %d queries, floor %.3f.\n\n",
-		labelsPath, len(queries), recall.DefaultThresholds.Neighbour)
+	fmt.Fprintf(&b, "Neighbour document frequency over %s — %d queries, floor %.3f,\n"+
+		"NeighbourWindow=%d.\n\n", labelsPath, len(queries), recall.DefaultThresholds.Neighbour, recall.NeighbourWindow)
 	fmt.Fprintf(&b, "%d/%d queries have recall.Rank return a full TopN=%d nonzero-scored\n"+
 		"candidates (before the floor filters anything).\n",
 		rankCapped, len(queries), recall.TopN)
-	fmt.Fprintf(&b, "%d/%d queries emit a full TopN=%d neighbours after the floor (the\n"+
-		"number that says the window, not just the floor, ran out of room).\n\n",
-		neighbourCapped, len(queries), recall.TopN)
+	fmt.Fprintf(&b, "%d/%d queries exhaust the widened NeighbourWindow=%d pool itself (even\n"+
+		"the window, not just the floor, ran out of room).\n",
+		poolSaturated, len(queries), recall.NeighbourWindow)
+	fmt.Fprintf(&b, "Neighbours per query: min %d, median %d, max %d.\n\n",
+		minOf(neighbourCounts), median(neighbourCounts), maxOf(neighbourCounts))
 	b.WriteString("| Note | N of M (all) | Queries (only listed when N > 1) |\n|---|---|---|\n")
 	for _, r := range rows {
 		list := ""

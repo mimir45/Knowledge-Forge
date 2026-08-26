@@ -136,3 +136,41 @@ func TestRankBodyPassRunsOnLoadableDocs(t *testing.T) {
 		t.Errorf("score = %v, want 1 (title and body both perfect)", got.Score)
 	}
 }
+
+// NeighbourWindow and BodyPassSize are equal today for a real reason (a neighbour can
+// only be as informed as a candidate that was actually body-scored), but they are
+// separate constants on purpose — see rank.go's NeighbourWindow comment. This pin forces
+// a deliberate decision if either ever moves without the other, instead of a silent drift
+// where a future B-038 change to BodyPassSize quietly changes neighbour volume too.
+func TestNeighbourWindowMatchesBodyPassSizeToday(t *testing.T) {
+	if NeighbourWindow != BodyPassSize {
+		t.Errorf("NeighbourWindow=%d BodyPassSize=%d — decoupled: was this intentional? "+
+			"see rank.go's NeighbourWindow comment before changing either", NeighbourWindow, BodyPassSize)
+	}
+}
+
+// RankPool must never truncate — Rank's TopN cut is the only truncation point, so a
+// corpus with more than TopN nonzero-scoring candidates should return all of them from
+// RankPool, and Rank should return exactly the leading TopN of that same list.
+func TestRankPoolIsUntruncatedRankIsItsTopNPrefix(t *testing.T) {
+	docs := make([]Doc, TopN+5)
+	for i := range docs {
+		docs[i] = Doc{Rel: string(rune('a' + i)) + ".md", Slug: string(rune('a' + i)),
+			Title: "spring boot", Stack: []string{"spring-boot"}}
+	}
+	pool := RankPool(Query{Question: "spring boot", Stack: []string{"spring-boot"}}, docs, now)
+	if len(pool) != len(docs) {
+		t.Fatalf("RankPool len = %d, want %d (every doc scores, none should be truncated)",
+			len(pool), len(docs))
+	}
+	ranked := Rank(Query{Question: "spring boot", Stack: []string{"spring-boot"}}, docs, now)
+	if len(ranked) != TopN {
+		t.Fatalf("Rank len = %d, want TopN=%d", len(ranked), TopN)
+	}
+	for i, c := range ranked {
+		if c.Slug != pool[i].Slug {
+			t.Errorf("Rank[%d] = %s, want RankPool[%d] = %s (Rank must be RankPool's TopN prefix)",
+				i, c.Slug, i, pool[i].Slug)
+		}
+	}
+}

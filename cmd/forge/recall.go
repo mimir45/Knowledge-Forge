@@ -82,7 +82,7 @@ func runRecall(vaultDir, question, stack string, explain bool, th recall.Thresho
 		return 1
 	}
 	q := recall.Query{Question: question, Stack: splitStack(stack)}
-	res := th.Result(q, recall.Rank(q, docs, time.Now()))
+	res := th.ResultFrom(q, recall.RankPool(q, docs, time.Now()))
 	if explain {
 		printExplain(os.Stderr, q, res)
 	}

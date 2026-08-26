@@ -11,13 +11,33 @@ import (
 // on a vault that no longer fits in a few hundred kilobytes.
 const BodyPassSize = 20
 
-// TopN is the size of the emitted array (recall-spec.md §4).
+// TopN is the size of the emitted array (recall-spec.md §4: `candidates` is "at most 10
+// entries"). This bounds only the `candidates` output — `neighbours` is a separate field
+// in the §4 contract with no stated cap there (see NeighbourWindow).
 const TopN = 10
 
-// Rank scores every doc and returns the top candidates, highest first. `now` is an
-// argument rather than time.Now() so staleness is testable and so a run is a pure
-// function of its inputs.
-func Rank(q Query, docs []Doc, now time.Time) []Candidate {
+// NeighbourWindow bounds how many top-ranked, already body-scored candidates
+// Thresholds.Neighbours may draw from — wider than TopN=10 so a genuinely-scoring 11th+
+// candidate is not discarded by TopN truncation before the neighbour band ever sees it
+// (BACKLOG B-036: on a broad query, all 10 truncated candidates can already clear the
+// neighbour floor, so no floor value can surface an 11th that Rank never computed).
+//
+// It equals BodyPassSize today because both cite DESIGN §8 step 3's "top 20 files" — a
+// neighbour can only be as informed as a candidate that was actually body-scored. But the
+// two are kept as separate named constants on purpose: BodyPassSize is a scoring-cost
+// boundary (which candidates get opened and body-rescored) and NeighbourWindow is an
+// output-truncation boundary (how much of the ranked list a downstream caller may see).
+// B-038 may move the former without silently moving the latter, and vice versa — see
+// rank_test.go's TestNeighbourWindowMatchesBodyPassSizeToday, which fails on purpose if
+// the two drift apart without a deliberate decision either way.
+const NeighbourWindow = 20
+
+// RankPool scores every doc and returns every nonzero-scoring candidate, sorted, highest
+// first — the same computation Rank has always done, minus its final TopN truncation.
+// Rank and Thresholds.ResultFrom each take their own truncated view of this; RankPool
+// itself belongs to neither. `now` is an argument rather than time.Now() so staleness is
+// testable and so a run is a pure function of its inputs.
+func RankPool(q Query, docs []Doc, now time.Time) []Candidate {
 	s := newScope(q, docs)
 	cands := make([]Candidate, 0, len(docs))
 	for _, d := range docs {
@@ -26,11 +46,29 @@ func Rank(q Query, docs []Doc, now time.Time) []Candidate {
 	sortByScore(cands)
 	s.bodyPass(cands, docs)
 	sortByScore(cands)
-	cands = nonZero(cands)
-	if len(cands) > TopN {
-		cands = cands[:TopN]
+	return round(nonZero(cands))
+}
+
+// Rank returns the top TopN candidates, highest first — recall-spec.md §4's `candidates`
+// contract. Byte-identical in shape and behaviour to before B-036: forge intent's top-1
+// pick and every caller that only wants candidates keeps using this unchanged.
+func Rank(q Query, docs []Doc, now time.Time) []Candidate {
+	return truncate(RankPool(q, docs, now), TopN)
+}
+
+// truncate returns the leading n candidates, or all of them if there are fewer than n.
+func truncate(cands []Candidate, n int) []Candidate {
+	if len(cands) > n {
+		return cands[:n]
 	}
-	return round(cands)
+	return cands
+}
+
+// NeighbourPool is the slice Thresholds.ResultFrom band-filters for Neighbours. Exported
+// so cmd/forge's sweep and frequency harnesses can mirror production truncation exactly
+// instead of reimplementing it.
+func NeighbourPool(pool []Candidate) []Candidate {
+	return truncate(pool, NeighbourWindow)
 }
 
 // nonZero drops candidates no channel matched at all. A vault rarely has ten notes with

@@ -19,7 +19,12 @@ import (
 //
 // It deliberately does not route through calibration.golden. The floor is a property of
 // Thresholds.Neighbours, so the sweep constructs Thresholds directly per candidate value
-// and never touches Rank or Decide — the two the floor must not influence.
+// and never touches Decide, which the floor must not influence.
+//
+// Since B-036 (widened NeighbourWindow, docs/BACKLOG.md), the sweep scores via RankPool
+// and filters recall.NeighbourPool(pool[i]) per floor — the same wider pool
+// Thresholds.ResultFrom uses in production — rather than the old TopN=10-truncated Rank
+// output. Rank itself is still untouched by this file.
 
 const (
 	labelsPath      = "testdata/neighbour-labels.txt"
@@ -72,14 +77,14 @@ func sweepFloors() []float64 {
 func sweepTable(t *testing.T) string {
 	docs := calibrationCorpus(t)
 	queries := loadNeighbourLabels(t)
-	ranked := make([][]recall.Candidate, len(queries))
+	pool := make([][]recall.Candidate, len(queries))
 	for i, q := range queries {
-		ranked[i] = recall.Rank(recall.Query{Question: q.question}, docs, calibrationNow)
+		pool[i] = recall.RankPool(recall.Query{Question: q.question}, docs, calibrationNow)
 	}
 	var b strings.Builder
 	b.WriteString(sweepHeader(queries))
 	for _, floor := range sweepFloors() {
-		b.WriteString(sweepRow(queries, ranked, floor))
+		b.WriteString(sweepRow(queries, pool, floor))
 	}
 	return b.String()
 }
@@ -96,12 +101,12 @@ func sweepHeader(queries []labelledQuery) string {
 }
 
 // sweepRow measures one floor across every query.
-func sweepRow(queries []labelledQuery, ranked [][]recall.Candidate, floor float64) string {
+func sweepRow(queries []labelledQuery, pool [][]recall.Candidate, floor float64) string {
 	th := recall.Thresholds{Answer: 0.85, Update: 0.55, Neighbour: floor}
 	var emitted, tp, empty int
 	counts := make([]int, 0, len(queries))
 	for i, q := range queries {
-		ns := th.Neighbours(ranked[i])
+		ns := th.Neighbours(recall.NeighbourPool(pool[i]))
 		emitted += len(ns)
 		tp += hits(ns, q.want)
 		counts = append(counts, len(ns))

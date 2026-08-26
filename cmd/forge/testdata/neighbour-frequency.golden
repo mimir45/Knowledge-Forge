@@ -1,32 +1,38 @@
-Neighbour document frequency over testdata/neighbour-labels.txt — 15 queries, floor 0.150.
+Neighbour document frequency over testdata/neighbour-labels.txt — 15 queries, floor 0.150,
+NeighbourWindow=20.
 
 14/15 queries have recall.Rank return a full TopN=10 nonzero-scored
 candidates (before the floor filters anything).
-2/15 queries emit a full TopN=10 neighbours after the floor (the
-number that says the window, not just the floor, ran out of room).
+5/15 queries exhaust the widened NeighbourWindow=20 pool itself (even
+the window, not just the floor, ran out of room).
+Neighbours per query: min 2, median 5, max 14.
 
 | Note | N of M (all) | Queries (only listed when N > 1) |
 |---|---|---|
 | spring-cli-and-maven-commands-for-spring-boot | 5/15 | Spring Data JPA pagination with sorting on multiple columns; Testcontainers reuse across test classes in Spring Boot; Maven multi module build with a shared parent pom; Spring Security method security with a custom permission evaluator; Binding a nested YAML list into a Spring Boot configuration record |
 | meterreadingsservice-spring-boot-4-x-project | 4/15 | Spring Data JPA pagination with sorting on multiple columns; Testcontainers reuse across test classes in Spring Boot; Spring Security method security with a custom permission evaluator; Binding a nested YAML list into a Spring Boot configuration record |
+| docker-compose-local-yaml-local-development-docker-compose | 3/15 | Running a local embedding model for code search; Docker Compose healthcheck for a Postgres service; Binding a nested YAML list into a Spring Boot configuration record |
 | loader-component-pattern-react-frontend-conventions | 3/15 | Storybook accessibility addon for component checks; React hook for detecting clicks outside a dropdown; Testing a React component that renders nothing until data loads |
+| preauthorize-spring-security-method-level-access-control | 3/15 | Testcontainers reuse across test classes in Spring Boot; Spring Security method security with a custom permission evaluator; Binding a nested YAML list into a Spring Boot configuration record |
 | spring-boot-4-breaking-changes-artifact-renames-and-test-module-split | 3/15 | Testcontainers reuse across test classes in Spring Boot; Maven multi module build with a shared parent pom; Binding a nested YAML list into a Spring Boot configuration record |
 | decision-keycloak-init-docker-init-container-for-ssl-fix | 2/15 | Keycloak client scopes and custom claim mappers; Docker Compose healthcheck for a Postgres service |
-| docker-compose-local-yaml-local-development-docker-compose | 2/15 | Running a local embedding model for code search; Docker Compose healthcheck for a Postgres service |
+| docker-desktop-has-two-socket-types-testcontainers-must-use-the-daemon-socket | 2/15 | Testcontainers reuse across test classes in Spring Boot; Docker Compose healthcheck for a Postgres service |
 | food-ordering-system-course-architecture-index | 2/15 | Kafka consumer group rebalancing in an event driven system; Domain events in a hexagonal architecture |
 | intellij-test-sources-root-why-it-gets-lost-and-the-build-helper-fix | 2/15 | Testcontainers reuse across test classes in Spring Boot; Maven multi module build with a shared parent pom |
 | issue-spring-boot-4-x-testcontainers-2-x-artifact-renames | 2/15 | Testcontainers reuse across test classes in Spring Boot; Binding a nested YAML list into a Spring Boot configuration record |
+| issue-testcontainers-http-400-from-docker-desktop-cli-socket | 2/15 | Testcontainers reuse across test classes in Spring Boot; Docker Compose healthcheck for a Postgres service |
 | local-ai-stack-architecture-overview | 2/15 | Running a local embedding model for code search; Domain events in a hexagonal architecture |
 | openapi-code-generation-contract-first-with-openapi-generator-maven-plugin | 2/15 | Running a local embedding model for code search; Maven multi module build with a shared parent pom |
 | pom-xml-meterreadingsservice-maven-project-descriptor | 2/15 | Testcontainers reuse across test classes in Spring Boot; Maven multi module build with a shared parent pom |
-| preauthorize-spring-security-method-level-access-control | 2/15 | Spring Security method security with a custom permission evaluator; Binding a nested YAML list into a Spring Boot configuration record |
 | soft-delete-flag-based-record-deletion-pattern | 2/15 | Binding a nested YAML list into a Spring Boot configuration record; Soft delete with Hibernate entity filters |
 | spring-boot-3-4plus-initializr-generates-spring-boot-starter-webmvc-instead-of | 2/15 | Testcontainers reuse across test classes in Spring Boot; Binding a nested YAML list into a Spring Boot configuration record |
+| spring-cli-create-project-as-folder-instead-of-zip | 2/15 | Testcontainers reuse across test classes in Spring Boot; Binding a nested YAML list into a Spring Boot configuration record |
 | storybook-isolated-component-development-and-visual-documentation | 2/15 | Storybook accessibility addon for component checks; Testing a React component that renders nothing until data loads |
 | testcontainers-docker-based-integration-testing | 2/15 | Testcontainers reuse across test classes in Spring Boot; Docker Compose healthcheck for a Postgres service |
 | usefocusonmount-shared-react-focus-hook | 2/15 | Maven multi module build with a shared parent pom; React hook for detecting clicks outside a dropdown |
 | build-helper-maven-plugin-adding-generated-sources-to-compile-path | 1/15 |  |
 | configurationproperties-vs-value-yaml-list-binding | 1/15 |  |
+| continue-config-json-continue-dev-configuration | 1/15 |  |
 | cqrs-and-event-driven-messaging | 1/15 |  |
 | ddd-aggregates-value-objects-domain-events-domain-services | 1/15 |  |
 | decision-extract-usefocusonmount-hook | 1/15 |  |
@@ -35,8 +41,8 @@ number that says the window, not just the floor, ran out of room).
 | decision-separate-endpoint-for-admin-user-creation | 1/15 |  |
 | decision-set-tc-host-to-var-run-docker-sock | 1/15 |  |
 | decision-skip-storybook-stories-for-page-level-wrapper-components | 1/15 |  |
+| decision-use-configurationproperties-for-cors-allowed-origins-list | 1/15 |  |
 | docker-compose-init-container-pattern-with-health-gated-sequencing | 1/15 |  |
-| docker-desktop-has-two-socket-types-testcontainers-must-use-the-daemon-socket | 1/15 |  |
 | hibernate-orm-patterns-and-gotchas | 1/15 |  |
 | issue-11-components-missing-storybook-stories | 1/15 |  |
 | issue-continue-dev-intellij-dropdown-shows-only-cloud-models | 1/15 |  |
@@ -44,7 +50,6 @@ number that says the window, not just the floor, ran out of room).
 | issue-intellij-loses-src-test-java-as-test-sources-root | 1/15 |  |
 | issue-keycloak-master-realm-sslrequired-external | 1/15 |  |
 | issue-liquibase-yaml-flow-mapping-comma-parse-error | 1/15 |  |
-| issue-testcontainers-http-400-from-docker-desktop-cli-socket | 1/15 |  |
 | keycloak-google-social-login-plus-nimbus-jwt-flow | 1/15 |  |
 | keycloak-realm-export-json-keycloak-realm-definition | 1/15 |  |
 | keyset-cursor-pagination-requires-a-compound-or-predicate | 1/15 |  |
@@ -67,19 +72,25 @@ this label set with M >= 2 — see testdata/query-ecosystems.txt):
 |---|---|
 | spring-cli-and-maven-commands-for-spring-boot | 5/6 |
 | meterreadingsservice-spring-boot-4-x-project | 4/6 |
+| docker-compose-local-yaml-local-development-docker-compose | 1/6 |
+| preauthorize-spring-security-method-level-access-control | 3/6 |
 | spring-boot-4-breaking-changes-artifact-renames-and-test-module-split | 3/6 |
+| docker-desktop-has-two-socket-types-testcontainers-must-use-the-daemon-socket | 1/6 |
 | intellij-test-sources-root-why-it-gets-lost-and-the-build-helper-fix | 2/6 |
 | issue-spring-boot-4-x-testcontainers-2-x-artifact-renames | 2/6 |
+| issue-testcontainers-http-400-from-docker-desktop-cli-socket | 1/6 |
 | openapi-code-generation-contract-first-with-openapi-generator-maven-plugin | 1/6 |
 | pom-xml-meterreadingsservice-maven-project-descriptor | 2/6 |
-| preauthorize-spring-security-method-level-access-control | 2/6 |
 | soft-delete-flag-based-record-deletion-pattern | 2/6 |
 | spring-boot-3-4plus-initializr-generates-spring-boot-starter-webmvc-instead-of | 2/6 |
+| spring-cli-create-project-as-folder-instead-of-zip | 2/6 |
 | testcontainers-docker-based-integration-testing | 1/6 |
 | usefocusonmount-shared-react-focus-hook | 1/6 |
 | build-helper-maven-plugin-adding-generated-sources-to-compile-path | 1/6 |
 | configurationproperties-vs-value-yaml-list-binding | 1/6 |
+| continue-config-json-continue-dev-configuration | 1/6 |
 | decision-separate-endpoint-for-admin-user-creation | 1/6 |
+| decision-use-configurationproperties-for-cors-allowed-origins-list | 1/6 |
 | hibernate-orm-patterns-and-gotchas | 1/6 |
 | issue-hibernate-ddl-auto-validate-note-notes-column-mismatch | 1/6 |
 | issue-intellij-loses-src-test-java-as-test-sources-root | 1/6 |
