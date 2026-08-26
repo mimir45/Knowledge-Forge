@@ -155,7 +155,7 @@ func TestNeighbourWindowMatchesBodyPassSizeToday(t *testing.T) {
 func TestRankPoolIsUntruncatedRankIsItsTopNPrefix(t *testing.T) {
 	docs := make([]Doc, TopN+5)
 	for i := range docs {
-		docs[i] = Doc{Rel: string(rune('a' + i)) + ".md", Slug: string(rune('a' + i)),
+		docs[i] = Doc{Rel: string(rune('a'+i)) + ".md", Slug: string(rune('a' + i)),
 			Title: "spring boot", Stack: []string{"spring-boot"}}
 	}
 	pool := RankPool(Query{Question: "spring boot", Stack: []string{"spring-boot"}}, docs, now)
