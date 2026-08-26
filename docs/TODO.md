@@ -101,22 +101,29 @@ hypothesis holds, and what's missing now is a design, not more measurement.**
 
 `cmd/forge/neighbour_frequency_test.go` (`TestNeighbourDocumentFrequency`) ran the "appears
 in N of M query results" column this entry originally asked for, over
-`testdata/neighbour-labels.txt`'s fifteen queries. Read against the right denominator —
-the four queries that literally contain "Spring" among the fifteen, not all fifteen —
-`spring-cli-and-maven-commands-for-spring-boot` and `meterreadingsservice-spring-boot-4-x-
-project` both appear in **every one of them**. That is this entry's original claim,
-confirmed: a note scoring on every query in an ecosystem is being admitted as a neighbour
-regardless of what the question specifically asks.
+`testdata/neighbour-labels.txt`'s fifteen queries; it now also records *which* queries
+admit each note, not just the count. Reading it needs an ecosystem boundary that didn't
+exist before the measurement ran, so it's picked after the fact here and disclosed as
+such rather than presented as settled — see BACKLOG.md's B-036 closing note for both
+readings (narrow: literal "Spring" in the query, 4 of 15, both notes 4/4; wide: + Maven +
+Hibernate/JPA, 6 of 15, the two notes 5/6 and 4/6). Both readings confirm the same claim:
+these two notes clear a strong majority of an ecosystem-scoped subset while sitting at
+33%/27% of the full fifteen — a note scoring on every query in an ecosystem is being
+admitted as a neighbour regardless of what the question specifically asks.
 
-**Unblock condition (updated): none — the measurement is done and it confirms the
-hypothesis.** What remains is a design decision this entry always deferred to "after
-reading it," now actually reachable: `Thresholds.Neighbours` (`pkg/recall/rank.go:102-
-110`) only ever sees `recall.Rank`'s already-truncated top-10 candidate list, so excluding
-a universal note there cannot surface an 11th candidate `Rank` never computed in the first
-place — any real fix has to touch `Rank`'s internal window, not just `Neighbours`'
-filtering, which is a bigger, more careful `pkg/recall` change than a one-line filter. That
-design (and its own PLANNED write-up) is the next step, not attempted in the same pass
-that corrected this entry's own measurement.
+**Unblock condition (updated): a pre-committed ecosystem label — which queries belong to
+which technology cluster, written before it's used to justify any scoring change, the
+same discipline `neighbour-labels.txt` itself got (written before scores, committed one
+commit ahead of the sweep that reads it).** Picking the boundary post-hoc, as this
+session's own correction had to disclose doing, is not something a scoring change should
+be built on even when the conclusion survives it. Once that label exists, the design step
+this entry always deferred to "after reading it" becomes: `Thresholds.Neighbours`
+(`pkg/recall/rank.go:102-110`) only ever sees `recall.Rank`'s already-truncated top-10
+candidate list, so excluding a universal note there cannot surface an 11th candidate
+`Rank` never computed in the first place — any real fix has to touch `Rank`'s internal
+window, not just `Neighbours`' filtering, which is a bigger, more careful `pkg/recall`
+change than a one-line filter. That design (and its own PLANNED write-up) is the next
+step, not attempted in the same pass that corrected this entry's own measurement.
 
 **Do not respond to this by raising the floor.** Unchanged from the original entry —
 every floor B-033's sweep tried that drops these two notes also drops the Storybook

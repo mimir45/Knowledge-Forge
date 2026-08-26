@@ -2065,18 +2065,33 @@ labelled queries span several unrelated ecosystems (Spring, Keycloak, React, Doc
 Kafka, Liquibase, ...); diluting a Spring-specific count by fourteen unrelated queries
 was always going to look small.
 
-**Corrected reading, same golden, right subset.** Of the fifteen queries, four contain
-the literal word "Spring" (`Spring Data JPA pagination...`, `Testcontainers reuse ... in
-Spring Boot`, `Spring Security method security...`, `Binding a nested YAML list into a
-Spring Boot configuration record`). `spring-cli-and-maven-commands-for-spring-boot`
-appears in **all four** (plus a fifth, `Maven multi module build with a shared parent
-pom` — Maven is this vault's Spring build tool, not an unrelated ecosystem).
-`meterreadingsservice-spring-boot-4-x-project` also appears in all four literal-"Spring"
-queries. That is the entry's original claim, measured and holding: two general notes
-answer to every Spring question this label file has, regardless of what the question
-specifically asks. `docs/TODO.md`'s per-note table (now carrying the query list per
-slug, not just the count — the fix that surfaced this) is the artifact to read this
-from directly rather than trusting either verdict in prose.
+**Corrected reading, same golden — and this reading's own subset boundary is disclosed
+rather than presented as settled, because picking it *after* seeing which queries the two
+notes hit is the same failure shape as the first wrong reading, one layer up.** No
+ecosystem label existed before this measurement ran; "which of the fifteen queries count
+as Spring" was decided by reading the result, not fixed in advance the way
+`neighbour-labels.txt` itself was written before any score existed. Two honest readings,
+not one:
+
+- **Narrow — literal word "Spring" in the query text (4 of 15):** `Spring Data JPA
+  pagination...`, `Testcontainers reuse ... in Spring Boot`, `Spring Security method
+  security...`, `Binding a nested YAML list into a Spring Boot configuration record`.
+  `spring-cli-and-maven-commands-for-spring-boot` and `meterreadingsservice-spring-boot-4-
+  x-project` both appear in **4 of 4**.
+- **Wide — the above plus Maven (this vault's Spring build tool) and Hibernate/JPA
+  (Spring Data's persistence layer), 6 of 15:** adds `Maven multi module build with a
+  shared parent pom` and `Soft delete with Hibernate entity filters`.
+  `spring-cli-and-maven-commands-for-spring-boot` reaches **5 of 6** (misses the Hibernate
+  query); `meterreadingsservice-spring-boot-4-x-project` reaches **4 of 6** (misses both
+  Maven and Hibernate).
+
+The verdict does not depend on which boundary is right: under either reading both notes
+clear a strong majority of an ecosystem-scoped subset while sitting at 33%/27% of the
+full fifteen. That is this entry's original claim, holding. What the boundary choice
+*does* change is the precise number to quote, which is why neither "4 of 4" nor "5 of 6"
+belongs in prose as if it were derived rather than chosen. `docs/TODO.md`'s per-note table
+(now carrying the query list per slug, not just the count) is the artifact to read this
+from directly.
 
 **A second miscount rode along with the first, in the same commit, and is retracted
 outright rather than corrected: there is no B-039.** The initial pass also reported "14
@@ -2095,10 +2110,15 @@ corrected signal is fully explained by the two universal notes already named her
 a second cause. B-039's BACKLOG section and its `docs/TODO.md` entry are removed
 outright, not just closed.
 
-**Status: still open.** The unblock condition is now genuinely satisfied — the
-"ecosystem" hypothesis is confirmed against real, checkable data, not assumed — so the
-next step really is "design after reading it," per this entry's original text. That
-design is **not done in this pass**: it is a `pkg/recall` scoring-surface change
+**Status: still open. Updated unblock condition: a pre-committed ecosystem label, written
+before any design and before re-reading scores — the same discipline
+`neighbour-labels.txt` itself got.** The hypothesis is confirmed under both readings above,
+so a design pass is now justified — but "which queries count as the same ecosystem as
+which notes" needs to be decided and committed to a file *before* it is used to justify a
+scoring change, exactly the way this entry's own boundary should have been fixed before
+being read off the result. Once that label exists, "design after reading it," per this
+entry's original text, is not attempted in this pass regardless: it is a `pkg/recall`
+scoring-surface change
 (admission would have to interact with `Rank`'s `TopN=10` truncation, since `Neighbours`
 only ever sees `Rank`'s already-truncated top 10 — excluding a universal note there
 cannot surface an 11th candidate `Rank` never computed), and this session already

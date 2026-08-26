@@ -514,24 +514,29 @@ Go code did. Recovered by restoring both files from `feat/b-034-d6-dataset`'s la
 good commit (`b2a390c`) onto the `dev` integration branch this session introduced, then
 layering B-036's own closure on top. No code was ever at risk; only these two doc files.
 
-**B-036 measured 2026-08-26, out-of-phase, on `dev` — a wrong reading was briefly
-committed and corrected the same day; the item stays open.** Built to its own unblock
-condition: `cmd/forge/neighbour_frequency_test.go` adds the per-note "appears in N of M
-query results" column TODO.md named, run over `testdata/neighbour-labels.txt`'s fifteen
-queries at the shipped floor (0.150). The first read — 5/15 and 4/15 for the two notes
-this entry named, "no note comes close to universal," closed as rejected with no code
-change — used the wrong denominator: this entry's hypothesis was never "on every query,"
-it was "on every query **in an ecosystem**" (TODO.md's own wording), and the fifteen
-labels span several unrelated ecosystems. Read against the four queries that literally
-contain "Spring," both notes appear in **all four** — the original hypothesis, confirmed,
-not rejected. A second error rode the same wrong pass: "14 of 15 queries hit `Rank`'s
-`TopN=10` cap" was `nonZero`-truncation, not neighbour-floor saturation; the metric that
-actually counts full-neighbour emission reads **2 of 15**, and both are the same
-literal-"Spring" queries — no separate mechanism, so the **B-039 this pass opened is
-retracted outright**, not closed. Advisor review caught both errors before they reached a
-pushed commit's final state; see BACKLOG.md's B-036 closing note for the full correction
-and the corrected harness output (`cmd/forge/testdata/neighbour-frequency.golden`, now
-carrying per-slug query lists, not just counts, specifically so this kind of misread is
+**B-036 measured 2026-08-26, out-of-phase, on `dev` — two wrong readings were pushed and
+corrected the same day, in two more commits on `dev`, not by rewriting history; the item
+stays open.** Built to its own unblock condition: `cmd/forge/neighbour_frequency_test.go`
+adds the per-note "appears in N of M query results" column TODO.md named, run over
+`testdata/neighbour-labels.txt`'s fifteen queries at the shipped floor (0.150). First
+error: the initial read — 5/15 and 4/15 for the two notes this entry named, "no note
+comes close to universal," closed as rejected with no code change — used the wrong
+denominator. This entry's hypothesis was never "on every query," it was "on every query
+**in an ecosystem**" (TODO.md's own wording), and the fifteen labels span several
+unrelated ecosystems. It also miscounted the wrong number as evidence for a new item
+(**B-039**, since retracted outright): "14 of 15 queries hit `Rank`'s `TopN=10` cap" was
+`nonZero`-truncation, not neighbour-floor saturation — the metric that actually counts
+full-neighbour emission reads 2 of 15, both of them Spring-flavored, no separate
+mechanism. Second error, caught by advisor review one commit later: the "corrected"
+denominator (four queries containing the literal word "Spring") was itself picked *after*
+seeing which queries the two notes hit — the same failure shape one layer up. Final state
+reports both an honest narrow reading (literal "Spring," 4 of 15: both notes 4/4) and a
+wide one (+ Maven + Hibernate/JPA, 6 of 15: 5/6 and 4/6) rather than one cherry-picked
+number, and the updated unblock condition asks for a pre-committed ecosystem label before
+any design, not a post-hoc grep. See BACKLOG.md's B-036 closing note for the full
+correction and the corrected harness output (`cmd/forge/testdata/neighbour-frequency.
+golden`, now carrying per-slug query lists, not just counts, specifically so this kind of
+misread is
 checkable from the artifact rather than trusted from prose). **Status: still open** — the
 unblock condition is answered, but the design (which has to touch `Rank`'s internal
 window, not just `Neighbours`' filter, since `Neighbours` never sees an 11th candidate
