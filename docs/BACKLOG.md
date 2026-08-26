@@ -2130,6 +2130,67 @@ write-up for the design is the right next step, not a hurried diff here.
 floor B-033's sweep tried that drops these two notes also drops the Storybook family
 B-033 was opened to fix.
 
+### Closed 2026-08-26, same day as the measurement pass, on `worktree-b-036-neighbour-window`
+— out-of-phase work, not a phase.
+
+TODO.md's updated unblock condition was satisfied first, in its own commit, before any
+`pkg/recall` file was touched: `cmd/forge/testdata/query-ecosystems.txt` labels all
+fifteen `neighbour-labels.txt` queries by a mechanical, documented rule (Spring/Maven/
+Hibernate-JPA → `spring`; a single named technology; `unclustered` if nothing matches).
+`spring` = 6/15, matching this entry's own already-disclosed "wide" boundary exactly — a
+fixed artifact, not re-derived. `git log` shows that commit landing before the scoring
+change, the same discipline `neighbour-labels.txt` itself got.
+
+**The fix widens `Rank`'s internal window rather than filtering `Neighbours` more
+cleverly, per this entry's own framing.** `Thresholds.Neighbours` only ever saw
+`recall.Rank`'s `TopN=10`-truncated list — measured directly against `examples/vault`
+before writing any code: all three offending queries return exactly 10 candidates, every
+one already clearing the 0.150 floor by 0.06–0.10 margin, confirming the truncation, not
+the floor, is what's binding. `pkg/recall/rank.go` gained `RankPool` (the same computation
+`Rank` always did, minus the final `TopN` truncation) and a new `NeighbourPool =
+truncate(pool, NeighbourWindow=20)` — a separate constant from `BodyPassSize`, even though
+equal today, pinned by `TestNeighbourWindowMatchesBodyPassSizeToday` so a future B-038
+change to one doesn't silently move the other. `Rank` itself is now `truncate(RankPool(...),
+TopN)` — provably byte-identical output to before. `Thresholds.Result` → `ResultFrom(q,
+pool)`: `Candidates` still truncates to `TopN` (recall-spec.md §4's contract, unchanged),
+`Neighbours` now band-filters the wider `NeighbourPool`.
+
+**A candidate alternative was tried and rejected before the window-widening design was
+written, not instead of measuring it.** This entry's own "shape when picked up" section
+asked whether a note-level document-frequency signal — extending §2.3.1's term-level IDF
+to notes — should exclude a note from the neighbour band outright. Computed by hand over
+the real 91-note corpus: it does not separate the two universal notes from labelled-wanted
+neighbours. Several notes `neighbour-labels.txt` calls wanted share the identical min-idf
+value (1.395) with the two universal notes, and `idfCap` saturates almost every tagged
+note in a given ecosystem at the same max value (3.5) regardless of whether it's universal
+or specific. This rules out a note-level admission filter as the mechanism; the shipped
+fix widens the window instead and accepts the resulting neighbour-volume increase as a
+measured, disclosed consequence rather than engineering it away with an unverified filter.
+
+**Golden diffs, checked against a stated prediction before accepting `-update`'s output, not
+after** — `calibration.golden`: all 9 §3.1 rows' Top-1 slug / Top score / Verdict stayed
+byte-identical; only the 3 previously-10-capped rows' Neighbours column changed, each now
+up to 20 entries, the original 10 present as a leading subset, plus genuinely Spring/Java-
+ecosystem additions — two of which (`jpaspecificationexecutor-dynamic-queries-with-
+specification-pattern`, `keyset-pagination-compound-or-predicate`) are
+`neighbour-labels.txt`'s own labelled-wanted neighbours for an adjacent query, direct
+evidence the added links are real recall, not noise. `neighbour-sweep.golden`: F1's peak
+stayed at floor 0.150 (0.578 → 0.587, still the argmax across every swept floor) — **the
+floor did not move**, checked before accepting the regenerated golden rather than after,
+exactly the one place this entry's standing "do not raise the floor" rule could have been
+violated by accident. `neighbour-frequency.golden`: both predicted effects present, not
+just one — the two universal notes' overall frequency rose slightly (they were previously
+crowded out of some query's top 10 too) **and** a previously crowded-out specific note
+(`preauthorize-spring-security-method-level-access-control`) gained admissions on
+`spring`-cluster queries (now 3/6). `TestNeighbourBandEdges`, `TestDecideAtThresholdBoundaries`
+and `TestIntentGateSeparation` all pass unmodified, no `-update` — nothing outside the
+neighbour band moved. Full suite green under both `CGO_ENABLED=0` and `CGO_ENABLED=1`.
+
+**Binding invariants held**: `Answer`/`Update` thresholds untouched (0.85/0.55), `score.go`
+untouched entirely (`idf(0,n)==0` intact), `neighbour-labels.txt` unedited, `candidates`'
+at-most-10 contract unchanged (`Rank` provably byte-identical), the 0.150 floor not raised,
+`BodyPassSize` not moved.
+
 ---
 
 ## B-038 — `bodyPass`'s top-20 window is allocated by path, not by relevance

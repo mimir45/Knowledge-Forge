@@ -543,6 +543,43 @@ window, not just `Neighbours`' filter, since `Neighbours` never sees an 11th can
 `Rank` didn't compute) is deliberately not attempted in the same pass that just corrected
 a measurement error.
 
+**B-036 closed 2026-08-26, same day, on `worktree-b-036-neighbour-window` — out-of-phase
+work, not a phase.** Its own updated unblock condition (a pre-committed ecosystem label)
+landed first, in its own commit: `cmd/forge/testdata/query-ecosystems.txt` labels all
+fifteen `neighbour-labels.txt` queries by a mechanical, documented rule, `spring` = 6/15,
+matching the entry's own already-disclosed "wide" boundary exactly. The fix widens
+`Rank`'s internal window rather than filtering `Neighbours` more cleverly, per the entry's
+own framing: `pkg/recall/rank.go` gained `RankPool` (the full nonzero-sorted computation,
+un-truncated) and `NeighbourPool = truncate(pool, NeighbourWindow=20)` — a constant kept
+separate from `BodyPassSize` even though equal today, pinned by a new test so the two
+can't silently drift apart — while `Rank` itself is now `truncate(RankPool(...), TopN)`,
+provably byte-identical to before. `Thresholds.Result` became `ResultFrom(q, pool)`:
+`Candidates` still truncates to `TopN` (recall-spec.md §4's contract, unchanged),
+`Neighbours` now band-filters the wider pool. A candidate alternative — a note-level IDF/
+document-frequency exclusion signal, extending §2.3.1's term-level IDF to notes, which is
+what the entry's own "shape when picked up" section asked about — was computed by hand
+against the real corpus and rejected before being built: it does not separate the two
+universal notes from labelled-wanted neighbours, since several wanted notes share their
+exact min-idf value and `idfCap` saturates almost every tagged note in an ecosystem at the
+same max regardless of specificity. Golden diffs matched a stated prediction, checked
+before accepting `-update`'s output rather than after: `calibration.golden`'s 9 rows kept
+byte-identical Top-1/score/verdict, only the 3 previously-10-capped rows' Neighbours grew
+(bounded ≤20), the original 10 present as a leading subset plus genuinely Spring/Java
+additions — two of them `neighbour-labels.txt`'s own labelled-wanted neighbours for an
+adjacent query. `neighbour-sweep.golden`'s F1 peak stayed at floor 0.150 (0.578 → 0.587,
+still the argmax) — **the floor did not move**, the one place the entry's standing
+"do not raise the floor" rule could have been violated by accident.
+`neighbour-frequency.golden` showed both predicted effects, not just one: the two
+universal notes' overall frequency rose slightly, and a previously crowded-out specific
+note (`preauthorize-spring-security-method-level-access-control`) gained admissions on
+`spring`-cluster queries. `TestNeighbourBandEdges`, `TestDecideAtThresholdBoundaries` and
+`TestIntentGateSeparation` all passed unmodified (no `-update`) — nothing outside the
+neighbour band moved. Both build lanes green. Binding invariants held: 0.85/0.55
+untouched, `score.go` untouched (`idf(0,n)==0` intact), `neighbour-labels.txt` unedited,
+`candidates`' at-most-10 contract unchanged, the 0.150 floor not raised, `BodyPassSize`
+not moved. See BACKLOG.md's B-036 closing section for the full measurement and diff
+detail.
+
 **B-022 closed in Phase 4**
 (the schema pattern now covers all nine `cfg.Pipeline` stages minus `critique`); **B-007
 closed in Phase 4** (`agents/forge-librarian.md`'s prompt stamps `Forge-Write: true` on
@@ -660,10 +697,8 @@ project, not a phase gated inside this one; see BACKLOG B-021. One phase per ses
 time runs out the cut order is `6b → 5b → advisor tier`. If work comes up outside the
 current phase's scope, write it to `docs/BACKLOG.md` rather than building it.
 
-**Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004, **B-036** (measured
-2026-08-26, confirmed, still needs a design pass — see the Status note above before
-touching it), **B-037**, **B-038** and most of the twelve findings 2b recorded are
-open; **B-025 is blocked**, not open. B-001 (doc coherence), B-005 (seven note types) and
+**Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004, **B-037**, **B-038** and
+most of the twelve findings 2b recorded are open; **B-025 is blocked**, not open. B-001 (doc coherence), B-005 (seven note types) and
 B-006 (link rewrite) closed on 2026-08-09; B-007 and B-022 in Phase 4; B-009 and B-024 on
 2026-08-21, when B-023 and B-027 were also half-closed (docs synced, the behavior/design-doc
 halves still open); **B-008 on 2026-08-22**, which opened B-031/B-032/B-033 in its place;
@@ -675,14 +710,14 @@ place (see the Status note above). **B-015 also on 2026-08-24**, populating
 `CodeGroup.DependsOn` (see the Status note above). **B-035 on 2026-08-25**, minting the
 `run_id` correlation key, and **B-034 the same day**, building D6 as a derived export
 view over `forge logback`'s map rather than a sixth capture tier (see the Status note
-above). **B-036 measured 2026-08-26** — unlike B-031, its hypothesis *did* survive
-measurement once read against the right denominator (a corrected reading, after a wrong
-one briefly landed the same day; see the Status note above) — and stays open pending a
-design pass. **`docs/TODO.md`'s PLANNED class is empty now** — B-036, B-037 and B-038 are
-all NO STEPS by their own argument (B-036 nearest to PLANNED, its measurement now done),
-so nothing in BACKLOG's open list currently has a six-field plan to execute; the next
-phase or out-of-phase item starts by writing
-one.
+above). **B-036 measured, then closed, both 2026-08-26** — unlike B-031, its hypothesis
+*did* survive measurement once read against the right denominator (a corrected reading,
+after a wrong one briefly landed the same day), and the widened-`Rank`-window fix shipped
+the same day once its ecosystem-label prerequisite landed (see the Status note above).
+**`docs/TODO.md`'s PLANNED class stays empty** — B-037 and B-038 are NO STEPS by their own
+argument, each naming a measurement to run before any design is chosen; so nothing in
+BACKLOG's open list currently has a six-field plan to execute; the next phase or
+out-of-phase item starts by writing one.
 
 **`docs/TODO.md` is the execution half of that file** (written 2026-08-23). BACKLOG records
 *why* an item exists; TODO records *how to close it* — a six-field plan (anchors,
