@@ -1,0 +1,58 @@
+Neighbour document frequency over testdata/neighbour-labels.txt — 15 queries, floor 0.150.
+14/15 queries hit Rank's TopN=10 cap (emitted the maximum candidates
+Neighbours could ever see, before the floor filters anything).
+
+| Note | Appears in N of M queries |
+|---|---|
+| spring-cli-and-maven-commands-for-spring-boot | 5/15 |
+| meterreadingsservice-spring-boot-4-x-project | 4/15 |
+| loader-component-pattern-react-frontend-conventions | 3/15 |
+| spring-boot-4-breaking-changes-artifact-renames-and-test-module-split | 3/15 |
+| decision-keycloak-init-docker-init-container-for-ssl-fix | 2/15 |
+| docker-compose-local-yaml-local-development-docker-compose | 2/15 |
+| food-ordering-system-course-architecture-index | 2/15 |
+| intellij-test-sources-root-why-it-gets-lost-and-the-build-helper-fix | 2/15 |
+| issue-spring-boot-4-x-testcontainers-2-x-artifact-renames | 2/15 |
+| local-ai-stack-architecture-overview | 2/15 |
+| openapi-code-generation-contract-first-with-openapi-generator-maven-plugin | 2/15 |
+| pom-xml-meterreadingsservice-maven-project-descriptor | 2/15 |
+| preauthorize-spring-security-method-level-access-control | 2/15 |
+| soft-delete-flag-based-record-deletion-pattern | 2/15 |
+| spring-boot-3-4plus-initializr-generates-spring-boot-starter-webmvc-instead-of | 2/15 |
+| storybook-isolated-component-development-and-visual-documentation | 2/15 |
+| testcontainers-docker-based-integration-testing | 2/15 |
+| usefocusonmount-shared-react-focus-hook | 2/15 |
+| build-helper-maven-plugin-adding-generated-sources-to-compile-path | 1/15 |
+| configurationproperties-vs-value-yaml-list-binding | 1/15 |
+| cqrs-and-event-driven-messaging | 1/15 |
+| ddd-aggregates-value-objects-domain-events-domain-services | 1/15 |
+| decision-extract-usefocusonmount-hook | 1/15 |
+| decision-liquibase-migration-over-column-alias-for-column-rename | 1/15 |
+| decision-rag-embedding-model-loaded-eagerly-at-startup | 1/15 |
+| decision-separate-endpoint-for-admin-user-creation | 1/15 |
+| decision-set-tc-host-to-var-run-docker-sock | 1/15 |
+| decision-skip-storybook-stories-for-page-level-wrapper-components | 1/15 |
+| docker-compose-init-container-pattern-with-health-gated-sequencing | 1/15 |
+| docker-desktop-has-two-socket-types-testcontainers-must-use-the-daemon-socket | 1/15 |
+| hibernate-orm-patterns-and-gotchas | 1/15 |
+| issue-11-components-missing-storybook-stories | 1/15 |
+| issue-continue-dev-intellij-dropdown-shows-only-cloud-models | 1/15 |
+| issue-hibernate-ddl-auto-validate-note-notes-column-mismatch | 1/15 |
+| issue-intellij-loses-src-test-java-as-test-sources-root | 1/15 |
+| issue-keycloak-master-realm-sslrequired-external | 1/15 |
+| issue-liquibase-yaml-flow-mapping-comma-parse-error | 1/15 |
+| issue-testcontainers-http-400-from-docker-desktop-cli-socket | 1/15 |
+| keycloak-google-social-login-plus-nimbus-jwt-flow | 1/15 |
+| keycloak-realm-export-json-keycloak-realm-definition | 1/15 |
+| keyset-cursor-pagination-requires-a-compound-or-predicate | 1/15 |
+| keyset-pagination-compound-or-predicate | 1/15 |
+| knowledge-forge-claude-code-plugin-design-phase | 1/15 |
+| leprecoin-react-next-js-frontend-project | 1/15 |
+| liquibase-database-migration-conventions | 1/15 |
+| litellm-yaml-litellm-proxy-configuration | 1/15 |
+| maven-surefire-auto-detects-test-framework-from-classpath-scope | 1/15 |
+| saveandflush-vs-save-hibernate-timestamp-flush-timing | 1/15 |
+| storybook-decorator-pattern-provider-wrappers-for-redux-and-context | 1/15 |
+| storybook-plus-next-js-app-router-requires-appdirectory-true-parameter | 1/15 |
+| til-demoing-keycloak-plus-google-login-in-a-presentation | 1/15 |
+| value-doesn-t-work-for-yaml-lists-use-configurationproperties | 1/15 |
