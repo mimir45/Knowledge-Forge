@@ -2048,40 +2048,67 @@ every floor that drops these two notes also drops the case B-033 was opened to f
 Related: **B-031** is the coverage side of the same scoring surface, and **B-032** moves
 `blend`'s denominator, which will change every number above — re-measure after it lands.
 
-### Closed 2026-08-26, out-of-phase, on `dev` — measured, and the document-frequency
-hypothesis this entry proposed does not survive the measurement it asked for.
+### Measured 2026-08-26, out-of-phase, on `dev` — first pass got the denominator wrong
+and reversed the verdict; corrected same day. **Still open — the hypothesis is
+confirmed, not rejected.**
 
-TODO.md's own unblock condition was built exactly as specified: a per-note "appears in N
-of M query results" column, added as `cmd/forge/neighbour_frequency_test.go`
-(`TestNeighbourDocumentFrequency`), run over the *other* labelled query set —
-`testdata/neighbour-labels.txt`'s fifteen adjacent-topic queries (B-033's derivation set,
-disjoint from this entry's nine calibration queries), at the shipped floor (0.150, post-
-B-032 — this entry's own table above was measured at the pre-B-032 0.125). Result: **no
-note comes close to universal.** The most frequent, `spring-cli-and-maven-commands-for-
-spring-boot`, appears in 5 of 15 (33%); `meterreadingsservice-spring-boot-4-x-project` — the
-other note this entry named — appears in 4 of 15 (27%); every other note appears in 3 or
-fewer. The top offender is also a genuinely *wanted* neighbour in at least one of the
-fifteen labels, not pure noise. Condition (a) of the decision rule this session wrote before
-running the measurement (`docs/superpowers/plans/2026-08-26-b036-neighbour-document-
-frequency.md` — at least one note at N ≥ 8 of 15) fails outright, so per that rule's own
-"otherwise" branch this closes with **no code change**, the same shape B-031 closed with.
+TODO.md's own unblock condition was built as specified: a per-note "appears in N of M
+query results" column, added as `cmd/forge/neighbour_frequency_test.go`
+(`TestNeighbourDocumentFrequency`), run over `testdata/neighbour-labels.txt`'s fifteen
+adjacent-topic queries at the shipped floor (0.150). The first read of that table —
+`spring-cli-and-maven-commands-for-spring-boot` at 5/15, `meterreadingsservice-spring-
+boot-4-x-project` at 4/15, "no note comes close to universal" — was posted as a
+rejection and briefly committed as one. **That reading used the wrong denominator.**
+This entry's own hypothesis was never "on every query" — it was "on every query in an
+**ecosystem**" (TODO.md's unblock condition uses that word for a reason). The fifteen
+labelled queries span several unrelated ecosystems (Spring, Keycloak, React, Docker,
+Kafka, Liquibase, ...); diluting a Spring-specific count by fourteen unrelated queries
+was always going to look small.
 
-**What the measurement found instead, and why it's a different item, not this one.** The
-harness also counts how many queries hit `recall.Rank`'s `TopN=10` truncation before
-`Neighbours` ever filters by the floor: **14 of 15**. The "ten neighbours" symptom this
-entry opened on is real and, on this wider set, more pervasive than the original nine-query
-sample suggested — but it is not driven by a small number of specific generic notes
-recurring; it is `Rank`'s top-10 window saturating on nearly every adjacent-topic query
-against this 92-doc corpus, regardless of which notes fill it. That is a question about
-window size versus corpus density, not note quality, and it needs its own measurement
-before any design — filed as **B-039** rather than folded in here, because "which notes
-recur" and "does the window saturate" turned out to be two different mechanisms, not one
-question answered two ways.
+**Corrected reading, same golden, right subset.** Of the fifteen queries, four contain
+the literal word "Spring" (`Spring Data JPA pagination...`, `Testcontainers reuse ... in
+Spring Boot`, `Spring Security method security...`, `Binding a nested YAML list into a
+Spring Boot configuration record`). `spring-cli-and-maven-commands-for-spring-boot`
+appears in **all four** (plus a fifth, `Maven multi module build with a shared parent
+pom` — Maven is this vault's Spring build tool, not an unrelated ecosystem).
+`meterreadingsservice-spring-boot-4-x-project` also appears in all four literal-"Spring"
+queries. That is the entry's original claim, measured and holding: two general notes
+answer to every Spring question this label file has, regardless of what the question
+specifically asks. `docs/TODO.md`'s per-note table (now carrying the query list per
+slug, not just the count — the fix that surfaced this) is the artifact to read this
+from directly rather than trusting either verdict in prose.
 
-**Do not re-open this entry to try the document-frequency filter anyway.** The two notes
-named in this entry's original table were never re-measured after B-032 moved the floor
-before now; at the current floor, against a wider label set, they are not the outlier this
-entry describes them as.
+**A second miscount rode along with the first, in the same commit, and is retracted
+outright rather than corrected: there is no B-039.** The initial pass also reported "14
+of 15 queries hit `recall.Rank`'s `TopN=10` cap" as evidence of a general window-
+saturation mechanism distinct from this entry, and opened B-039 on it. That number
+counted `len(ranked) == recall.TopN` — `Rank` returns `nonZero(cands)` truncated to 10,
+so this only means ten notes had *some* nonzero overlap with the query, which a tagged
+92-note corpus will do almost everywhere; it says nothing about the floor. The number
+that actually says the *neighbour* window saturated is `len(Neighbours(ranked)) ==
+recall.TopN` — measured (temporarily, not committed) at **2 of 15**, and both of those
+two queries are the same literal-"Spring" queries above (`Testcontainers reuse ... in
+Spring Boot`, `Binding a nested YAML list into a Spring Boot configuration record`).
+There is no general window-saturation mechanism separate from this entry's own finding
+— B-039 was built on a metric that didn't measure what its prose claimed, and its real,
+corrected signal is fully explained by the two universal notes already named here, not
+a second cause. B-039's BACKLOG section and its `docs/TODO.md` entry are removed
+outright, not just closed.
+
+**Status: still open.** The unblock condition is now genuinely satisfied — the
+"ecosystem" hypothesis is confirmed against real, checkable data, not assumed — so the
+next step really is "design after reading it," per this entry's original text. That
+design is **not done in this pass**: it is a `pkg/recall` scoring-surface change
+(admission would have to interact with `Rank`'s `TopN=10` truncation, since `Neighbours`
+only ever sees `Rank`'s already-truncated top 10 — excluding a universal note there
+cannot surface an 11th candidate `Rank` never computed), and this session already
+produced one wrong verdict under time pressure; writing the fix in the same sitting as
+correcting that mistake is how a second one happens. A `docs/superpowers/plans/` PLANNED
+write-up for the design is the right next step, not a hurried diff here.
+
+**Do not respond to this by raising the floor.** Unchanged from the original entry — every
+floor B-033's sweep tried that drops these two notes also drops the Storybook family
+B-033 was opened to fix.
 
 ---
 
@@ -2138,48 +2165,3 @@ constraint before anyone has shown the wider window changes an actual verdict.
 Related: split from **B-031**, which established the row that surfaced this but is closed
 on its own terms — see its BACKLOG closing section.
 
----
-
-## B-039 — `recall.Rank`'s `TopN=10` window saturates on nearly every adjacent-topic query
-
-**Owner: unassigned. Status: open — split out of B-036's 2026-08-26 closure.**
-
-B-036 asked whether a small number of document-frequent notes was forcing queries to the
-ten-neighbour cap. Measuring it (`cmd/forge/neighbour_frequency_test.go`,
-`testdata/neighbour-frequency.golden`) over the fifteen `neighbour-labels.txt` queries
-found no such notes — but it found something else while counting: **14 of the 15 queries
-hit `recall.Rank`'s `TopN=10` truncation**, meaning `Rank` returns the maximum candidate
-count it is capable of returning, before `Thresholds.Neighbours` (`pkg/recall/rank.go:102-
-110`) ever gets to filter by the floor, on nearly every query tried. `calibration.golden`'s
-nine queries show the same shape at a smaller sample (3 of 9 hit the cap).
-
-**Why this might be nothing.** A 92-note corpus with real topical clustering (a dozen
-Spring notes, a handful of Testcontainers/Docker notes, several React/Storybook notes) is
-exactly the shape that would legitimately clear a 0.150 floor with room to spare on most
-of its own topics — that is `Rank` working as designed, not a defect. `nonZero`
-(`pkg/recall/rank.go:35-42`) already truncates *below* the cap when a query genuinely has
-fewer than ten related notes (see `calibration.golden`'s `JPA entity graph to avoid N+1`
-row: 0 neighbours) — the mechanism to emit fewer already exists and fires when the corpus
-doesn't support ten.
-
-**Why it might not be.** `TopN=10` is also the *emitted-array contract*
-(`references/recall-spec.md` §4) and the *internal ranking window* in the same constant —
-`Rank` never computes an 11th candidate to compare against a 10th, so there is no way to
-tell, from inside the current code, whether candidate 11 would have scored close behind
-candidate 10 (a genuinely saturated topic) or far behind (a window that's simply the right
-size and 10 is not a meaningful cutoff either way). Nothing today distinguishes those two
-cases.
-
-**Shape when someone picks it up — measure before designing.** Widen the *internal* window
-only (a second, larger constant feeding `Rank`'s scoring pass, not the emitted `TopN`) and
-re-run `TestNeighbourFloorSweep`'s and this item's own harness to see whether candidates
-11-15 cluster near candidate 10's score (saturation — arguably fine) or fall off sharply
-(a real signal `TopN=10` is already the right cut). That answers the question this entry
-can't from static analysis alone.
-
-**Do not respond to this by raising `neighbour_min_score`.** B-033's and B-036's closures
-both found no single floor value separates a saturated-but-legitimate query from a
-genuinely noisy one — this is a window-size question, not a threshold question.
-
-Related: split from **B-036**, which is closed; **B-036**'s document-frequency hypothesis
-was rejected by this same measurement, and this item is the mechanism actually observed.

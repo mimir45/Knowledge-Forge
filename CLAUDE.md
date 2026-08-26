@@ -514,25 +514,29 @@ Go code did. Recovered by restoring both files from `feat/b-034-d6-dataset`'s la
 good commit (`b2a390c`) onto the `dev` integration branch this session introduced, then
 layering B-036's own closure on top. No code was ever at risk; only these two doc files.
 
-**B-036 closed 2026-08-26, out-of-phase, on `dev` — measured, and the document-frequency
-hypothesis it proposed does not survive the measurement it asked for.** Built exactly to
-its own unblock condition: `cmd/forge/neighbour_frequency_test.go` adds the per-note
-"appears in N of M query results" column TODO.md named, run over `testdata/neighbour-
-labels.txt`'s fifteen queries (B-033's derivation set, disjoint from this entry's nine
-calibration queries) at the shipped floor (0.150, post-B-032 — this entry's own numbers
-were measured pre-B-032, at 0.125). Result: no note comes close to universal. The most
-frequent, `spring-cli-and-maven-commands-for-spring-boot`, appears in 5 of 15 (33%) and is
-also a genuinely *wanted* neighbour in one of the fifteen labels, not pure noise;
-`meterreadingsservice-spring-boot-4-x-project` — this entry's other named note — reaches
-4 of 15. Closes with **no code change**, the same shape B-031 closed with: the fix this
-entry sketched (a document-frequency filter) is not supported by data. The harness also
-found the real mechanism while counting: **14 of 15** queries hit `recall.Rank`'s
-`TopN=10` truncation before `Neighbours` ever filters by the floor — the "ten neighbours"
-symptom is real and pervasive, but it is `Rank`'s window saturating on nearly every query
-against a 92-doc corpus, not a small set of generic notes recurring. Filed as **B-039**
-rather than folded in here, since "which notes recur" and "does the window saturate"
-turned out to be two different questions. See BACKLOG.md's B-036 closing section and
-B-039's new entry.
+**B-036 measured 2026-08-26, out-of-phase, on `dev` — a wrong reading was briefly
+committed and corrected the same day; the item stays open.** Built to its own unblock
+condition: `cmd/forge/neighbour_frequency_test.go` adds the per-note "appears in N of M
+query results" column TODO.md named, run over `testdata/neighbour-labels.txt`'s fifteen
+queries at the shipped floor (0.150). The first read — 5/15 and 4/15 for the two notes
+this entry named, "no note comes close to universal," closed as rejected with no code
+change — used the wrong denominator: this entry's hypothesis was never "on every query,"
+it was "on every query **in an ecosystem**" (TODO.md's own wording), and the fifteen
+labels span several unrelated ecosystems. Read against the four queries that literally
+contain "Spring," both notes appear in **all four** — the original hypothesis, confirmed,
+not rejected. A second error rode the same wrong pass: "14 of 15 queries hit `Rank`'s
+`TopN=10` cap" was `nonZero`-truncation, not neighbour-floor saturation; the metric that
+actually counts full-neighbour emission reads **2 of 15**, and both are the same
+literal-"Spring" queries — no separate mechanism, so the **B-039 this pass opened is
+retracted outright**, not closed. Advisor review caught both errors before they reached a
+pushed commit's final state; see BACKLOG.md's B-036 closing note for the full correction
+and the corrected harness output (`cmd/forge/testdata/neighbour-frequency.golden`, now
+carrying per-slug query lists, not just counts, specifically so this kind of misread is
+checkable from the artifact rather than trusted from prose). **Status: still open** — the
+unblock condition is answered, but the design (which has to touch `Rank`'s internal
+window, not just `Neighbours`' filter, since `Neighbours` never sees an 11th candidate
+`Rank` didn't compute) is deliberately not attempted in the same pass that just corrected
+a measurement error.
 
 **B-022 closed in Phase 4**
 (the schema pattern now covers all nine `cfg.Pipeline` stages minus `critique`); **B-007
@@ -651,8 +655,9 @@ project, not a phase gated inside this one; see BACKLOG B-021. One phase per ses
 time runs out the cut order is `6b → 5b → advisor tier`. If work comes up outside the
 current phase's scope, write it to `docs/BACKLOG.md` rather than building it.
 
-**Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004,
-**B-037**, **B-038**, **B-039** and most of the twelve findings 2b recorded are
+**Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004, **B-036** (measured
+2026-08-26, confirmed, still needs a design pass — see the Status note above before
+touching it), **B-037**, **B-038** and most of the twelve findings 2b recorded are
 open; **B-025 is blocked**, not open. B-001 (doc coherence), B-005 (seven note types) and
 B-006 (link rewrite) closed on 2026-08-09; B-007 and B-022 in Phase 4; B-009 and B-024 on
 2026-08-21, when B-023 and B-027 were also half-closed (docs synced, the behavior/design-doc
@@ -665,11 +670,13 @@ place (see the Status note above). **B-015 also on 2026-08-24**, populating
 `CodeGroup.DependsOn` (see the Status note above). **B-035 on 2026-08-25**, minting the
 `run_id` correlation key, and **B-034 the same day**, building D6 as a derived export
 view over `forge logback`'s map rather than a sixth capture tier (see the Status note
-above). **B-036 on 2026-08-26**, closed with no code change — like B-031, its own
-hypothesis did not survive measurement — and opening **B-039** in its place (see the
-Status note above). **`docs/TODO.md`'s PLANNED class is empty now** — B-037, B-038 and
-B-039 are all NO STEPS by their own argument, so nothing in BACKLOG's open list currently
-has a six-field plan to execute; the next phase or out-of-phase item starts by writing
+above). **B-036 measured 2026-08-26** — unlike B-031, its hypothesis *did* survive
+measurement once read against the right denominator (a corrected reading, after a wrong
+one briefly landed the same day; see the Status note above) — and stays open pending a
+design pass. **`docs/TODO.md`'s PLANNED class is empty now** — B-036, B-037 and B-038 are
+all NO STEPS by their own argument (B-036 nearest to PLANNED, its measurement now done),
+so nothing in BACKLOG's open list currently has a six-field plan to execute; the next
+phase or out-of-phase item starts by writing
 one.
 
 **`docs/TODO.md` is the execution half of that file** (written 2026-08-23). BACKLOG records
