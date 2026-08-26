@@ -2048,6 +2048,88 @@ every floor that drops these two notes also drops the case B-033 was opened to f
 Related: **B-031** is the coverage side of the same scoring surface, and **B-032** moves
 `blend`'s denominator, which will change every number above — re-measure after it lands.
 
+### Measured 2026-08-26, out-of-phase, on `dev` — first pass got the denominator wrong
+and reversed the verdict; corrected same day. **Still open — the hypothesis is
+confirmed, not rejected.**
+
+TODO.md's own unblock condition was built as specified: a per-note "appears in N of M
+query results" column, added as `cmd/forge/neighbour_frequency_test.go`
+(`TestNeighbourDocumentFrequency`), run over `testdata/neighbour-labels.txt`'s fifteen
+adjacent-topic queries at the shipped floor (0.150). The first read of that table —
+`spring-cli-and-maven-commands-for-spring-boot` at 5/15, `meterreadingsservice-spring-
+boot-4-x-project` at 4/15, "no note comes close to universal" — was posted as a
+rejection and briefly committed as one. **That reading used the wrong denominator.**
+This entry's own hypothesis was never "on every query" — it was "on every query in an
+**ecosystem**" (TODO.md's unblock condition uses that word for a reason). The fifteen
+labelled queries span several unrelated ecosystems (Spring, Keycloak, React, Docker,
+Kafka, Liquibase, ...); diluting a Spring-specific count by fourteen unrelated queries
+was always going to look small.
+
+**Corrected reading, same golden — and this reading's own subset boundary is disclosed
+rather than presented as settled, because picking it *after* seeing which queries the two
+notes hit is the same failure shape as the first wrong reading, one layer up.** No
+ecosystem label existed before this measurement ran; "which of the fifteen queries count
+as Spring" was decided by reading the result, not fixed in advance the way
+`neighbour-labels.txt` itself was written before any score existed. Two honest readings,
+not one:
+
+- **Narrow — literal word "Spring" in the query text (4 of 15):** `Spring Data JPA
+  pagination...`, `Testcontainers reuse ... in Spring Boot`, `Spring Security method
+  security...`, `Binding a nested YAML list into a Spring Boot configuration record`.
+  `spring-cli-and-maven-commands-for-spring-boot` and `meterreadingsservice-spring-boot-4-
+  x-project` both appear in **4 of 4**.
+- **Wide — the above plus Maven (this vault's Spring build tool) and Hibernate/JPA
+  (Spring Data's persistence layer), 6 of 15:** adds `Maven multi module build with a
+  shared parent pom` and `Soft delete with Hibernate entity filters`.
+  `spring-cli-and-maven-commands-for-spring-boot` reaches **5 of 6** (misses the Hibernate
+  query); `meterreadingsservice-spring-boot-4-x-project` reaches **4 of 6** (misses both
+  Maven and Hibernate).
+
+The verdict does not depend on which boundary is right: under either reading both notes
+clear a strong majority of an ecosystem-scoped subset while sitting at 33%/27% of the
+full fifteen. That is this entry's original claim, holding. What the boundary choice
+*does* change is the precise number to quote, which is why neither "4 of 4" nor "5 of 6"
+belongs in prose as if it were derived rather than chosen. `docs/TODO.md`'s per-note table
+(now carrying the query list per slug, not just the count) is the artifact to read this
+from directly.
+
+**A second miscount rode along with the first, in the same commit, and is retracted
+outright rather than corrected: there is no B-039.** The initial pass also reported "14
+of 15 queries hit `recall.Rank`'s `TopN=10` cap" as evidence of a general window-
+saturation mechanism distinct from this entry, and opened B-039 on it. That number
+counted `len(ranked) == recall.TopN` — `Rank` returns `nonZero(cands)` truncated to 10,
+so this only means ten notes had *some* nonzero overlap with the query, which a tagged
+92-note corpus will do almost everywhere; it says nothing about the floor. The number
+that actually says the *neighbour* window saturated is `len(Neighbours(ranked)) ==
+recall.TopN` — measured (temporarily, not committed) at **2 of 15**, and both of those
+two queries are the same literal-"Spring" queries above (`Testcontainers reuse ... in
+Spring Boot`, `Binding a nested YAML list into a Spring Boot configuration record`).
+There is no general window-saturation mechanism separate from this entry's own finding
+— B-039 was built on a metric that didn't measure what its prose claimed, and its real,
+corrected signal is fully explained by the two universal notes already named here, not
+a second cause. B-039's BACKLOG section and its `docs/TODO.md` entry are removed
+outright, not just closed.
+
+**Status: still open. Updated unblock condition: a pre-committed ecosystem label, written
+before any design and before re-reading scores — the same discipline
+`neighbour-labels.txt` itself got.** The hypothesis is confirmed under both readings above,
+so a design pass is now justified — but "which queries count as the same ecosystem as
+which notes" needs to be decided and committed to a file *before* it is used to justify a
+scoring change, exactly the way this entry's own boundary should have been fixed before
+being read off the result. Once that label exists, "design after reading it," per this
+entry's original text, is not attempted in this pass regardless: it is a `pkg/recall`
+scoring-surface change
+(admission would have to interact with `Rank`'s `TopN=10` truncation, since `Neighbours`
+only ever sees `Rank`'s already-truncated top 10 — excluding a universal note there
+cannot surface an 11th candidate `Rank` never computed), and this session already
+produced one wrong verdict under time pressure; writing the fix in the same sitting as
+correcting that mistake is how a second one happens. A `docs/superpowers/plans/` PLANNED
+write-up for the design is the right next step, not a hurried diff here.
+
+**Do not respond to this by raising the floor.** Unchanged from the original entry — every
+floor B-033's sweep tried that drops these two notes also drops the Storybook family
+B-033 was opened to fix.
+
 ---
 
 ## B-038 — `bodyPass`'s top-20 window is allocated by path, not by relevance
@@ -2102,3 +2184,4 @@ constraint before anyone has shown the wider window changes an actual verdict.
 
 Related: split from **B-031**, which established the row that surfaced this but is closed
 on its own terms — see its BACKLOG closing section.
+
