@@ -1,0 +1,78 @@
+# Ecosystem cluster labels for neighbour-labels.txt's fifteen queries — B-036's own named
+# prerequisite (docs/TODO.md's "unblock condition (updated)"): a pre-committed ecosystem
+# label, written before any scoring change and before re-reading scores, the same
+# discipline neighbour-labels.txt itself got. This file is committed in its own commit,
+# one commit ahead of any pkg/recall change and ahead of the TestNeighbourDocumentFrequency
+# re-run that reads it — the ordering is checkable in git history, not asserted in prose.
+#
+# Mechanical rule, applied in order, first match wins, over the query text alone:
+#   1. spring     — query contains "Spring" (any case), or "Maven", or "Hibernate"/"JPA".
+#                    This is not a fresh derivation: it is BACKLOG B-036's own already-
+#                    disclosed 2026-08-26 "wide" boundary (6 of 15), fixed here as a
+#                    committed artifact instead of being re-derived or re-argued each time.
+#   2. A single other literally-named technology (keycloak, kafka, docker, liquibase,
+#      react, storybook).
+#   3. unclustered — no vault-stack keyword names a cluster mechanically. Flagged for a
+#      human override rather than guessed.
+#
+# Two borderline calls, disclosed rather than silently resolved:
+#   - "Storybook accessibility addon for component checks": this vault's Storybook notes
+#     carry stack:[storybook, react], so it's arguably `react`. Kept as its own `storybook`
+#     cluster because BACKLOG's own text always treats "the Storybook family" as a
+#     distinct, named case (the one a floor change must not break) — folding it into
+#     `react` would blur that comparison. Flag for override if wrong.
+#   - "Liquibase rollback strategy for a failed migration": this vault's Liquibase notes
+#     carry spring-boot in their stack too, but `liquibase` stays its own singleton rather
+#     than widening B-032/B-033's already-fixed Spring boundary (Spring + Maven +
+#     Hibernate/JPA, exactly).
+#   - "Running a local embedding model for code search" and "Domain events in a hexagonal
+#     architecture": no ecosystem keyword in this vault's known stack vocabulary appears in
+#     the query text. Left `unclustered` rather than guessed.
+#
+# Format: a Q: line (verbatim from neighbour-labels.txt) followed by an Ecosystem: line.
+# Blank lines and # are ignored.
+
+Q: Spring Data JPA pagination with sorting on multiple columns
+Ecosystem: spring
+
+Q: Testcontainers reuse across test classes in Spring Boot
+Ecosystem: spring
+
+Q: Keycloak client scopes and custom claim mappers
+Ecosystem: keycloak
+
+Q: Storybook accessibility addon for component checks
+Ecosystem: storybook
+
+Q: Liquibase rollback strategy for a failed migration
+Ecosystem: liquibase
+
+Q: Running a local embedding model for code search
+Ecosystem: unclustered
+
+Q: Kafka consumer group rebalancing in an event driven system
+Ecosystem: kafka
+
+Q: Maven multi module build with a shared parent pom
+Ecosystem: spring
+
+Q: React hook for detecting clicks outside a dropdown
+Ecosystem: react
+
+Q: Docker Compose healthcheck for a Postgres service
+Ecosystem: docker
+
+Q: Spring Security method security with a custom permission evaluator
+Ecosystem: spring
+
+Q: Binding a nested YAML list into a Spring Boot configuration record
+Ecosystem: spring
+
+Q: Soft delete with Hibernate entity filters
+Ecosystem: spring
+
+Q: Testing a React component that renders nothing until data loads
+Ecosystem: react
+
+Q: Domain events in a hexagonal architecture
+Ecosystem: unclustered

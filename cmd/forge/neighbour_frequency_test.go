@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"sort"
@@ -36,6 +37,7 @@ import (
 // top score (0.119) and 0 neighbours in the same run.
 
 const freqGoldenPath = "testdata/neighbour-frequency.golden"
+const ecosystemsPath = "testdata/query-ecosystems.txt"
 
 // TestNeighbourDocumentFrequency reports, for every note admitted as a neighbour in at
 // least one of the fifteen testdata/neighbour-labels.txt queries, how many of those
@@ -73,6 +75,7 @@ type freqRow struct {
 func frequencyTable(t *testing.T) string {
 	docs := calibrationCorpus(t)
 	queries := loadNeighbourLabels(t)
+	eco := loadQueryEcosystems(t)
 	freq := map[string]*freqRow{}
 	rankCapped, neighbourCapped := 0, 0
 	for _, q := range queries {
@@ -93,10 +96,47 @@ func frequencyTable(t *testing.T) string {
 			r.queries = append(r.queries, q.question)
 		}
 	}
-	return renderFrequencyTable(queries, freq, rankCapped, neighbourCapped)
+	return renderFrequencyTable(queries, eco, freq, rankCapped, neighbourCapped)
 }
 
-func renderFrequencyTable(queries []labelledQuery, freq map[string]*freqRow, rankCapped, neighbourCapped int) string {
+// loadQueryEcosystems parses testdata/query-ecosystems.txt — B-036's own named
+// prerequisite: which ecosystem cluster each of neighbour-labels.txt's fifteen queries
+// belongs to, written and committed before any scoring change. Format mirrors
+// loadNeighbourLabels: a "Q:" line followed by an "Ecosystem:" line, "#" and blank lines
+// ignored. Keyed by question text so it joins against labelledQuery without depending on
+// row order matching between the two files.
+func loadQueryEcosystems(t *testing.T) map[string]string {
+	t.Helper()
+	f, err := os.Open(ecosystemsPath)
+	if err != nil {
+		t.Fatalf("%v — B-036's ecosystem rollup needs this file; see its header for the labelling rule", err)
+	}
+	defer func() { _ = f.Close() }()
+	out, pending, sc := map[string]string{}, "", bufio.NewScanner(f)
+	for sc.Scan() {
+		line := strings.TrimSpace(sc.Text())
+		switch {
+		case line == "" || strings.HasPrefix(line, "#"):
+			continue
+		case strings.HasPrefix(line, "Q:"):
+			pending = strings.TrimSpace(strings.TrimPrefix(line, "Q:"))
+		case strings.HasPrefix(line, "Ecosystem:"):
+			if pending == "" {
+				t.Fatalf("%s: Ecosystem: line before any Q: line", ecosystemsPath)
+			}
+			out[pending] = strings.TrimSpace(strings.TrimPrefix(line, "Ecosystem:"))
+			pending = ""
+		default:
+			t.Fatalf("%s: unparsable line %q", ecosystemsPath, line)
+		}
+	}
+	if err := sc.Err(); err != nil {
+		t.Fatalf("reading %s: %v", ecosystemsPath, err)
+	}
+	return out
+}
+
+func renderFrequencyTable(queries []labelledQuery, eco map[string]string, freq map[string]*freqRow, rankCapped, neighbourCapped int) string {
 	rows := make([]*freqRow, 0, len(freq))
 	for _, r := range freq {
 		rows = append(rows, r)
@@ -116,13 +156,45 @@ func renderFrequencyTable(queries []labelledQuery, freq map[string]*freqRow, ran
 	fmt.Fprintf(&b, "%d/%d queries emit a full TopN=%d neighbours after the floor (the\n"+
 		"number that says the window, not just the floor, ran out of room).\n\n",
 		neighbourCapped, len(queries), recall.TopN)
-	b.WriteString("| Note | N of M | Queries (only listed when N > 1) |\n|---|---|---|\n")
+	b.WriteString("| Note | N of M (all) | Queries (only listed when N > 1) |\n|---|---|---|\n")
 	for _, r := range rows {
 		list := ""
 		if len(r.queries) > 1 {
 			list = strings.Join(r.queries, "; ")
 		}
 		fmt.Fprintf(&b, "| %s | %d/%d | %s |\n", r.slug, len(r.queries), len(queries), list)
+	}
+	b.WriteString(springClusterRollup(queries, eco, rows))
+	return b.String()
+}
+
+// springClusterRollup answers B-036's actual hypothesis — "a note scoring on every query
+// in an ecosystem" — which the full-fifteen N/M column above cannot: a note scattered
+// across unrelated ecosystems and a note universal within one both produce the same raw
+// count. `spring` is testdata/query-ecosystems.txt's only cluster with M >= 2 in this
+// label set (6 of 15); the others are singletons a ratio can't say anything about.
+func springClusterRollup(queries []labelledQuery, eco map[string]string, rows []*freqRow) string {
+	total := 0
+	for _, q := range queries {
+		if eco[q.question] == "spring" {
+			total++
+		}
+	}
+	var b strings.Builder
+	fmt.Fprintf(&b, "\nWithin the `spring` cluster (%d of %d queries; the only cluster in\n"+
+		"this label set with M >= 2 — see testdata/query-ecosystems.txt):\n\n", total, len(queries))
+	b.WriteString("| Note | N of M (spring) |\n|---|---|\n")
+	for _, r := range rows {
+		n := 0
+		for _, q := range r.queries {
+			if eco[q] == "spring" {
+				n++
+			}
+		}
+		if n == 0 {
+			continue
+		}
+		fmt.Fprintf(&b, "| %s | %d/%d |\n", r.slug, n, total)
 	}
 	return b.String()
 }

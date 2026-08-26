@@ -5,7 +5,7 @@ candidates (before the floor filters anything).
 2/15 queries emit a full TopN=10 neighbours after the floor (the
 number that says the window, not just the floor, ran out of room).
 
-| Note | N of M | Queries (only listed when N > 1) |
+| Note | N of M (all) | Queries (only listed when N > 1) |
 |---|---|---|
 | spring-cli-and-maven-commands-for-spring-boot | 5/15 | Spring Data JPA pagination with sorting on multiple columns; Testcontainers reuse across test classes in Spring Boot; Maven multi module build with a shared parent pom; Spring Security method security with a custom permission evaluator; Binding a nested YAML list into a Spring Boot configuration record |
 | meterreadingsservice-spring-boot-4-x-project | 4/15 | Spring Data JPA pagination with sorting on multiple columns; Testcontainers reuse across test classes in Spring Boot; Spring Security method security with a custom permission evaluator; Binding a nested YAML list into a Spring Boot configuration record |
@@ -59,3 +59,33 @@ number that says the window, not just the floor, ran out of room).
 | storybook-plus-next-js-app-router-requires-appdirectory-true-parameter | 1/15 |  |
 | til-demoing-keycloak-plus-google-login-in-a-presentation | 1/15 |  |
 | value-doesn-t-work-for-yaml-lists-use-configurationproperties | 1/15 |  |
+
+Within the `spring` cluster (6 of 15 queries; the only cluster in
+this label set with M >= 2 — see testdata/query-ecosystems.txt):
+
+| Note | N of M (spring) |
+|---|---|
+| spring-cli-and-maven-commands-for-spring-boot | 5/6 |
+| meterreadingsservice-spring-boot-4-x-project | 4/6 |
+| spring-boot-4-breaking-changes-artifact-renames-and-test-module-split | 3/6 |
+| intellij-test-sources-root-why-it-gets-lost-and-the-build-helper-fix | 2/6 |
+| issue-spring-boot-4-x-testcontainers-2-x-artifact-renames | 2/6 |
+| openapi-code-generation-contract-first-with-openapi-generator-maven-plugin | 1/6 |
+| pom-xml-meterreadingsservice-maven-project-descriptor | 2/6 |
+| preauthorize-spring-security-method-level-access-control | 2/6 |
+| soft-delete-flag-based-record-deletion-pattern | 2/6 |
+| spring-boot-3-4plus-initializr-generates-spring-boot-starter-webmvc-instead-of | 2/6 |
+| testcontainers-docker-based-integration-testing | 1/6 |
+| usefocusonmount-shared-react-focus-hook | 1/6 |
+| build-helper-maven-plugin-adding-generated-sources-to-compile-path | 1/6 |
+| configurationproperties-vs-value-yaml-list-binding | 1/6 |
+| decision-separate-endpoint-for-admin-user-creation | 1/6 |
+| hibernate-orm-patterns-and-gotchas | 1/6 |
+| issue-hibernate-ddl-auto-validate-note-notes-column-mismatch | 1/6 |
+| issue-intellij-loses-src-test-java-as-test-sources-root | 1/6 |
+| keyset-cursor-pagination-requires-a-compound-or-predicate | 1/6 |
+| keyset-pagination-compound-or-predicate | 1/6 |
+| litellm-yaml-litellm-proxy-configuration | 1/6 |
+| maven-surefire-auto-detects-test-framework-from-classpath-scope | 1/6 |
+| saveandflush-vs-save-hibernate-timestamp-flush-timing | 1/6 |
+| value-doesn-t-work-for-yaml-lists-use-configurationproperties | 1/6 |
