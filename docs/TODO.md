@@ -55,8 +55,6 @@ B-027 was last because it is documentation with no code consequence left.
 | B-004 | Module path has no VCS host prefix | NO STEPS — deferred by decision | [below](#no-steps) |
 | B-012 | `code_refs` has no live producer | NO STEPS — blocked on packaging | [below](#no-steps) |
 | B-025 | `PostToolUse`/WebFetch payload shape | NO STEPS — **BLOCKED** | [below](#no-steps) |
-| B-034 | D6 (code↔knowledge) not built | **PLANNED** | [§B-034](#b-034--build-d6-as-an-export-view) |
-| B-035 | D1 has no outcome label | **PLANNED** | [§B-035](#b-035--mint-a-run_id-so-d1-can-carry-an-outcome) |
 | B-036 | Broad query links ten neighbours | NO STEPS — measure first | [below](#no-steps) |
 | B-037 | Intent gate FIRE/QUIET margin now negative | NO STEPS — measure first | [below](#no-steps) |
 | B-038 | `bodyPass` window allocated by path, not relevance | NO STEPS — measure first | [below](#b-038--bodypasss-top-20-window-is-allocated-by-path-not-by-relevance) |

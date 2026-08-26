@@ -43,11 +43,17 @@ func dateRange(rep ExportReport) string {
 	return rep.From.Format("2006-01-02") + " → " + rep.To.Format("2006-01-02")
 }
 
+// anonLabel's d6 branch says "raw text", not "raw captured text" — d6 is derived, and
+// its own Limitations entry above already makes that distinction; this table row would
+// otherwise be the one place in a d6 datasheet that quietly contradicts it.
 func anonLabel(rep ExportReport) string {
-	if !rep.Anonymized {
-		return "**no** — this export contains raw captured text"
+	if rep.Anonymized {
+		return fmt.Sprintf("yes, %d redactions", rep.Redactions)
 	}
-	return fmt.Sprintf("yes, %d redactions", rep.Redactions)
+	if rep.Set == D6Tag {
+		return "**no** — this export is raw text (BACKLOG B-034: derived sets cannot be anonymized)"
+	}
+	return "**no** — this export contains raw captured text"
 }
 
 // writeDistribution prints a share table, or says plainly that the tier does not record
@@ -79,7 +85,7 @@ func share(n, total int) string {
 // rather than guessed at afterwards.
 func writeLimitations(b *strings.Builder, rep ExportReport) {
 	b.WriteString("\n## Limitations\n\n")
-	for _, l := range append(commonLimits(rep), tierLimits(rep.Set)...) {
+	for _, l := range append(commonLimits(rep), tierLimits(rep)...) {
 		fmt.Fprintf(b, "- %s\n", l)
 	}
 }
@@ -88,8 +94,7 @@ func commonLimits(rep ExportReport) []string {
 	out := []string{
 		"Single-author corpus. Every pair comes from one developer's vault, so what looks " +
 			"like a preference is at least partly one person's habit.",
-		"Capture is forward-only. Nothing before the day the relevant tier was switched on " +
-			"appears here, and the date range above is the honest start of the record.",
+		accumulationLimit(rep.Set),
 	}
 	if rep.Anonymized {
 		out = append(out, "Anonymization redacts token-, address- and path-shaped content. "+
@@ -102,14 +107,41 @@ func commonLimits(rep ExportReport) []string {
 	return out
 }
 
-func tierLimits(set string) []string {
-	switch set {
+// accumulationLimit is D6's one structural difference from every other common limit: it
+// does not accumulate, so the usual "forward-only" framing would misdescribe it — a
+// second export can emit *fewer* pairs than the first, if a citation stops resolving or
+// a repo's cached index goes stale, which no D1-D5 tier can do.
+func accumulationLimit(set string) string {
+	if set == D6Tag {
+		return "This is a point-in-time derivation over `forge logback`'s map, not a " +
+			"forward-accumulating capture (BACKLOG B-034). Re-running the export later can " +
+			"emit *fewer* pairs than before if a citation stops resolving or a repo's cached " +
+			"code index goes stale — unlike D1-D5, an old record here is not guaranteed to " +
+			"still be present."
+	}
+	return "Capture is forward-only. Nothing before the day the relevant tier was switched " +
+		"on appears here, and the date range above is the honest start of the record."
+}
+
+func tierLimits(rep ExportReport) []string {
+	switch rep.Set {
 	case D1Tag:
 		return []string{
-			"**No outcome label.** A pair is (question features → the routing decision), " +
-				"with nothing recording whether that decision was right — there is no run_id " +
-				"joining a recall call to the note that followed it (BACKLOG B-035). This is " +
-				"supervision on the router's own output, not evidence the router is correct.",
+			fmt.Sprintf("**Outcome label is partial: %s (%d of %d records).** A joined pair "+
+				"carries whether the note it led to was actually published or quarantined "+
+				"(BACKLOG B-035, closed 2026-08-25); the rest are (question features → routing "+
+				"decision) pairs only — supervision on the router's own output, not evidence "+
+				"the router is correct. A pair joins only when the caller threaded recall's "+
+				"run_id back through `forge gate --run-id`; forgetting it degrades to the "+
+				"unjoined case silently, it does not fail, so do not read this share as a "+
+				"census of how often the routing decision was right.",
+				share(rep.D1Joined, rep.Records), rep.D1Joined, rep.Records),
+			"**A joined outcome is the last one reported, not the first.** A quarantine " +
+				"followed by a `--previous-draft` repair that re-passes `--run-id` (SKILL.md's " +
+				"Stage 4) appends a second D1Outcome for the same run_id; export keeps the " +
+				"later record. A repair that forgets `--run-id` leaves the pair labelled " +
+				"`quarantined` even though the note went on to publish — that pair is " +
+				"indistinguishable from a real quarantine in this export.",
 			"**Recall calls only, not every ranking.** ADDENDUM §D.1 says \"every run\", but " +
 				"`forge intent` also ranks the vault on every prompt submission and is " +
 				"deliberately excluded: it has a 50ms budget and a passive hint is not a " +
@@ -125,6 +157,26 @@ func tierLimits(set string) []string {
 	case D4Tag:
 		return []string{"Only retries that were explicitly joined with `--previous-draft` " +
 			"appear. A draft fixed without passing that flag back is invisible here."}
+	case D6Tag:
+		return []string{
+			"**Derived, not captured.** This tier has no write path: every export re-resolves " +
+				"(repo, path, symbol) → note pairs from the vault's citations against whatever " +
+				"`.forge/code-index-<repo>.json` caches this machine currently holds. An empty " +
+				"export usually means no repo has been indexed here yet (`forge logback`), not " +
+				"that nothing is documented.",
+			"**--anonymize is always refused for this set.** Repo, path and symbol strings " +
+				"are the feature D6 exists to carry, and also the most employer-identifying " +
+				"strings in the system; `anonymize.go`'s note-path answer (hash the slug, keep " +
+				"the type) has no equivalent that leaves this tier useful. Every export is raw " +
+				"text — read the repo names before sharing.",
+			"**An unresolved or ambiguous citation contributes no pair.** Symbol lookup is " +
+				"exact-name-then-trailing-member (`codeindex.File.Lookup`, the same rule " +
+				"`forge check`'s coverage numbers use); a citation with a typo or a renamed " +
+				"symbol drops out silently rather than appearing with a guessed target.",
+			"**Records ≠ notes.** ADDENDUM §D.1 gives volume as \"= note count\", but a note " +
+				"citing five symbols yields five records here — read this tier's count as " +
+				"citation count, not note count.",
+		}
 	case D5Tag:
 		return []string{"**Gate is not enforced in Go.** `forge gate` running before every " +
 			"write is an invariant of `skills/forge/SKILL.md`, not of the binary, so a note " +

@@ -543,9 +543,17 @@ entries:
       "matched_on": ["title", "tags"]
     }
   ],
-  "neighbours": []
+  "neighbours": [],
+  "run_id": "3f9a1c2e7b4d6081a5c3e9f0b2d4a716"
 }
 ```
+
+**`run_id`** is BACKLOG B-035's correlation key, added 2026-08-25 and purely additive to
+this contract. It is minted fresh per call (`telemetry.NewRunID`, 128 random bits, no
+ordering or wall-clock semantics), never repeats, and carries no meaning on its own — a
+caller threads it back through `forge gate --run-id <id>` to join this routing decision
+to whether the note write it led to was actually published. A caller that ignores the
+field loses nothing else; the join is optional on both ends.
 
 **The verdict ships in the payload, not in the caller.** §3's tree is implemented once,
 in Go. A skill that restated the thresholds in prose would silently diverge the moment

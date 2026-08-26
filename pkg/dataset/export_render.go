@@ -18,6 +18,11 @@ type (
 		ID         string `json:"id,omitempty"`
 		Prompt     string `json:"prompt"`
 		Completion string `json:"completion"`
+		// Outcome is D1-only (BACKLOG B-035): nil for every other tier, omitted from
+		// their JSON, and nil for a D1 pair whose run_id never joined a gate outcome —
+		// see D1Pair.Outcome's doc comment for why nil and false both meaning
+		// something different has to stay observable.
+		Outcome *bool `json:"outcome,omitempty"`
 	}
 	dpoLine struct {
 		Kind     string `json:"kind"`
@@ -41,8 +46,21 @@ func idOf(rec any) string {
 		return p.Note
 	case D5Pair:
 		return p.Rel
+	case D6Pair:
+		return d6ID(p)
 	}
 	return ""
+}
+
+// d6ID has no single natural key the way the other tiers do — Note alone is not unique,
+// since one note documents many symbols. repo:path is unique per module-level pair;
+// #symbol disambiguates the symbol-level pairs a module citation and a symbol citation
+// of the same file would otherwise collide on.
+func d6ID(p D6Pair) string {
+	if p.Symbol == "" {
+		return p.Repo + ":" + p.Path
+	}
+	return p.Repo + ":" + p.Path + "#" + p.Symbol
 }
 
 func render(t Tier, recs []any, f Format) ([]byte, error) {
@@ -76,7 +94,7 @@ func sftOf(t Tier, rec any) (any, error) {
 	l := sftLine{Kind: t.Kind, ID: idOf(rec)}
 	switch p := rec.(type) {
 	case D1Pair:
-		l.Prompt, l.Completion = d1Prompt(p), p.Decision
+		l.Prompt, l.Completion, l.Outcome = d1Prompt(p), p.Decision, p.Outcome
 	case D2Pair:
 		l.Prompt, l.Completion = p.Draft, p.Critique
 	case Pair:
@@ -85,6 +103,8 @@ func sftOf(t Tier, rec any) (any, error) {
 		l.Prompt, l.Completion = repairPrompt(p), p.FixedDraft
 	case D5Pair:
 		l.Prompt, l.Completion = d5Prompt(p), p.Note
+	case D6Pair:
+		l.Prompt, l.Completion = d6Prompt(p), p.Note
 	default:
 		return nil, fmt.Errorf("unhandled record type %T", rec)
 	}
@@ -113,6 +133,14 @@ func d1Prompt(p D1Pair) string {
 	return fields("topic", p.Topic, "stack", strings.Join(p.Stack, ", "),
 		"top_score", strconv.FormatFloat(p.RecallTopScore, 'f', 3, 64),
 		"candidates", strconv.Itoa(p.Candidates))
+}
+
+// d6Prompt renders the code side of the pair as a retrieval query; Completion is the
+// note's vault-relative path — a retrieval target, not generated text, matching
+// ADDENDUM §D.1's stated intended use for D6 ("retrieval / RAG eval") rather than the
+// drafting shape D1-D5's prompts share.
+func d6Prompt(p D6Pair) string {
+	return fields("repo", p.Repo, "path", p.Path, "symbol", p.Symbol)
 }
 
 func d5Prompt(p D5Pair) string {
@@ -146,7 +174,7 @@ func fields(kv ...string) string {
 func renderCSV(recs []any) ([]byte, error) {
 	var buf bytes.Buffer
 	w := csv.NewWriter(&buf)
-	if err := w.Write([]string{"topic", "stack", "top_score", "candidates", "decision"}); err != nil {
+	if err := w.Write([]string{"topic", "stack", "top_score", "candidates", "decision", "outcome"}); err != nil {
 		return nil, err
 	}
 	for i, r := range recs {
@@ -165,7 +193,21 @@ func renderCSV(recs []any) ([]byte, error) {
 func csvRow(p D1Pair) []string {
 	return []string{p.Topic, strings.Join(p.Stack, " "),
 		strconv.FormatFloat(p.RecallTopScore, 'f', 3, 64),
-		strconv.Itoa(p.Candidates), p.Decision}
+		strconv.Itoa(p.Candidates), p.Decision, outcomeStr(p.Outcome)}
+}
+
+// outcomeStr spells out the three states a CSV cell can't leave to a null: never joined
+// (empty — no run_id, or a gate call that never received one), joined and published,
+// joined and quarantined.
+func outcomeStr(o *bool) string {
+	switch {
+	case o == nil:
+		return ""
+	case *o:
+		return "published"
+	default:
+		return "quarantined"
+	}
 }
 
 // summarize fills the report's descriptive half from the records that will actually be
@@ -175,9 +217,22 @@ func summarize(rep ExportReport, recs []any, o ExportOptions) ExportReport {
 	rep.Records = len(recs)
 	rep.From, rep.To = span(recs)
 	rep.Stacks, rep.EngineTrail = distribution(recs, stacksOf), distribution(recs, trailOf)
+	if rep.Set == D1Tag {
+		rep.D1Joined = countD1Joined(recs)
+	}
 	base := rep.Set + "-" + string(o.Format)
 	rep.OutFile, rep.Datasheet = base+extFor(o.Format), base+"-datasheet.md"
 	return rep
+}
+
+func countD1Joined(recs []any) int {
+	n := 0
+	for _, r := range recs {
+		if p, ok := r.(D1Pair); ok && p.Outcome != nil {
+			n++
+		}
+	}
+	return n
 }
 
 func extFor(f Format) string {

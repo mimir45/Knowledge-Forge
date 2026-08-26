@@ -15,7 +15,7 @@ func loadTier(root string, t Tier) ([]any, error) {
 	path := filepath.Join(root, t.Path)
 	switch t.Tag {
 	case D1Tag:
-		return boxed(readStrict[D1Pair](path))
+		return loadD1(root, path)
 	case D2Tag:
 		return boxed(readStrict[D2Pair](path))
 	case D3Tag:
@@ -24,8 +24,59 @@ func loadTier(root string, t Tier) ([]any, error) {
 		return boxed(readStrict[D4Pair](path))
 	case D5Tag:
 		return boxed(readStrict[D5Pair](path))
+	case D6Tag:
+		return loadD6(root)
 	}
 	return nil, fmt.Errorf("tier %q has no reader", t.Tag)
+}
+
+// loadD1 reads D1's own pairs plus the separate outcome file BACKLOG B-035 added
+// (d1_outcome.go) and joins them by RunID before boxing. The join happens here, not in
+// render, so `since`, anonymizeAll and roundTripAll all see the already-joined shape —
+// Outcome is an export-time-only field and never round-trips back into the capture file.
+func loadD1(root, path string) ([]any, error) {
+	pairs, err := readStrict[D1Pair](path)
+	if err != nil {
+		return nil, err
+	}
+	outs, err := readStrict[D1Outcome](filepath.Join(root, D1OutcomePath))
+	if err != nil {
+		return nil, err
+	}
+	return boxed(joinD1Outcomes(pairs, outs), nil)
+}
+
+// joinD1Outcomes matches each pair to the outcome sharing its RunID, if any. A pair with
+// no RunID (captured before B-035) and a pair whose gate call never received --run-id
+// both stay unjoined — Outcome is left nil, which the renderers read as "no outcome
+// recorded", not "not published".
+//
+// Two outcomes can legitimately share a RunID: a quarantine followed by a fixed retry
+// that passes --run-id back through the same --previous-draft repair loop (see
+// SKILL.md's Stage 4). The map assignment below is last-wins in append order — outs is
+// read straight off the JSONL file, so "last" means "most recently appended" — which is
+// deliberately the retry's outcome, not the original quarantine's. That is the final
+// disposition of the routing decision; recording "quarantined" forever because the first
+// gate call happened to fail would bias the label in exactly the direction a repair loop
+// exists to fix.
+func joinD1Outcomes(pairs []D1Pair, outs []D1Outcome) []D1Pair {
+	if len(outs) == 0 {
+		return pairs
+	}
+	published := make(map[string]bool, len(outs))
+	for _, o := range outs {
+		published[o.RunID] = o.Published // last write for a RunID wins, see doc comment
+	}
+	for i := range pairs {
+		if pairs[i].RunID == "" {
+			continue
+		}
+		if pub, ok := published[pairs[i].RunID]; ok {
+			v := pub
+			pairs[i].Outcome = &v
+		}
+	}
+	return pairs
 }
 
 func boxed[T any](recs []T, err error) ([]any, error) {
@@ -41,7 +92,9 @@ func boxed[T any](recs []T, err error) ([]any, error) {
 
 // stampOf is the field --since filters on. D3 uses EditedAt rather than a capture time:
 // the pair is dated by when the human made the correction, which is the event, not by
-// when the hook happened to harvest it.
+// when the hook happened to harvest it. D6Pair falls through to the zero value on
+// purpose — it has no per-record timestamp, which is exactly why refuseDerivedOptions
+// rejects --since before this function is ever asked about a D6 record.
 func stampOf(rec any) time.Time {
 	switch p := rec.(type) {
 	case D1Pair:
@@ -90,6 +143,8 @@ func roundTrip(rec any) error {
 		return reparse[D4Pair](b)
 	case D5Pair:
 		return reparse[D5Pair](b)
+	case D6Pair:
+		return reparse[D6Pair](b)
 	}
 	return fmt.Errorf("unhandled record type %T", rec)
 }

@@ -71,6 +71,11 @@ pre-summarizing it into keywords throws away the terms the scoring depends on. P
 Recall is deterministic and makes **zero model calls**. It costs ~5 ms. There is no
 budget argument for skipping it.
 
+**Hold onto `run_id` from the JSON output.** It correlates this recall call to whatever
+note write follows it (BACKLOG B-035) — pass it back as Stage 4's `forge gate --run-id`
+if you reach a write for this same question. Dropping it costs nothing beyond that one
+join; every other behavior is unaffected.
+
 ### Read the verdict, do not re-derive it
 
 ```json
@@ -209,8 +214,12 @@ above ran or how.
 
 ```bash
 forge gate --file <rendered draft> --rel <intended vault-relative path> \
-           [--mode create|update] [--target-slug <slug>]
+           [--mode create|update] [--target-slug <slug>] [--run-id <id from Stage 1>]
 ```
+
+Pass `--run-id` when Stage 1's recall call led to this write — it joins the routing
+decision to whether the note actually got published (BACKLOG B-035). Omit it for any
+write that did not start from a recall call; the gate behaves identically either way.
 
 Read the JSON `Report` it prints. Branch on `Report.Quarantine` and the individual gate
 outcomes — do not re-derive gate logic from this prose; the seven DESIGN §12 gates
@@ -239,7 +248,10 @@ thresholds:
 On a quarantine, `forge gate` prints a `--previous-draft` path to stderr. If you fix the
 draft and re-run `forge gate` with that flag, a passing retry captures the (failing,
 error, fixed) triple as training data (dataset D4) — pass it through when retrying
-rather than starting a fresh invocation.
+rather than starting a fresh invocation. **Pass `--run-id` again too, if you had one.**
+The retry is still the same routing decision from Stage 1; dropping `--run-id` on the
+retry leaves D1's outcome pinned at the first call's `quarantined` verdict forever, even
+though the note went on to publish.
 
 ---
 

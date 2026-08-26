@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -35,12 +36,17 @@ const (
 // CSV is D1's alone: it is the one tier whose record is a fixed-width feature row over a
 // categorical label. Flattening a note body into a CSV cell is not a format, it is a
 // quoting problem.
+// D6 gets FormatSFT only: it has no chosen/rejected pair for DPO (there is nothing to
+// prefer between — every record is one resolved citation), and it is not a fixed-width
+// feature row the way D1 is, so CSV would be the same quoting problem D1's own comment
+// above rules out.
 var formatsFor = map[string][]Format{
 	D1Tag: {FormatSFT, FormatCSV},
 	D2Tag: {FormatSFT},
 	D3Tag: {FormatSFT, FormatDPO},
 	D4Tag: {FormatSFT, FormatDPO},
 	D5Tag: {FormatSFT},
+	D6Tag: {FormatSFT},
 }
 
 // ExportOptions is one export request. Since zero means no lower bound.
@@ -67,8 +73,12 @@ type ExportReport struct {
 	To          time.Time      `json:"to"`
 	Stacks      map[string]int `json:"stacks,omitempty"`
 	EngineTrail map[string]int `json:"engine_trail,omitempty"`
-	OutFile     string         `json:"out_file"`
-	Datasheet   string         `json:"datasheet"`
+	// D1Joined is D1-only (BACKLOG B-035): how many of Records joined a gate outcome by
+	// run_id, so the datasheet can say what fraction of the corpus is genuinely
+	// outcome-labelled rather than implying the whole export is.
+	D1Joined  int    `json:"d1_joined,omitempty"`
+	OutFile   string `json:"out_file"`
+	Datasheet string `json:"datasheet"`
 }
 
 // Export reads one tier, filters, anonymizes, renders, and writes — in that order, with
@@ -79,6 +89,9 @@ type ExportReport struct {
 func Export(vaultRoot string, o ExportOptions) (ExportReport, error) {
 	tier, err := resolve(o.Set, o.Format)
 	if err != nil {
+		return ExportReport{}, err
+	}
+	if err := refuseDerivedOptions(tier, o); err != nil {
 		return ExportReport{}, err
 	}
 	recs, err := loadTier(vaultRoot, tier)
@@ -114,7 +127,39 @@ func resolve(set string, f Format) (Tier, error) {
 			return t, checkFormat(t, f)
 		}
 	}
-	return Tier{}, usageErr("unknown --set %q: want one of d1 d2 d3 d4 d5", set)
+	return Tier{}, usageErr("unknown --set %q: want one of %s", set, tagList())
+}
+
+// tagList reads Tiers() rather than restating it, so a set added there does not also
+// need updating in this message by hand.
+func tagList() string {
+	tags := make([]string, len(Tiers()))
+	for i, t := range Tiers() {
+		tags[i] = t.Tag
+	}
+	return strings.Join(tags, " ")
+}
+
+// refuseDerivedOptions rejects --since and --anonymize on a derived tier before a record
+// is read, keyed off Derived rather than D6Tag so a future derived tier inherits both
+// refusals automatically. Neither flag has a safe silent behaviour here: --since has no
+// per-record timestamp to filter on (a filtered-looking export that never filtered), and
+// no redaction of a derived set's whole reason for existing — its repo/path/symbol
+// content — has been found that leaves it useful (BACKLOG B-034's closing note).
+func refuseDerivedOptions(t Tier, o ExportOptions) error {
+	if !t.Derived {
+		return nil
+	}
+	if !o.Since.IsZero() {
+		return usageErr("--since has no meaning for --set %s: it is a derived set with no "+
+			"per-record timestamp, so filtering it would silently do nothing", t.Tag)
+	}
+	if o.Anonymize {
+		return usageErr("--anonymize is refused for --set %s: repo, path and symbol names "+
+			"are the whole feature, and no redaction of them has been found that leaves the "+
+			"export useful; pass --no-anonymize and treat the result as raw", t.Tag)
+	}
+	return nil
 }
 
 func checkFormat(t Tier, f Format) error {

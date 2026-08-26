@@ -554,7 +554,7 @@ time runs out the cut order is `6b → 5b → advisor tier`. If work comes up ou
 current phase's scope, write it to `docs/BACKLOG.md` rather than building it.
 
 **Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004,
-**B-034**, **B-035**, **B-036**, **B-037**, **B-038** and most of the twelve findings 2b recorded are
+**B-036**, **B-037**, **B-038** and most of the twelve findings 2b recorded are
 open; **B-025 is blocked**, not open. B-001 (doc coherence), B-005 (seven note types) and
 B-006 (link rewrite) closed on 2026-08-09; B-007 and B-022 in Phase 4; B-009 and B-024 on
 2026-08-21, when B-023 and B-027 were also half-closed (docs synced, the behavior/design-doc
