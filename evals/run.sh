@@ -27,9 +27,12 @@ cp -R "$fixture" "$vault"
 fail=0
 
 echo "== forge recall: determinism =="
+# run_id (B-035) is a fresh random correlation key minted per call by design — it must
+# differ every run, so it's excluded here the same way a timestamp field would be from
+# any other snapshot comparison. Everything else in the envelope must still match.
 q="how does kafka consumer group rebalancing work"
-r1="$("$bin" recall --question "$q" --vault "$vault")"
-r2="$("$bin" recall --question "$q" --vault "$vault")"
+r1="$("$bin" recall --question "$q" --vault "$vault" | grep -v '"run_id"')"
+r2="$("$bin" recall --question "$q" --vault "$vault" | grep -v '"run_id"')"
 if [ "$r1" != "$r2" ]; then
   echo "FAIL: forge recall output differs across runs"
   diff <(echo "$r1") <(echo "$r2") || true
