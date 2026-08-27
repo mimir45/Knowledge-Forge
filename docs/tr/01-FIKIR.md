@@ -288,8 +288,8 @@ tersine çevirdi ve dokümanın kendisi *"that was wrong"* diyor. Nedenler:
   bir bağımlılık ağacı demektir — bir git hook'unun içinde bunların hepsi kırılganlıktır.
 - **Latency bütçesi.** 100 ms'lik drift bütçesi, Python interpreter başlangıcının
   neredeyse tamamını yerdi.
-- **Cross-compile.** Makefile altı hedefe derliyor (darwin/linux/windows × amd64/arm64)
-  tek komutla, `CGO_ENABLED=0` sayesinde.
+- **Cross-compile.** Makefile dört hedefe derliyor (darwin/linux × amd64/arm64)
+  tek komutla, `CGO_ENABLED=0` sayesinde. Windows şimdilik hedef değil.
 
 Hayatta kalan tek Python: bir kerelik `migrate_vault.py` ve offline dataset/fine-tuning
 araçları. İkisi de binary'ye girmez.

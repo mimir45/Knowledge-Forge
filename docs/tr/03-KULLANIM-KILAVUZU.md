@@ -46,7 +46,7 @@ forge recall --question "how does keyset pagination work" --explain
 | `make test` | Önce `CGO_ENABLED=1 go test ./...`, sonra `CGO_ENABLED=0 go build ./...`. **İkisi de gerekli.** |
 | `make bench` | Benchmark'lar. |
 | `make vet` / `make fmt` / `make lint` | `go vet`; `gofmt`; `gofmt`-as-a-gate + `go vet`. |
-| `make dist` | Altı hedef: darwin/linux/windows × amd64/arm64. |
+| `make dist` | Dört hedef: darwin/linux × amd64/arm64. Windows şimdilik yok. |
 | `make checksums` | `bin/forge` shim'inin çalıştırmadan önce doğruladığı sha256'lar. |
 | `make install-hook` | Binary'yi `$HOME/.forge/bin/forge`'a kopyalar + `.sha256` pin'i yazar. |
 | `make clean` / `make help` | |

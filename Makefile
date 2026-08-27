@@ -13,7 +13,7 @@ DIST     := dist
 VERSION  ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 COMMIT   ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo none)
 LDFLAGS  := -s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT)
-PLATFORMS := darwin/amd64 darwin/arm64 linux/amd64 linux/arm64 windows/amd64 windows/arm64
+PLATFORMS := darwin/amd64 darwin/arm64 linux/amd64 linux/arm64
 
 .PHONY: all build full test bench vet fmt lint dist checksums install-hook clean help
 
@@ -48,15 +48,14 @@ lint:
 	@out=$$(gofmt -l pkg cmd); if [ -n "$$out" ]; then echo "gofmt:"; echo "$$out"; exit 1; fi
 	go vet ./...
 
-## dist: the portable matrix — six targets, reproducible from any host
+## dist: the portable matrix — four targets, reproducible from any host
 dist: clean
 	@mkdir -p $(DIST)
 	@for p in $(PLATFORMS); do \
-		os=$${p%/*}; arch=$${p#*/}; ext=""; \
-		[ "$$os" = windows ] && ext=".exe"; \
+		os=$${p%/*}; arch=$${p#*/}; \
 		echo "  $$os/$$arch"; \
 		CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch \
-			go build -ldflags '$(LDFLAGS)' -o $(DIST)/$(BIN)-$$os-$$arch$$ext $(PKG) || exit 1; \
+			go build -ldflags '$(LDFLAGS)' -o $(DIST)/$(BIN)-$$os-$$arch $(PKG) || exit 1; \
 	done
 	@$(MAKE) --no-print-directory checksums
 
