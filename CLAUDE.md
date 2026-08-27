@@ -580,6 +580,36 @@ untouched, `score.go` untouched (`idf(0,n)==0` intact), `neighbour-labels.txt` u
 not moved. See BACKLOG.md's B-036 closing section for the full measurement and diff
 detail.
 
+**B-037's wide-sweep half ran 2026-08-27, out-of-phase, on
+`worktree-b-037-intent-gate-plan` — planned and executed the same day, and it stays
+open.** `docs/TODO.md` got a PLANNED six-field section, scoped by user decision to only
+one of B-037's two named unblock paths (widen the labelled corpus, not the targeted
+[0.407, 0.443] band). `cmd/forge/testdata/intent-gate-labels.txt` widened 25 → 50 prompts
+(10 → 20 FIRE, 15 → 30 QUIET), written from `examples/vault`'s note titles before any score
+on the new batch was measured — the same discipline `query-ecosystems.txt` used ahead of
+B-036's rescoring, landing in its own commit ahead of the golden regeneration so the
+ordering is checkable in git history. The ten new FIRE prompts and fifteen new QUIET
+prompts target nine ecosystems the original 25 under-represented: Keycloak+JWT, Liquibase,
+DDD/hexagonal/CQRS, MapStruct, Spring Security beyond `@Value`, Docker init-container
+sequencing, Spring Boot 4 breaking changes, Storybook+Next.js, Continue.dev config
+precedence. **The margin came back unchanged: lowest FIRE 0.407, highest QUIET 0.443,
+margin -0.036, byte-identical to the pre-widening measurement** — none of the new FIRE
+prompts scored below the old lowest FIRE and none of the new QUIET prompts scored above the
+old highest QUIET, across twice the sample and nine more ecosystems. That rules out "this
+is the original 25-prompt sample's noise" without resolving the item: the band's width is
+stable, not growing, and the gate (0.50, untouched) still clears it with the same 0.057 of
+room. `minFireAdmitted` was rescaled 8 → 16 (`cmd/forge/intent_gate_test.go`) — the widened
+set measures 16/20 FIRE admitted and 0/30 QUIET admitted, the same 80%/0% the original 8/10
+and 0/15 measured, so 16 keeps pinning what's true today rather than silently loosening the
+tripwire. Verified: both build lanes green, `pkg/recall` untouched, `calibration.golden`
+and both neighbour goldens untouched (no `-update` run on either). **B-037's plan section
+was dropped from `docs/TODO.md` per the file's own rule (done work is removed, not left as
+a stale PLANNED entry) and the item moved back to NO STEPS, narrowed to its one remaining
+path** — more labelled prompts written specifically inside [0.407, 0.443], which this
+session deliberately did not attempt, since guessing a prompt's score before writing it
+would make that measurement unfalsifiable. See BACKLOG.md's B-037 measurement note for the
+full table.
+
 **B-022 closed in Phase 4**
 (the schema pattern now covers all nine `cfg.Pipeline` stages minus `critique`); **B-007
 closed in Phase 4** (`agents/forge-librarian.md`'s prompt stamps `Forge-Write: true` on
@@ -714,10 +744,12 @@ above). **B-036 measured, then closed, both 2026-08-26** — unlike B-031, its h
 *did* survive measurement once read against the right denominator (a corrected reading,
 after a wrong one briefly landed the same day), and the widened-`Rank`-window fix shipped
 the same day once its ecosystem-label prerequisite landed (see the Status note above).
-**`docs/TODO.md`'s PLANNED class stays empty** — B-037 and B-038 are NO STEPS by their own
-argument, each naming a measurement to run before any design is chosen; so nothing in
-BACKLOG's open list currently has a six-field plan to execute; the next phase or
-out-of-phase item starts by writing one.
+**`docs/TODO.md`'s PLANNED class is empty again, not still empty** — B-037 briefly had a
+PLANNED section on 2026-08-27, scoped to measurement only, ran the same day, and was
+dropped per the file's own rule once its "Done when" was met (see the Status note above).
+B-037 and B-038 are both back to NO STEPS by their own argument, each naming a measurement
+to run before any design is chosen; so nothing in BACKLOG's open list currently has a
+six-field plan to execute; the next phase or out-of-phase item starts by writing one.
 
 **`docs/TODO.md` is the execution half of that file** (written 2026-08-23). BACKLOG records
 *why* an item exists; TODO records *how to close it* — a six-field plan (anchors,

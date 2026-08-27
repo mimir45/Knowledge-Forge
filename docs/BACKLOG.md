@@ -2193,6 +2193,78 @@ at-most-10 contract unchanged (`Rank` provably byte-identical), the 0.150 floor 
 
 ---
 
+## B-037 — `forge intent`'s FIRE/QUIET margin went negative under B-032's scale
+
+**Owner: unassigned. Status: open — opened 2026-08-23 while closing B-032.**
+
+B-032 moved `blend`'s denominator, which shifted every score in `cmd/forge/testdata/
+intent-gate.golden`. `TestIntentGateSeparation`'s two pinned invariants still hold
+mechanically — the gate (0.50) admits zero QUIET prompts and at least `minFireAdmitted`
+FIRE prompts, both unchanged counts — because the gate sits above the whole overlapping
+score band, not inside it. What changed is the *reason* 0.50 is safe: B-033's derivation
+argued it as "the lowest value still a clear step above the QUIET ceiling," a margin
+argument, and that margin — the lowest gate-admitted-relevant FIRE prompt's score minus the
+highest QUIET prompt's score, read literally across the full labelled set rather than just
+at the gate — went from +0.005 (pre-B-032) to **-0.036**: lowest FIRE 0.407, highest QUIET
+0.443. Somewhere in [0.407, 0.443] a FIRE prompt and a QUIET prompt trade places by score,
+so no single threshold separates the two labelled sets everywhere, only above 0.443
+specifically. 0.50 clears 0.443 with room (0.057), so nothing is mis-admitted today.
+
+**Do not respond to this by moving the gate.** 0.50 is still measured safe against every
+labelled prompt on file; a margin turning negative in a data slice the gate doesn't
+actually sit inside is a reason to get more data, not a reason to re-derive a number that
+isn't failing.
+
+`docs/TODO.md` named two unblock paths and chose neither at the time: more labelled prompts
+targeted at the [0.407, 0.443] overlap band, or a wider sweep of `examples/vault` prompts
+the way `neighbour-labels.txt` widened B-033's evidence past nine queries.
+
+### Measured 2026-08-27, out-of-phase, on `worktree-b-037-intent-gate-plan` — the
+wide-sweep path, chosen by user decision. **Still open — the -0.036 finding replicates,
+unchanged, at twice the sample.**
+
+`docs/TODO.md`'s PLANNED plan for this item covered only the wide-sweep half of the two
+named unblock paths. `cmd/forge/testdata/intent-gate-labels.txt` widened 25 → 50 prompts
+(10 → 20 FIRE, 15 → 30 QUIET), written from `examples/vault`'s note titles **before any
+score on the new batch was measured** — the same discipline `query-ecosystems.txt` used
+ahead of B-036's rescoring, in its own commit ahead of the golden regeneration so the
+ordering is checkable in git history. The ten new FIRE prompts and fifteen new QUIET
+prompts deliberately target nine ecosystems the original 25 under-represented: Keycloak+JWT,
+Liquibase, DDD/hexagonal/CQRS, MapStruct, Spring Security beyond `@Value`, Docker
+init-container sequencing, Spring Boot 4 breaking changes, Storybook+Next.js, and
+Continue.dev config precedence.
+
+**The margin did not move: lowest FIRE 0.407, highest QUIET 0.443, margin -0.036 —
+byte-identical to the pre-widening measurement.** None of the ten new FIRE prompts scored
+below the original lowest FIRE (`why does @Value not work for a YAML list in Spring Boot`,
+0.407); none of the fifteen new QUIET prompts scored above the original highest QUIET
+(`Testcontainers reuse across test classes in Spring Boot`, 0.443) — across nine additional
+ecosystems and twice the sample. This is the answer the original unblock condition asked
+for: it rules out "this is this 25-prompt sample's noise," because the same two prompts
+still define both edges of the band at 50. It does not show the overlap *growing* either —
+the band's width is stable, not expanding, as the corpus grows.
+
+`minFireAdmitted` was rescaled 8 → 16 (`cmd/forge/intent_gate_test.go`), proportionally, not
+loosened: the widened set measures 16/20 FIRE admitted, the same 80% the original 8/10
+measured, and 0/30 QUIET admitted — the never-disturb invariant holds exactly, at twice the
+sample. Leaving the floor at 8 would have silently tolerated a regression down to 8/20 (40%)
+without failing the build, which is the exact failure shape B-033's original derivation
+built the floor to catch.
+
+**Verified:** `go test ./cmd/forge -run TestIntentGate` green under the rescaled floor;
+`go test ./...` green on both `CGO_ENABLED=0` and `CGO_ENABLED=1`; `pkg/recall` untouched;
+`calibration.golden`, `neighbour-sweep.golden` and `neighbour-frequency.golden` untouched
+(no `-update` run on any of them); `intentGate` (0.50) untouched.
+
+**This closes the wide-sweep half of the original unblock condition, not the item.** The
+finding is now measured at 2x scale rather than assumed to be sample noise, which is new
+information — but B-037's own standing rule is unchanged by it: nothing is mis-admitted
+today, so this is not a reason to move the gate. The targeted-boundary-sampling alternative
+(more labelled prompts specifically inside [0.407, 0.443]) is still untouched and is the
+next thing to run if the question is "does a real FIRE/QUIET pair exist inside the band
+itself, not just at its edges" — the wide sweep answered "does the band's width hold at
+scale," not that.
+
 ## B-038 — `bodyPass`'s top-20 window is allocated by path, not by relevance
 
 **Owner: unassigned. Status: open — split out of B-031 on 2026-08-24, deliberately.**
