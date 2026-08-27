@@ -206,6 +206,12 @@ fixture vault only.
 
 Everything else below is still design spec; **the roadmap is complete.**
 
+**`docs/RELEASE-READINESS.md` (2026-08-27) is the pre-release snapshot** — open backlog
+items, the two unverified release mechanics (shim download/checksum, `claude plugin
+marketplace add` from a clean machine, both blocked on the not-yet-cut tagged release),
+and pending PRs, in one place instead of scattered across this file's Status prose and
+`docs/BACKLOG.md`'s 2000+ lines. Read it before deciding what's left to do.
+
 **A defect-cleanup pass ran 2026-08-21 on `simplify/codebase-cleanup` — out-of-phase work,
 not a phase, and it does not reorder the roadmap.** It took the doc-sync and one-line tier
 of the open backlog and deliberately left the two items that need their own session.
