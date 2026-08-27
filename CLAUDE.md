@@ -610,6 +610,20 @@ session deliberately did not attempt, since guessing a prompt's score before wri
 would make that measurement unfalsifiable. See BACKLOG.md's B-037 measurement note for the
 full table.
 
+**Windows removed as a release target, 2026-08-27, out-of-phase, same worktree — direct
+user decision (`şimdilik`, "for now"), not a doc-coherence finding, so no `AUDIT.md` §8.4
+entry.** `Makefile`'s `PLATFORMS` and the `dist` target's `.exe`-suffix branch, and
+`.goreleaser.yml`'s `goos` list and `format_overrides` block, all drop `windows` — `make
+dist` now produces exactly four binaries (darwin/linux × amd64/arm64), verified by running
+it. Two Turkish user-guide lines describing `make dist`'s live behavior were corrected to
+match. Deliberately left alone: `STACK.md`'s cross-compile-capability rationale and cgo-
+options discussion (capability claims, not a release-target list), the historical phase-6
+execution prompt (`CLAUDE-CODE-PROMPT.md`, `STACK.md`'s duplicate of it — B-034's
+precedent), and every CRLF/BOM-normalization mention of "Windows" in `pkg/config` and its
+Turkish doc — that's parsing robustness for any editor, not shipped platform support.
+`bin/forge` is POSIX `sh` and never had a Windows branch. See BACKLOG.md's B-039 for the
+full record and the revert steps.
+
 **B-022 closed in Phase 4**
 (the schema pattern now covers all nine `cfg.Pipeline` stages minus `critique`); **B-007
 closed in Phase 4** (`agents/forge-librarian.md`'s prompt stamps `Forge-Write: true` on

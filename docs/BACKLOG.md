@@ -2318,3 +2318,40 @@ constraint before anyone has shown the wider window changes an actual verdict.
 Related: split from **B-031**, which established the row that surfaced this but is closed
 on its own terms — see its BACKLOG closing section.
 
+---
+
+## B-039 — Windows release targets removed, 2026-08-27, by user decision (`şimdilik`, "for now")
+
+**Owner: unassigned. Status: closed at open — this is a record of a reversible cut, not
+a defect.** Out-of-phase, direct user request (not a doc-coherence finding, so no
+`AUDIT.md` §8.4 entry — §8.4 is for a decision permanently superseded by a later ruling;
+this is a scope cut the user may reverse).
+
+`windows` dropped from the actual build/release surface:
+`Makefile:16`'s `PLATFORMS` (was `darwin/amd64 darwin/arm64 linux/amd64 linux/arm64
+windows/amd64 windows/arm64`, now the first four only), the now-dead `.exe`-suffix branch
+in the `dist` target, and `.goreleaser.yml`'s `goos` list plus its now-unreachable
+`format_overrides: [{goos: windows, formats: [zip]}]` block. `make dist` verified: exactly
+four binaries in `dist/`, none `.exe`, `checksums.txt` lists four. Two Turkish
+user-guide lines describing `make dist`'s live behavior were corrected to match
+(`docs/tr/03-KULLANIM-KILAVUZU.md:49`, `docs/tr/01-FIKIR.md:291`) — same shape as B-027
+(a doc naming something that isn't there), not B-033's (a superseded decision).
+
+**Deliberately left alone**, per the discriminator this repo already uses for design docs
+vs. live behavior: `docs/KNOWLEDGE-FORGE-STACK.md:72` (Go's cross-compile *capability* as
+a reason to pick Go — stays true whether an artifact ships) and `:133` (one of three cgo
+options considered, already superseded by the shipped portable-only goreleaser config);
+`docs/CLAUDE-CODE-PROMPT.md:255` and `STACK.md:323` (the historical phase-6 execution
+prompt — B-034's precedent: a dated planning snapshot isn't a living spec). Also left
+alone, because it isn't Windows-*support* at all: `pkg/config/load.go:154` and
+`pkg/config/chain_test.go:215`'s CRLF/BOM normalization (a markdown config can arrive CRLF
+from any editor, not specifically a shipped Windows binary) and `docs/tr/02-MIMARI.md:177`,
+the Turkish description of the same. `bin/forge` is POSIX `sh` and never had a Windows
+branch to remove.
+
+**To restore Windows as a release target:** re-add `windows/amd64 windows/arm64` to
+`Makefile:16`'s `PLATFORMS`, restore the `ext=".exe"` branch and `$$ext` suffix in `dist`,
+add `windows` back to `.goreleaser.yml`'s `goos` list, and restore the `format_overrides`
+block (`goos: windows` → `formats: [zip]`, since a bare `.exe` in a `.tar.gz` is not the
+convention). No other file needs touching.
+
