@@ -580,6 +580,25 @@ untouched, `score.go` untouched (`idf(0,n)==0` intact), `neighbour-labels.txt` u
 not moved. See BACKLOG.md's B-036 closing section for the full measurement and diff
 detail.
 
+**B-025 closed 2026-08-28, same worktree, out-of-phase — the unblock condition was
+observation, not another documentation lookup.** The three earlier attempts had all
+WebFetched Claude Code's own doc pages looking for a written schema; the entry's own
+unblock trigger asked for a live hook payload instead, which is a different action. A
+throwaway diagnostic `PostToolUse`/`WebFetch` hook (`cat > /tmp/webfetch-payload.json`)
+could not be wired from inside the session it was meant to observe — the auto-mode
+classifier correctly refused that settings-file write as self-granting — so a human added
+it to the main checkout's `.claude/settings.json` (not the worktree's), and it fired
+anyway on the next live `WebFetch` call: project-level hook config does not care which
+worktree a session is cd'd into. Confirmed shape: `tool_response` is an object
+`{result, url, code, codeText, bytes, durationMs}`; `result` carries the fetched text —
+neither of the entry's own guessed field names (`content`, `text`) was right. `cacheBody`
+(`cmd/forge/cache_source.go`) now decodes into `map[string]json.RawMessage` and looks up
+`"result"` by key, deliberately not a fixed struct, so a present-but-empty result stays
+distinguishable from an absent one; two fallbacks (bare string, raw bytes) are unchanged in
+spirit for any shape that isn't this one. Two new tests pin the real shape and the
+empty-result edge case; all four existing `cache_source_test.go` tests pass unmodified.
+Both build lanes green. See BACKLOG.md's B-025 closing section.
+
 **B-022 closed in Phase 4**
 (the schema pattern now covers all nine `cfg.Pipeline` stages minus `critique`); **B-007
 closed in Phase 4** (`agents/forge-librarian.md`'s prompt stamps `Forge-Write: true` on
@@ -698,7 +717,8 @@ time runs out the cut order is `6b → 5b → advisor tier`. If work comes up ou
 current phase's scope, write it to `docs/BACKLOG.md` rather than building it.
 
 **Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004, **B-037**, **B-038** and
-most of the twelve findings 2b recorded are open; **B-025 is blocked**, not open. B-001 (doc coherence), B-005 (seven note types) and
+most of the twelve findings 2b recorded are open. **B-025 closed 2026-08-28** (see the
+Status note above) — it was blocked, not open, until then. B-001 (doc coherence), B-005 (seven note types) and
 B-006 (link rewrite) closed on 2026-08-09; B-007 and B-022 in Phase 4; B-009 and B-024 on
 2026-08-21, when B-023 and B-027 were also half-closed (docs synced, the behavior/design-doc
 halves still open); **B-008 on 2026-08-22**, which opened B-031/B-032/B-033 in its place;

@@ -931,9 +931,9 @@ the five entries in that `capture:` list are read by no code at all.
 
 ## B-025 — `forge cache-source`'s `PostToolUse`/WebFetch `tool_response` JSON shape is unconfirmed
 
-**Owner: whoever next touches `cmd/forge/cache_source.go`. Status: BLOCKED on external
-confirmation, not open work — re-triaged 2026-08-21. Originally found while building
-Phase 5's five hook subcommands.**
+**Owner: whoever next touches `cmd/forge/cache_source.go`. Status: closed 2026-08-28 — see
+the closure note below. Was BLOCKED on external confirmation, re-triaged 2026-08-21.
+Originally found while building Phase 5's five hook subcommands.**
 
 **Do not re-attempt the WebFetch.** Three tries against two official doc pages already
 failed (below); a fourth is not new evidence. The trigger that unblocks this is
@@ -960,6 +960,45 @@ it never silently drops data or asserts a false schema. If a future session conf
 real shape (e.g. by inspecting a live `.claude/settings.json` hook firing against a real
 WebFetch call), `cacheBody` should be updated to extract the actual text field instead of
 caching the wrapper JSON.
+
+### Closed 2026-08-28. The unblock condition was exactly what the entry said: observation.
+
+Not a doc-page WebFetch — the three earlier attempts asked the wrong question. The real
+unblock came from wiring a throwaway diagnostic `PostToolUse`/`WebFetch` hook (`cat >
+/tmp/webfetch-payload.json`) into a live `.claude/settings.local.json` and firing one real
+`WebFetch` call, then reading what Claude Code actually sent. Two things worth recording
+about *how*, not just what: the diagnostic hook could not be wired from inside the same
+session it was meant to observe — Claude Code's own auto-mode classifier refused the
+settings-file write, correctly, since a session editing its own hook config is exactly the
+self-granting change that guard exists to catch — so a human added it directly, outside the
+sandboxed session. Second, it was added to the **main checkout's** `.claude/settings.json`
+while this session ran in a worktree, and the hook fired anyway — project-level hook config
+resolves independent of which worktree a session happens to be cd'd into.
+
+**Confirmed shape**, captured live 2026-08-28 against `https://example.com`:
+
+```json
+"tool_response": {"bytes":559,"code":200,"codeText":"OK",
+  "result":"<the fetched/summarized text>","durationMs":1516,"url":"https://example.com"}
+```
+
+An object, as guessed, but the field is **`result`** — neither of the two names this entry
+itself speculated (`content`, `text`) was right. `bytes`/`code`/`codeText`/`durationMs`/`url`
+are wrapper metadata the cache must not leak into the body.
+
+`cacheBody` (`cmd/forge/cache_source.go`) now decodes `tool_response` into
+`map[string]json.RawMessage` and looks up `"result"` by key — not a fixed struct — so a
+present-but-empty result (`""`, a real fetch outcome) is still correctly extracted rather
+than falling through to the wrapper fallback; a struct-only decode can't distinguish "key
+absent" from "key present, empty string" without extra bookkeeping the map avoids for free.
+Two fallbacks are unchanged in spirit from before: a bare JSON string (in case the shape
+ever simplifies) and, failing that, the raw bytes verbatim — so an unrecognized shape is
+still never silently dropped. Two new tests pin the real shape:
+`TestCacheSourceExtractsResultField` (result extracted, wrapper fields absent from the
+cached body) and `TestCacheSourceEmptyResultStillExtracted` (the map-decode choice, not the
+struct-decode alternative that would have missed this). Existing tests (string body, object
+without a `result` key, non-WebFetch skip, fail-silent-on-malformed-stdin) all pass
+unmodified. Both build lanes green.
 
 ---
 
