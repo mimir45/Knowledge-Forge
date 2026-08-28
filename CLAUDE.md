@@ -206,6 +206,12 @@ fixture vault only.
 
 Everything else below is still design spec; **the roadmap is complete.**
 
+**`docs/RELEASE-READINESS.md` (2026-08-27) is the pre-release snapshot** — open backlog
+items, the two unverified release mechanics (shim download/checksum, `claude plugin
+marketplace add` from a clean machine, both blocked on the not-yet-cut tagged release),
+and pending PRs, in one place instead of scattered across this file's Status prose and
+`docs/BACKLOG.md`'s 2000+ lines. Read it before deciding what's left to do.
+
 **A defect-cleanup pass ran 2026-08-21 on `simplify/codebase-cleanup` — out-of-phase work,
 not a phase, and it does not reorder the roadmap.** It took the doc-sync and one-line tier
 of the open backlog and deliberately left the two items that need their own session.
@@ -580,24 +586,49 @@ untouched, `score.go` untouched (`idf(0,n)==0` intact), `neighbour-labels.txt` u
 not moved. See BACKLOG.md's B-036 closing section for the full measurement and diff
 detail.
 
-**B-025 closed 2026-08-28, same worktree, out-of-phase — the unblock condition was
-observation, not another documentation lookup.** The three earlier attempts had all
-WebFetched Claude Code's own doc pages looking for a written schema; the entry's own
-unblock trigger asked for a live hook payload instead, which is a different action. A
-throwaway diagnostic `PostToolUse`/`WebFetch` hook (`cat > /tmp/webfetch-payload.json`)
-could not be wired from inside the session it was meant to observe — the auto-mode
-classifier correctly refused that settings-file write as self-granting — so a human added
-it to the main checkout's `.claude/settings.json` (not the worktree's), and it fired
-anyway on the next live `WebFetch` call: project-level hook config does not care which
-worktree a session is cd'd into. Confirmed shape: `tool_response` is an object
-`{result, url, code, codeText, bytes, durationMs}`; `result` carries the fetched text —
-neither of the entry's own guessed field names (`content`, `text`) was right. `cacheBody`
-(`cmd/forge/cache_source.go`) now decodes into `map[string]json.RawMessage` and looks up
-`"result"` by key, deliberately not a fixed struct, so a present-but-empty result stays
-distinguishable from an absent one; two fallbacks (bare string, raw bytes) are unchanged in
-spirit for any shape that isn't this one. Two new tests pin the real shape and the
-empty-result edge case; all four existing `cache_source_test.go` tests pass unmodified.
-Both build lanes green. See BACKLOG.md's B-025 closing section.
+**B-037's wide-sweep half ran 2026-08-27, out-of-phase, on
+`worktree-b-037-intent-gate-plan` — planned and executed the same day, and it stays
+open.** `docs/TODO.md` got a PLANNED six-field section, scoped by user decision to only
+one of B-037's two named unblock paths (widen the labelled corpus, not the targeted
+[0.407, 0.443] band). `cmd/forge/testdata/intent-gate-labels.txt` widened 25 → 50 prompts
+(10 → 20 FIRE, 15 → 30 QUIET), written from `examples/vault`'s note titles before any score
+on the new batch was measured — the same discipline `query-ecosystems.txt` used ahead of
+B-036's rescoring, landing in its own commit ahead of the golden regeneration so the
+ordering is checkable in git history. The ten new FIRE prompts and fifteen new QUIET
+prompts target nine ecosystems the original 25 under-represented: Keycloak+JWT, Liquibase,
+DDD/hexagonal/CQRS, MapStruct, Spring Security beyond `@Value`, Docker init-container
+sequencing, Spring Boot 4 breaking changes, Storybook+Next.js, Continue.dev config
+precedence. **The margin came back unchanged: lowest FIRE 0.407, highest QUIET 0.443,
+margin -0.036, byte-identical to the pre-widening measurement** — none of the new FIRE
+prompts scored below the old lowest FIRE and none of the new QUIET prompts scored above the
+old highest QUIET, across twice the sample and nine more ecosystems. That rules out "this
+is the original 25-prompt sample's noise" without resolving the item: the band's width is
+stable, not growing, and the gate (0.50, untouched) still clears it with the same 0.057 of
+room. `minFireAdmitted` was rescaled 8 → 16 (`cmd/forge/intent_gate_test.go`) — the widened
+set measures 16/20 FIRE admitted and 0/30 QUIET admitted, the same 80%/0% the original 8/10
+and 0/15 measured, so 16 keeps pinning what's true today rather than silently loosening the
+tripwire. Verified: both build lanes green, `pkg/recall` untouched, `calibration.golden`
+and both neighbour goldens untouched (no `-update` run on either). **B-037's plan section
+was dropped from `docs/TODO.md` per the file's own rule (done work is removed, not left as
+a stale PLANNED entry) and the item moved back to NO STEPS, narrowed to its one remaining
+path** — more labelled prompts written specifically inside [0.407, 0.443], which this
+session deliberately did not attempt, since guessing a prompt's score before writing it
+would make that measurement unfalsifiable. See BACKLOG.md's B-037 measurement note for the
+full table.
+
+**Windows removed as a release target, 2026-08-27, out-of-phase, same worktree — direct
+user decision (`şimdilik`, "for now"), not a doc-coherence finding, so no `AUDIT.md` §8.4
+entry.** `Makefile`'s `PLATFORMS` and the `dist` target's `.exe`-suffix branch, and
+`.goreleaser.yml`'s `goos` list and `format_overrides` block, all drop `windows` — `make
+dist` now produces exactly four binaries (darwin/linux × amd64/arm64), verified by running
+it. Two Turkish user-guide lines describing `make dist`'s live behavior were corrected to
+match. Deliberately left alone: `STACK.md`'s cross-compile-capability rationale and cgo-
+options discussion (capability claims, not a release-target list), the historical phase-6
+execution prompt (`CLAUDE-CODE-PROMPT.md`, `STACK.md`'s duplicate of it — B-034's
+precedent), and every CRLF/BOM-normalization mention of "Windows" in `pkg/config` and its
+Turkish doc — that's parsing robustness for any editor, not shipped platform support.
+`bin/forge` is POSIX `sh` and never had a Windows branch. See BACKLOG.md's B-039 for the
+full record and the revert steps.
 
 **B-022 closed in Phase 4**
 (the schema pattern now covers all nine `cfg.Pipeline` stages minus `critique`); **B-007
@@ -717,8 +748,7 @@ time runs out the cut order is `6b → 5b → advisor tier`. If work comes up ou
 current phase's scope, write it to `docs/BACKLOG.md` rather than building it.
 
 **Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004, **B-037**, **B-038** and
-most of the twelve findings 2b recorded are open. **B-025 closed 2026-08-28** (see the
-Status note above) — it was blocked, not open, until then. B-001 (doc coherence), B-005 (seven note types) and
+most of the twelve findings 2b recorded are open; **B-025 is blocked**, not open. B-001 (doc coherence), B-005 (seven note types) and
 B-006 (link rewrite) closed on 2026-08-09; B-007 and B-022 in Phase 4; B-009 and B-024 on
 2026-08-21, when B-023 and B-027 were also half-closed (docs synced, the behavior/design-doc
 halves still open); **B-008 on 2026-08-22**, which opened B-031/B-032/B-033 in its place;
@@ -734,10 +764,12 @@ above). **B-036 measured, then closed, both 2026-08-26** — unlike B-031, its h
 *did* survive measurement once read against the right denominator (a corrected reading,
 after a wrong one briefly landed the same day), and the widened-`Rank`-window fix shipped
 the same day once its ecosystem-label prerequisite landed (see the Status note above).
-**`docs/TODO.md`'s PLANNED class stays empty** — B-037 and B-038 are NO STEPS by their own
-argument, each naming a measurement to run before any design is chosen; so nothing in
-BACKLOG's open list currently has a six-field plan to execute; the next phase or
-out-of-phase item starts by writing one.
+**`docs/TODO.md`'s PLANNED class is empty again, not still empty** — B-037 briefly had a
+PLANNED section on 2026-08-27, scoped to measurement only, ran the same day, and was
+dropped per the file's own rule once its "Done when" was met (see the Status note above).
+B-037 and B-038 are both back to NO STEPS by their own argument, each naming a measurement
+to run before any design is chosen; so nothing in BACKLOG's open list currently has a
+six-field plan to execute; the next phase or out-of-phase item starts by writing one.
 
 **`docs/TODO.md` is the execution half of that file** (written 2026-08-23). BACKLOG records
 *why* an item exists; TODO records *how to close it* — a six-field plan (anchors,

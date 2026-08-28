@@ -1,32 +1,57 @@
-Intent gate: 0.50. Corpus ../../examples/vault, 25 prompts.
+Intent gate: 0.50. Corpus ../../examples/vault, 50 prompts.
 
 | Score | Class | Admitted | Prompt |
 |---|---|---|---|
 | 1.000 | FIRE | true | what is the transactional outbox pattern |
 | 0.950 | FIRE | true | how does the saga pattern work with choreography |
+| 0.827 | FIRE | true | what is CQRS and how does it relate to event-driven messaging |
+| 0.827 | FIRE | true | what's the difference between hexagonal architecture ports and adapters |
 | 0.780 | FIRE | true | Testcontainers HTTP 400 from the Docker Desktop CLI socket |
 | 0.762 | FIRE | true | why is Continue.dev sending zero requests to llama.cpp |
 | 0.738 | FIRE | true | why does Qwen3 return a blank response in Continue.dev |
 | 0.729 | FIRE | true | how does keyset pagination work |
 | 0.652 | FIRE | true | what does the Storybook decorator pattern do for Redux providers |
+| 0.651 | FIRE | true | why is MapStruct warning about unmapped target properties |
+| 0.643 | FIRE | true | why does Storybook with Next.js App Router need appDirectory true |
+| 0.624 | FIRE | true | what breaking changes does Spring Boot 4 introduce for artifact renames and test modules |
+| 0.596 | FIRE | true | what does @PreAuthorize do for Spring Security method-level access control |
 | 0.576 | FIRE | true | why did IntelliJ lose src/test/java as a test sources root |
+| 0.510 | FIRE | true | why does Continue.dev's config.ts silently override config.json |
+| 0.500 | FIRE | true | why did Spring Boot Initializr generate spring-boot-starter-webmvc instead of spring-boot-starter-web |
+| 0.487 | FIRE | false | how do I set up Keycloak Google social login with Nimbus JWT |
+| 0.479 | FIRE | false | why does docker-compose need health-gated init containers for sequencing |
 | 0.464 | FIRE | false | why do I need saveAndFlush to get a creation timestamp |
 | 0.443 | QUIET | false | Testcontainers reuse across test classes in Spring Boot |
+| 0.409 | QUIET | false | Continue.dev remote model provider authentication setup |
 | 0.407 | FIRE | false | why does @Value not work for a YAML list in Spring Boot |
 | 0.402 | QUIET | false | Kafka consumer group rebalancing in an event driven system |
 | 0.381 | QUIET | false | Docker Compose healthcheck for a Postgres service |
+| 0.352 | QUIET | false | event sourcing snapshotting strategy for CQRS aggregates |
 | 0.326 | QUIET | false | Liquibase rollback strategy for a failed migration |
+| 0.326 | QUIET | false | Keycloak custom login theme customization |
 | 0.323 | QUIET | false | Storybook accessibility addon for component checks |
 | 0.308 | QUIET | false | Binding a nested YAML list into a Spring Boot configuration record |
+| 0.308 | QUIET | false | Spring Boot Actuator health check endpoint customization |
 | 0.292 | QUIET | false | React hook for detecting clicks outside a dropdown |
+| 0.292 | QUIET | false | Spring Security custom AccessDecisionVoter for role hierarchies |
 | 0.289 | QUIET | false | how do I rename a file in bash |
 | 0.270 | QUIET | false | Maven multi module build with a shared parent pom |
+| 0.250 | QUIET | false | how do I configure nginx as a reverse proxy |
+| 0.240 | QUIET | false | how do I reverse a linked list in place |
+| 0.205 | QUIET | false | Liquibase changelog authoring best practices for large teams |
+| 0.204 | QUIET | false | RAG chunking strategy for long documents |
 | 0.201 | QUIET | false | Spring Data JPA pagination with sorting on multiple columns |
 | 0.195 | QUIET | false | Keycloak client scopes and custom claim mappers |
+| 0.183 | QUIET | false | MapStruct custom converter for nested DTO mapping |
+| 0.173 | QUIET | false | DDD bounded context mapping between two microservices |
+| 0.170 | QUIET | false | Docker multi-stage build caching strategies |
 | 0.158 | QUIET | false | how do I set up a Kubernetes ingress with cert-manager |
 | 0.080 | QUIET | false | write a regex that matches an email address |
 | 0.067 | QUIET | false | what is the time complexity of quicksort |
+| 0.050 | QUIET | false | how do I center a div with CSS flexbox |
+| 0.033 | QUIET | false | what is the CAP theorem in distributed systems |
 | 0.022 | QUIET | false | what is the difference between a mutex and a semaphore |
+| 0.022 | QUIET | false | what's the difference between TCP and UDP |
 
 Lowest FIRE 0.407, highest QUIET 0.443, margin -0.036 — every value from the top of
 QUIET to the old 0.7 is false-positive-free here, so this measurement rules out

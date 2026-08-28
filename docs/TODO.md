@@ -18,7 +18,12 @@ past the old `TopN=10` cliff. A short-lived B-039, opened on the wrong-denominat
 was retracted outright — see BACKLOG.md's B-036 closing note for the full correction and
 the closure itself, including why the "no code change" and "B-039" text both briefly
 existed here before being reverted. Anchors were verified against the tree at that date;
-re-grep before trusting a line number.
+re-grep before trusting a line number. **B-037 got a PLANNED section 2026-08-27, ran the
+same day, and was dropped back to NO STEPS the same day** — same shape as B-036's own
+measure-then-done arc, just without a design at the end of it. The wide-sweep half of its
+two named unblock paths ran (widen `intent-gate-labels.txt`, per user decision); the margin
+came back unchanged at -0.036, which rules out sample noise but doesn't resolve the item —
+see BACKLOG's B-037 measurement note and its NO STEPS section below for what's left.
 **Closed and recorded items are dropped from this file
 entirely, not just their plan sections** — `docs/BACKLOG.md` is the full census (every ID,
 closed or open, with the reasoning) and the durable record of *why*; this file exists only
@@ -30,16 +35,19 @@ up in BACKLOG.
 Not every open backlog item can take a plan, and the absence of steps below is a decision,
 not an oversight:
 
-- **PLANNED** — workable, has a full six-field section in this file. **None written yet.**
-  B-034 (2026-08-25) was the last of the eight: B-029, B-027, B-033, B-032, B-023, B-031,
-  B-015 and B-035 closed 2026-08-23/24/25 before it. B-033's closure opened B-036 and
-  B-032's opened B-037. **B-036 closed 2026-08-26** (measured, then designed and shipped
-  the same day — see its BACKLOG entry) without ever getting a PLANNED write-up here: the
-  design was scoped and low-risk enough (widen `Rank`'s internal window, one new constant,
-  two new functions, three golden regenerations) to go straight from measurement to
-  implementation once its ecosystem-label prerequisite landed. B-037/B-038 are still NO
-  STEPS by their own argument, each naming a measurement to run before any design is
-  chosen.
+- **PLANNED** — workable, has a full six-field section in this file. **None right now.**
+  B-034 (2026-08-25) was the last of the prior eight: B-029, B-027, B-033, B-032, B-023,
+  B-031, B-015 and B-035 closed 2026-08-23/24/25 before it. B-033's closure opened B-036
+  and B-032's opened B-037. **B-036 closed 2026-08-26** (measured, then designed and
+  shipped the same day — see its BACKLOG entry) without ever getting a PLANNED write-up
+  here: the design was scoped and low-risk enough (widen `Rank`'s internal window, one new
+  constant, two new functions, three golden regenerations) to go straight from measurement
+  to implementation once its ecosystem-label prerequisite landed. **B-037 got a PLANNED
+  section 2026-08-27, ran it the same day, and dropped back to NO STEPS** — its plan was
+  scoped to measurement only (widen the labelled corpus, re-measure the margin), never to
+  moving `intentGate`, and the margin came back unchanged, so there was no design to do.
+  B-038 is still NO STEPS by its own argument, naming a measurement to run before any
+  design is chosen.
 - **NO STEPS** — open but not actionable by an implementation session: blocked on external
   observation, or a user decision, or "record, don't fix" by standing rule. Listed with
   its unblock condition instead of steps.
@@ -52,14 +60,15 @@ closing note, not restated here.
 
 ---
 
-## Index — 5 open items (34 closed/recorded IDs live in BACKLOG only)
+## Index — 6 open items (33 closed/recorded IDs live in BACKLOG only)
 
 | ID | Subject | Class | Section |
 |---|---|---|---|
 | B-003 | Repo directory still named `TIL` | NO STEPS — user decision | [below](#no-steps) |
 | B-004 | Module path has no VCS host prefix | NO STEPS — deferred by decision | [below](#no-steps) |
 | B-012 | `code_refs` has no live producer | NO STEPS — blocked on packaging | [below](#no-steps) |
-| B-037 | Intent gate FIRE/QUIET margin now negative | NO STEPS — measure first | [below](#no-steps) |
+| B-025 | `PostToolUse`/WebFetch payload shape | NO STEPS — **BLOCKED** | [below](#no-steps) |
+| B-037 | Intent gate FIRE/QUIET margin now negative | NO STEPS — measure further (targeted band) | [below](#no-steps) |
 | B-038 | `bodyPass` window allocated by path, not relevance | NO STEPS — measure first | [below](#b-038--bodypasss-top-20-window-is-allocated-by-path-not-by-relevance) |
 
 **B-025 closed 2026-08-28** — the unblock condition was met by observation, not by moving
@@ -89,33 +98,30 @@ dispatches. Until then the field is documentation, every note reaches drift thro
 
 ## B-037 — `forge intent`'s FIRE/QUIET margin went negative under B-032's scale
 
-**Measure before touching the gate — it is not broken today, and that is the reason there
-is no plan below rather than a threshold nudge.** `cmd/forge/testdata/intent-gate.golden`:
-before B-032, the lowest gate-admitted FIRE prompt and the highest QUIET prompt separated
-by +0.005 (0.407 vs 0.402). After, they overlap: lowest FIRE 0.407, highest QUIET **0.443**,
-margin **-0.036**. `TestIntentGateSeparation`'s two pinned invariants both still hold
-mechanically — the gate (0.50) admits zero QUIET prompts and exactly `minFireAdmitted` (8)
-FIRE prompts, both unchanged counts — because the gate sits above the whole overlapping
-band (0.407–0.443), not inside it.
+**One of the two original unblock paths already ran — see BACKLOG's B-037 measurement
+note (2026-08-27).** `intent-gate-labels.txt` was widened 25 → 50 prompts (10 → 20 FIRE,
+15 → 30 QUIET), covering nine ecosystems the original set under-represented, and the
+margin came back byte-identical: lowest FIRE 0.407, highest QUIET 0.443, margin **-0.036**
+— the same two prompts still define both edges of the band at twice the sample. `intentGate`
+(0.50) was not moved; `minFireAdmitted` was rescaled 8 → 16 to keep pinning the measured
+80% admission rate rather than silently loosening.
 
-What changed is the *reason* 0.50 is safe. B-033's derivation argued it as "the lowest
-value still a clear step above the QUIET ceiling" — a margin argument. That margin, read
-literally across the full FIRE/QUIET split rather than just at the gate, is now negative:
-somewhere in [0.407, 0.443] a FIRE prompt and a QUIET prompt trade places by score, so no
-single threshold separates the two labelled sets everywhere, only above 0.443 specifically.
-0.50 clears 0.443 with room (0.057), so nothing is mis-admitted today.
+**What that answers and what it doesn't.** It rules out "the -0.036 finding is this
+25-prompt sample's noise" — a real, stable overlap band survives 2x the sample and nine
+more ecosystems. It does not answer whether a FIRE prompt and a QUIET prompt actually trade
+places *inside* [0.407, 0.443] on some as-yet-unwritten prompt, only that the band's outer
+edges haven't moved. Nothing is mis-admitted today either way — the gate (0.50) still
+clears the whole band with room (0.057).
 
-**Unblock condition:** either more labelled prompts on both sides of the overlap band, to
-tell whether -0.036 is this 25-prompt sample's noise or a real, growing overlap as more of
-the vault's tags/stack channels shift under B-032 — or a wider sweep of `examples/vault`
-prompts the way `neighbour-labels.txt` widened B-033's evidence past nine queries. Either
-answers whether 0.50 keeps clearing the band as the corpus grows, which this measurement
-alone cannot say.
+**Unblock condition, narrowed to what's left:** the other original path — more labelled
+prompts written specifically to land inside [0.407, 0.443] — has not run. Same discipline
+required: prompts written from the corpus's own topics before any score is measured, not
+chosen by guessing which score they'd get, which would make the result unfalsifiable.
 
-**Do not respond to this by moving the gate.** 0.50 is still measured safe against every
-labelled prompt on file; a margin turning negative in a data slice the gate doesn't
-actually sit inside is a reason to get more data, not a reason to re-derive a number that
-isn't failing.
+**Do not respond to this by moving the gate.** Still true after the wide sweep: 0.50 is
+measured safe against every labelled prompt on file, including the widened 50, and a stable
+overlap band the gate sits above is a reason to gather the remaining evidence, not to
+re-derive a number that isn't failing.
 
 ## B-038 — `bodyPass`'s top-20 window is allocated by path, not by relevance
 

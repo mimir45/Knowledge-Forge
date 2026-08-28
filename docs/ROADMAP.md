@@ -11,6 +11,10 @@
 > [`KNOWLEDGE-FORGE-B2B.md`](./KNOWLEDGE-FORGE-B2B.md) describes a **separate
 > project**, kept here only for reference/history — see "Sequencing notes"
 > below and BACKLOG B-021.
+>
+> The roadmap below is complete. For what's left before the first tagged release —
+> open backlog items, unverified release mechanics, pending PRs — see
+> [`RELEASE-READINESS.md`](./RELEASE-READINESS.md).
 
 ## What it is
 

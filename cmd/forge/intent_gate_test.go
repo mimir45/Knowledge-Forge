@@ -36,7 +36,14 @@ type intentPrompt struct {
 // B-008 moved the scale under it and nothing failed. A tripwire with slack in it would
 // have let that happen again more slowly. Any loss of recall stops the build and gets
 // argued about; that is the whole job.
-const minFireAdmitted = 8
+//
+// Rescaled 8 -> 16 by B-037's wide-sweep plan (docs/TODO.md), when
+// intent-gate-labels.txt widened 10 FIRE prompts -> 20. This is a proportional rescale,
+// not a loosened bar: the widened set measures 16/20 admitted, the same 80% the original
+// 8/10 measured, so 16 pins exactly what's true today, the same way 8 did. Leaving 8 in
+// place would have turned the tripwire into slack — 16 of 20 admitted would have passed
+// against a floor meant for 10, silently tolerating a real regression down to 8/20 (40%).
+const minFireAdmitted = 16
 
 // TestIntentGateSeparation asserts the two properties the gate promises, in the
 // asymmetric shape intent.go argues for: no QUIET prompt is ever admitted — that is the

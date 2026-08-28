@@ -42,3 +42,45 @@ QUIET: what is the time complexity of quicksort
 QUIET: write a regex that matches an email address
 QUIET: how do I set up a Kubernetes ingress with cert-manager
 QUIET: what is the difference between a mutex and a semaphore
+
+# --- Widened 2026-08-27, B-037's wide-sweep plan (docs/TODO.md) ---
+#
+# Same rule as above and as neighbour-labels.txt/query-ecosystems.txt: written from the
+# corpus's note titles/topics before any score was measured on this batch, targeting
+# ecosystems the original 25 under-represent (Keycloak+JWT, Liquibase, DDD/hexagonal/CQRS,
+# MapStruct, Spring Security beyond @Value, Docker init-container sequencing, Spring Boot 4
+# breaking changes, Storybook+Next.js, Continue.dev config precedence). None of these ten
+# FIRE prompts were chosen because of an expected score — each names an existing note this
+# corpus already answers, the same test the original ten pass.
+#
+# The new QUIET prompts split the same way as the original 15: ten adjacent-topic hard
+# negatives (a related note exists in the widened ecosystems above, but does not answer
+# this specific sub-question) and five off-corpus prompts in the same general-programming
+# register as the original five, on topics that appear nowhere in this vault.
+
+FIRE: what does @PreAuthorize do for Spring Security method-level access control
+FIRE: why is MapStruct warning about unmapped target properties
+FIRE: what is CQRS and how does it relate to event-driven messaging
+FIRE: what's the difference between hexagonal architecture ports and adapters
+FIRE: how do I set up Keycloak Google social login with Nimbus JWT
+FIRE: why does docker-compose need health-gated init containers for sequencing
+FIRE: why did Spring Boot Initializr generate spring-boot-starter-webmvc instead of spring-boot-starter-web
+FIRE: what breaking changes does Spring Boot 4 introduce for artifact renames and test modules
+FIRE: why does Storybook with Next.js App Router need appDirectory true
+FIRE: why does Continue.dev's config.ts silently override config.json
+
+QUIET: Spring Security custom AccessDecisionVoter for role hierarchies
+QUIET: MapStruct custom converter for nested DTO mapping
+QUIET: Keycloak custom login theme customization
+QUIET: Liquibase changelog authoring best practices for large teams
+QUIET: Docker multi-stage build caching strategies
+QUIET: DDD bounded context mapping between two microservices
+QUIET: event sourcing snapshotting strategy for CQRS aggregates
+QUIET: Continue.dev remote model provider authentication setup
+QUIET: RAG chunking strategy for long documents
+QUIET: Spring Boot Actuator health check endpoint customization
+QUIET: how do I reverse a linked list in place
+QUIET: what is the CAP theorem in distributed systems
+QUIET: how do I configure nginx as a reverse proxy
+QUIET: what's the difference between TCP and UDP
+QUIET: how do I center a div with CSS flexbox
