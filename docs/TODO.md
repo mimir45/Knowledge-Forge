@@ -71,6 +71,11 @@ closing note, not restated here.
 | B-037 | Intent gate FIRE/QUIET margin now negative | NO STEPS — measure further (targeted band) | [below](#no-steps) |
 | B-038 | `bodyPass` window allocated by path, not relevance | NO STEPS — measure first | [below](#b-038--bodypasss-top-20-window-is-allocated-by-path-not-by-relevance) |
 
+**B-025 closed 2026-08-28** — the unblock condition was met by observation, not by moving
+it into PLANNED first: a diagnostic `PostToolUse`/`WebFetch` hook wired into a live
+`.claude/settings.json` captured a real payload, `cacheBody` now extracts the confirmed
+`result` field, both build lanes green. See BACKLOG.md's B-025 closure note.
+
 ---
 
 <a name="no-steps"></a>
@@ -78,20 +83,6 @@ closing note, not restated here.
 # NO STEPS — open, but not implementation work
 
 These have no plan on purpose. Each names the condition that would change that.
-
-## B-025 — `PostToolUse`/WebFetch payload shape — **BLOCKED**
-
-**Do not re-attempt the WebFetch.** Three tries against two official doc pages already
-failed; a fourth is not new evidence. The unblock trigger is **observational**: a live
-`PostToolUse` hook firing on a real `WebFetch` call, whose payload can be captured and
-read. Until someone has that payload in hand there is no work to do — `cacheBody`
-(`cmd/forge/cache_source.go`) already handles both shapes and both branches are tested
-(`cache_source_test.go:12,34,49,59`). The current code is the correct response to not
-knowing, not a placeholder.
-
-When the payload arrives: update `cacheBody` to extract the real text field instead of
-caching the wrapper JSON, and keep both branches — the raw fallback stays correct for any
-shape that changes later.
 
 ## B-012 — `code_refs` has no live producer
 

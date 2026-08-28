@@ -54,8 +54,8 @@ func TestCmdCacheSourceAlwaysExitsZero(t *testing.T) {
 	}
 }
 
-// TestCacheSourceObjectResponseCachedVerbatim covers the unconfirmed-schema fallback: a
-// non-string tool_response (object shape) is cached as raw JSON rather than dropped.
+// TestCacheSourceObjectResponseCachedVerbatim covers the fallback for an object shape
+// carrying no "result" key: cached as raw JSON rather than dropped or misread.
 func TestCacheSourceObjectResponseCachedVerbatim(t *testing.T) {
 	root := t.TempDir()
 	p := postToolUsePayload{
@@ -73,6 +73,57 @@ func TestCacheSourceObjectResponseCachedVerbatim(t *testing.T) {
 	body, _ := os.ReadFile(files[0])
 	if !strings.Contains(string(body), `"content":"nested"`) {
 		t.Errorf("cache file missing raw object body: %s", body)
+	}
+}
+
+// TestCacheSourceExtractsResultField pins the real WebFetch PostToolUse shape, captured
+// live 2026-08-28 (docs/BACKLOG.md B-025's closure note): tool_response is an object
+// {result, url, code, codeText, bytes, durationMs}, and only result's text belongs in the
+// cache — the wrapper fields must not leak into the cached body.
+func TestCacheSourceExtractsResultField(t *testing.T) {
+	root := t.TempDir()
+	p := postToolUsePayload{
+		ToolName:  "WebFetch",
+		ToolInput: []byte(`{"url":"https://example.com","prompt":"summarize"}`),
+		ToolResponse: []byte(`{"bytes":559,"code":200,"codeText":"OK",` +
+			`"result":"the actual fetched text","durationMs":1516,"url":"https://example.com"}`),
+	}
+
+	cacheFetch(root, p)
+
+	files := cacheFiles(t, root)
+	if len(files) != 1 {
+		t.Fatalf("want 1 cache file, got %d", len(files))
+	}
+	body, _ := os.ReadFile(files[0])
+	if !strings.Contains(string(body), "the actual fetched text") {
+		t.Errorf("cache file missing extracted result: %s", body)
+	}
+	if strings.Contains(string(body), "durationMs") || strings.Contains(string(body), `"code":200`) {
+		t.Errorf("cache file leaked wrapper fields instead of extracting result: %s", body)
+	}
+}
+
+// TestCacheSourceEmptyResultStillExtracted pins the map-decode-over-struct choice: a
+// present-but-empty "result" ("" — a real fetch outcome, not malformed input) must be
+// returned as the extracted body, not fall through to caching the whole wrapper object.
+func TestCacheSourceEmptyResultStillExtracted(t *testing.T) {
+	root := t.TempDir()
+	p := postToolUsePayload{
+		ToolName:     "WebFetch",
+		ToolInput:    []byte(`{"url":"https://example.com/empty"}`),
+		ToolResponse: []byte(`{"result":"","code":200}`),
+	}
+
+	cacheFetch(root, p)
+
+	files := cacheFiles(t, root)
+	if len(files) != 1 {
+		t.Fatalf("want 1 cache file, got %d", len(files))
+	}
+	body, _ := os.ReadFile(files[0])
+	if strings.Contains(string(body), `"code":200`) {
+		t.Errorf("empty result fell through to raw wrapper instead of being extracted: %s", body)
 	}
 }
 

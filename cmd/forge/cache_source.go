@@ -19,11 +19,11 @@ const defaultCacheTTLDays = 30
 // window can later be short-circuited (nothing reads/enforces the TTL yet in Phase 5 —
 // this command only writes the cache).
 //
-// PostToolUse's exact tool_response JSON shape for WebFetch is not documented in Claude
-// Code's hooks/tools-reference docs as of 2026-08-13 (checked via WebFetch itself,
-// inconclusive both times — see docs/BACKLOG.md). tool_input.url is the one field known
-// with confidence, since it's WebFetch's own published parameter schema. tool_response is
-// therefore cached verbatim rather than field-extracted: see cacheBody's doc comment.
+// PostToolUse's tool_response shape for WebFetch was unconfirmed until a live hook
+// payload was captured 2026-08-28 (see docs/BACKLOG.md B-025's closure note): it is an
+// object {result, url, code, codeText, bytes, durationMs}, and result carries the actual
+// fetched/summarized text. cacheBody extracts result when present; see its doc comment
+// for the fallback chain that still applies to any other shape.
 func cmdCacheSource(args []string) int {
 	fs := flag.NewFlagSet("forge cache-source", flag.ContinueOnError)
 	vaultDir := fs.String("vault", "", "vault root; defaults to config vault_path, then .")
@@ -70,10 +70,24 @@ func cacheFetch(root string, p postToolUsePayload) {
 	_ = os.WriteFile(path, []byte(content), 0o644)
 }
 
-// cacheBody extracts a cacheable string from tool_response without asserting a schema it
-// cannot confirm: a plain JSON string unmarshals cleanly and is used as-is; anything else
-// (object, array, non-JSON) is cached as the raw bytes Claude Code sent, verbatim.
+// cacheBody extracts the fetched text from tool_response. The confirmed shape (B-025,
+// captured 2026-08-28) is an object carrying the text under a "result" key; that key is
+// looked up by name via a map decode, not a fixed struct, so a present-but-empty result
+// ("" — a real, if unlikely, fetch outcome) is still returned rather than falling through.
+// Two fallbacks cover anything else without asserting a schema this can't confirm: a bare
+// JSON string (kept in case the shape ever simplifies) unmarshals cleanly and is used
+// as-is; any other shape (object with no "result" key, array, non-JSON) is cached as the
+// raw bytes Claude Code sent, verbatim — never silently dropped, never guessed.
 func cacheBody(raw json.RawMessage) string {
+	var obj map[string]json.RawMessage
+	if json.Unmarshal(raw, &obj) == nil {
+		if result, ok := obj["result"]; ok {
+			var s string
+			if json.Unmarshal(result, &s) == nil {
+				return s
+			}
+		}
+	}
 	var s string
 	if json.Unmarshal(raw, &s) == nil {
 		return s
