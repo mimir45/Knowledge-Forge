@@ -2304,6 +2304,45 @@ next thing to run if the question is "does a real FIRE/QUIET pair exist inside t
 itself, not just at its edges" — the wide sweep answered "does the band's width hold at
 scale," not that.
 
+### A different widening was attempted 2026-08-29, discovered a real trap, then found this
+item already had a better answer merged — no code or test-data change shipped from this
+note; it exists to preserve the trap for whoever runs the targeted-boundary-sampling work
+above
+
+A separate worktree, based on a point before PR #15 above had merged and never re-fetched
+before starting, independently attempted a widening of `intent-gate-labels.txt`: a
+mechanical, full-coverage, directory-based rule (every `notes/pitfall/` note → FIRE, every
+`notes/decision/` note → QUIET, phrased as the decision's general subject). Five of the
+fourteen `notes/decision/`-derived QUIET prompts crossed 0.50 on the first re-run — a hit
+against the absolute never-admit-QUIET invariant. Reading the note bodies (not scores)
+showed why, and it generalizes past this vault's specific decisions: **this vault's
+`notes/decision/` files are short, narrowly prescriptive "do X because Y" records, so a
+general-topic phrasing derived mechanically from one is almost always directly answered by
+that same note** — e.g. `decision-disable-qwen3-thinking-mode-permanently.md`'s decision is
+verbatim "Add `--reasoning off` flag permanently," which directly answers "how do you
+disable Qwen3's thinking mode." That is FIRE's own stated definition, not QUIET's.
+Thirteen of the fourteen failed the same content check; only one (documenting *why* a
+refactor happened, not *how* the underlying pattern works — the implementation lives in a
+separate, narrower concept note) survived as genuine QUIET.
+
+**A mechanical `notes/decision/`-directory rule does not produce valid QUIET prompts in
+this vault.** The wide-sweep widening above avoided this trap already, by hand-authoring
+adjacent sub-topic questions rather than deriving from a directory rule — its QUIET
+additions (Spring Security `AccessDecisionVoter`, MapStruct nested DTO mapping, Keycloak
+login theme, etc.) are genuinely narrower than any one note, which is why none of them hit
+this failure. This note exists only so the *next* attempt — the still-open targeted-
+boundary-sampling work — doesn't reach for a directory-level shortcut and rediscover the
+same trap: hand-author each targeted prompt and check it against its nearest note's actual
+body before committing it, the same discipline that already worked twice (the original 15
+QUIET lines, and the wide-sweep's fifteen).
+
+The directory-based attempt's own corpus (60 prompts, built on the pre-PR-#15 25-prompt
+base) was not merged: it forked from a point already superseded by PR #15's 50-prompt
+corpus, so integrating it would have meant reconciling two independent widenings of the
+same file rather than extending one, and the base problem it set out to re-measure ("is
+-0.036 sample noise") was already answered by PR #15. Nothing here changes `intentGate`,
+`minFireAdmitted`, or any file in the tree — the finding above is the only thing kept.
+
 ## B-038 — `bodyPass`'s top-20 window is allocated by path, not by relevance
 
 **Owner: unassigned. Status: open — split out of B-031 on 2026-08-24, deliberately.**
