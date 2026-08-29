@@ -60,21 +60,15 @@ closing note, not restated here.
 
 ---
 
-## Index — 6 open items (33 closed/recorded IDs live in BACKLOG only)
+## Index — 5 open items (34 closed/recorded IDs live in BACKLOG only)
 
 | ID | Subject | Class | Section |
 |---|---|---|---|
 | B-003 | Repo directory still named `TIL` | NO STEPS — user decision | [below](#no-steps) |
 | B-004 | Module path has no VCS host prefix | NO STEPS — deferred by decision | [below](#no-steps) |
 | B-012 | `code_refs` has no live producer | NO STEPS — blocked on packaging | [below](#no-steps) |
-| B-025 | `PostToolUse`/WebFetch payload shape | NO STEPS — **BLOCKED** | [below](#no-steps) |
 | B-037 | Intent gate FIRE/QUIET margin now negative | NO STEPS — measure further (targeted band) | [below](#no-steps) |
 | B-038 | `bodyPass` window allocated by path, not relevance | NO STEPS — measure first | [below](#b-038--bodypasss-top-20-window-is-allocated-by-path-not-by-relevance) |
-
-**B-025 closed 2026-08-28** — the unblock condition was met by observation, not by moving
-it into PLANNED first: a diagnostic `PostToolUse`/`WebFetch` hook wired into a live
-`.claude/settings.json` captured a real payload, `cacheBody` now extracts the confirmed
-`result` field, both build lanes green. See BACKLOG.md's B-025 closure note.
 
 ---
 
