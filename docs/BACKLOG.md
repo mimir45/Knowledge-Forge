@@ -2396,6 +2396,40 @@ constraint before anyone has shown the wider window changes an actual verdict.
 Related: split from **B-031**, which established the row that surfaced this but is closed
 on its own terms — see its BACKLOG closing section.
 
+**Measured 2026-08-30, out-of-phase — question (a) only, status stays open.** Built
+`cmd/forge/bodypass_window_test.go` / `testdata/bodypass-window.golden`, this entry's own
+named unblock condition: run `RankPoolWithBodyPass` (new in `pkg/recall/rank.go`, `RankPool`
+now delegates to it at the shipped `BodyPassSize=20` — proven byte-identical by
+`TestRankPoolWithBodyPassMatchesRankPoolAtShippedSize`) capped at 20 vs. uncapped (every
+doc body-scored) across 24 queries — the 9 `calibration.golden` queries plus
+`testdata/neighbour-labels.txt`'s 15 `Q:` question lines (text only, no ground-truth labels
+read, so no new human labelling was needed for a diff measurement). Nothing shipped moved:
+`BodyPassSize` is still `20`, `sortByScore`'s path tie-break is untouched, no tie-break
+replacement was picked.
+
+Measured: **Top-1 slug/score changed on 0/24 rows** — this entry's own single-row finding
+("no effect on this row") generalizes to Top-1 across the wider set, not just the one query
+it was checked against. But **`Candidates` (top-10) changed on 16/24 rows**, and
+**`Neighbours` changed on 3/24 rows** (checked individually: all three — "Redis caching in
+Spring Boot", "Spring Boot 4 configuration properties binding", "Java virtual threads with
+Spring Boot" — stay CREATE→CREATE, so these are genuine neighbour-band membership shifts,
+not the verdict-confound the harness's own header warns about). `ShutOut>0` — the tie-break
+demonstrably deciding who gets a body pass — on **24/24 rows**, stronger than "most" as
+this entry originally phrased it. The mechanism is not one-directional as predicted before
+`-update` ran: `bodyChannel` is always active, so a previously-unopened doc with no
+body-term hits is diluted (denominator grows, numerator doesn't) rather than left alone —
+which is the likely source of the 16/24 `Candidates` churn, not newly-discovered relevant
+notes displacing irrelevant ones.
+
+**What this does and doesn't settle.** It answers "does removing the cap entirely ever move
+something" — yes, below Top-1, on this 24-query set. It does not sweep intermediate window
+sizes, and Top-1 (what a caller mostly acts on) never moved, so it does not by itself show
+the defect costs a real verdict today — only that the ranker's *internal* candidate/neighbour
+ordering is sensitive to the path tie-break at corpus scale, matching this entry's own
+already-disclosed mechanism. Question (b) — what the tie-break should favor instead of path
+— is untouched and still needs its own design pass; per this entry's own "do not," this
+measurement does not answer it and did not raise `BodyPassSize`.
+
 ---
 
 ## B-039 — Windows release targets removed, 2026-08-27, by user decision (`şimdilik`, "for now")

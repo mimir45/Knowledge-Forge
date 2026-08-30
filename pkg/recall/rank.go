@@ -38,13 +38,23 @@ const NeighbourWindow = 20
 // itself belongs to neither. `now` is an argument rather than time.Now() so staleness is
 // testable and so a run is a pure function of its inputs.
 func RankPool(q Query, docs []Doc, now time.Time) []Candidate {
+	return RankPoolWithBodyPass(q, docs, now, BodyPassSize)
+}
+
+// RankPoolWithBodyPass is RankPool with an explicit body-pass window instead of the
+// package constant BodyPassSize. It exists for B-038's measurement harness in cmd/forge,
+// which needs to compare today's window against a widened or removed one without moving
+// the shipped constant — that would be exactly the unmeasured performance change B-038's
+// own text forbids. Production code calls RankPool, never this, at any size other than
+// BodyPassSize; treat a second call site as a review flag, not a convenience.
+func RankPoolWithBodyPass(q Query, docs []Doc, now time.Time, bodyPassSize int) []Candidate {
 	s := newScope(q, docs)
 	cands := make([]Candidate, 0, len(docs))
 	for _, d := range docs {
 		cands = append(cands, s.frontmatterScore(d, now))
 	}
 	sortByScore(cands)
-	s.bodyPass(cands, docs)
+	s.bodyPass(cands, docs, bodyPassSize)
 	sortByScore(cands)
 	return round(nonZero(cands))
 }
@@ -109,12 +119,14 @@ func (s scope) frontmatterScore(d Doc, now time.Time) Candidate {
 // bodyPass opens the leading candidates and rescores them with the 0.1 channel. Notes
 // outside the window keep their frontmatter-only score, which is correct: the body
 // channel can move a score by at most 0.1 and never lifts a non-match into the band.
-func (s scope) bodyPass(cands []Candidate, docs []Doc) {
+// size is BodyPassSize in production (see RankPool); RankPoolWithBodyPass lets B-038's
+// measurement harness vary it without touching the shipped constant.
+func (s scope) bodyPass(cands []Candidate, docs []Doc, size int) {
 	byRel := map[string]Doc{}
 	for _, d := range docs {
 		byRel[d.Rel] = d
 	}
-	for i := range cands[:min(len(cands), BodyPassSize)] {
+	for i := range cands[:min(len(cands), size)] {
 		d, ok := byRel[cands[i].Path]
 		if !ok || d.LoadBody == nil {
 			continue
