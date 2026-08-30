@@ -48,7 +48,11 @@ not an oversight:
   moving `intentGate`, and the margin came back unchanged, so there was no design to do.
   B-038 was measured 2026-08-30 against its own named unblock condition (a); it stayed
   NO STEPS — the measurement didn't settle (b), the tie-break design question, which was
-  never in scope for this pass.
+  never in scope for this pass. **B-038 closed 2026-08-31**: (b) measured (recency,
+  verified date, document-frequency vs. path) via two new goldens; none cleared the
+  ground-truth-F1 noise floor Recency/Verified themselves set, and document-frequency's
+  own window-membership evidence showed a real cost (evicting relevant notes for
+  globally-rare irrelevant ones) with no offsetting benefit — see its BACKLOG entry.
 - **NO STEPS** — open but not actionable by an implementation session: blocked on external
   observation, or a user decision, or "record, don't fix" by standing rule. Listed with
   its unblock condition instead of steps.
@@ -61,7 +65,7 @@ closing note, not restated here.
 
 ---
 
-## Index — 5 open items (34 closed/recorded IDs live in BACKLOG only)
+## Index — 4 open items (35 closed/recorded IDs live in BACKLOG only)
 
 | ID | Subject | Class | Section |
 |---|---|---|---|
@@ -69,7 +73,6 @@ closing note, not restated here.
 | B-004 | Module path has no VCS host prefix | NO STEPS — deferred by decision | [below](#no-steps) |
 | B-012 | `code_refs` has no live producer | NO STEPS — blocked on packaging | [below](#no-steps) |
 | B-037 | Intent gate FIRE/QUIET margin now negative | NO STEPS — measure further (targeted band) | [below](#no-steps) |
-| B-038 | `bodyPass` window allocated by path, not relevance | NO STEPS — (a) measured 2026-08-30; (b) still undesigned | [below](#b-038--bodypasss-top-20-window-is-allocated-by-path-not-by-relevance) |
 
 ---
 
@@ -117,31 +120,6 @@ chosen by guessing which score they'd get, which would make the result unfalsifi
 measured safe against every labelled prompt on file, including the widened 50, and a stable
 overlap band the gate sits above is a reason to gather the remaining evidence, not to
 re-derive a number that isn't failing.
-
-## B-038 — `bodyPass`'s top-20 window is allocated by path, not by relevance
-
-**Question (a) measured 2026-08-30 — see BACKLOG's entry for the full numbers.**
-`cmd/forge/bodypass_window_test.go` / `testdata/bodypass-window.golden` ran the capped
-(`BodyPassSize=20`) vs. uncapped comparison across 24 queries (9 calibration + 15 from
-`neighbour-labels.txt`), via a new `pkg/recall.RankPoolWithBodyPass` proven
-byte-identical to today's `RankPool` at the shipped size. Top-1 never changed (0/24), but
-`Candidates` changed on 16/24 rows and `Neighbours` on 3/24 (checked: genuine band shifts,
-not verdict flips) — so the window does bind, below Top-1, at corpus scale. `BodyPassSize`
-was not raised; `sortByScore`'s path tie-break was not touched.
-
-**Unblock condition, narrowed to what's left:** question (a) is answered for "does the
-cap ever change anything" (yes, below Top-1) but not swept across intermediate window
-sizes, and Top-1 — what a caller mostly acts on — never moved on this 24-query set. What's
-left is exclusively **question (b)**: what the tie-break should favor instead of path
-(recency, verified date, a document-frequency signal per §2.3.1), which needs its own
-design pass now that (a) has shown the window is not inert. A follow-up intermediate-size
-sweep is optional, not required, before starting (b) — this measurement didn't find a
-reason one is needed.
-
-**Do not respond to this by simply raising `BodyPassSize`.** Still true after the
-measurement: the cost (a file open per window slot) is real and still unmeasured at
-production scale, and the fix this entry argues for is a better tie-break, not a bigger
-window — see BACKLOG's "why this is a defect and not just a cap that's too small."
 
 ## B-003 — repo directory still named `TIL`
 

@@ -2345,7 +2345,8 @@ same file rather than extending one, and the base problem it set out to re-measu
 
 ## B-038 — `bodyPass`'s top-20 window is allocated by path, not by relevance
 
-**Owner: unassigned. Status: open — split out of B-031 on 2026-08-24, deliberately.**
+**Owner: unassigned. Status: closed 2026-08-31 — split out of B-031 on 2026-08-24,
+deliberately; (a) measured 2026-08-30, (b) measured and closed 2026-08-31 (see below).**
 
 Closing B-031 measured, rather than assumed, whether the 0.1 `wBody` weight or the
 `BodyPassSize = 20` cap was binding for the "Kafka consumers with Testcontainers" row —
@@ -2429,6 +2430,93 @@ ordering is sensitive to the path tie-break at corpus scale, matching this entry
 already-disclosed mechanism. Question (b) — what the tie-break should favor instead of path
 — is untouched and still needs its own design pass; per this entry's own "do not," this
 measurement does not answer it and did not raise `BodyPassSize`.
+
+**Question (b) measured 2026-08-31, out-of-phase — closed with no shipped change.** Built
+`pkg/recall/tiebreak.go` (a `TieBreak` comparator type plus `PathTieBreak`,
+`RecencyTieBreak`, `VerifiedTieBreak`, `DocFreqTieBreak` — the last a note's mean `idf()`
+over its own `Tags ∪ Stack`, using `docFreq(docs)`, falling through to path when either
+side has no tags/stack rather than sorting untagged notes last) and two new measurement
+seams mirroring `RankPoolWithBodyPass`'s own pattern — `RankPoolWithTieBreak` and
+`BodyPassWindow` (`pkg/recall/rank.go`). Production `sortByScore` is unchanged: still
+`PathTieBreak` alone, pinned by
+`TestRankPoolWithBodyPassMatchesRankPoolWithTieBreakAtPathTieBreak`. A pinned unit test
+(`TestZeroFrontmatterScoreCapsAt0Point2TimesBody`) confirmed a candidate tied at 0.000
+frontmatter caps at `0.2 × body` after the body pass (below `Update=0.55`) — but this
+bounds the *verdict*, not Top-1's *identity*: the harness's own first draft wrongly
+asserted Top-1 could never move and was corrected the same run when it failed for real —
+2 of 72 (query, strategy) rows moved Top-1 between two candidates that landed on the
+*exact same score* (0.170 == 0.170) post-body-pass, verdict staying CREATE both sides. A
+tie-break choosing between an exact tie is what it exists to do; the test now measures
+this instead of assuming it away.
+
+Two new harnesses, both goldens are new exploratory artifacts and not
+among the four Phase-3-style goldens later paragraphs in this file talk about:
+`cmd/forge/tiebreak_comparison_test.go` → `testdata/tiebreak-comparison.golden` (24
+queries × 3 alternatives = 72 rows, window-membership deltas restricted to the
+tied-at-zero subset, named by slug) and `cmd/forge/tiebreak_neighbour_precision_test.go`
+→ `testdata/tiebreak-neighbour-precision.golden` (15 labelled queries × 4 strategies
+including Path, at the shipped 0.150 floor, reusing `neighbour_floor_test.go`'s own
+precision/recall/F1 machinery).
+
+Measured: `DocFreqTieBreak`'s saturation rate (fraction of tied-at-zero pairs it cannot
+separate) ranges 0.114–0.269 across the 24 queries — **low**, unlike BACKLOG B-036's
+rejected min-idf-based note-level signal, which saturated heavily for a *different*
+purpose (neighbour admission). Mean-idf over a note's whole tag/stack set does
+discriminate. But *what* it discriminates on turns out to be the disqualifier: it is a
+corpus-wide "how rare is this note overall" signal, not a "how relevant is this note to
+*this* query" one, and on window-membership terms that shows up directly —
+`tiebreak-comparison.golden` shows DocFreq repeatedly evicting topically-plausible
+Java/Spring/build-tooling notes (`hibernate-orm-patterns-and-gotchas`,
+`jpaspecificationexecutor-dynamic-queries-with-specification-pattern`,
+`keyset-pagination-compound-or-predicate`,
+`build-helper-maven-plugin-adding-generated-sources-to-compile-path`) from Java/Spring/
+testing-adjacent queries ("Kafka consumers with Testcontainers", "JPA entity graph to
+avoid N+1", "Maven multi module build with a shared parent pom") in favor of admitting
+globally-rare-tag notes from unrelated ecosystems
+(`python-dotenv-env-file-loading-for-python-scripts`,
+`llm-wiki-pattern-llm-maintained-knowledge-archive`,
+`leprecoin-react-next-js-frontend-project`) — a real, concrete cost, not a hypothetical
+one. This item's own two motivating rows (`transactional-outbox-pattern`,
+`cqrs-and-event-driven-messaging`) were checked directly (`OutboxInWindow`/
+`CQRSInWindow`) and neither strategy admits either — consistent with B-031's own closing
+finding that this specific row's problem is a body-signal gap no tie-break can fix, not
+new information.
+
+Against ground truth (`tiebreak-neighbour-precision.golden`), the cost shows no offsetting
+benefit: Emitted=85, TP=42, Precision=0.494, Recall=0.724, **F1=0.587, bit-identical
+across all four strategies** — Path, Recency, Verified and DocFreq all land on the same
+number. Per this entry's own pre-committed decision rule, Recency and Verified (two
+unmotivated reorderings of the same window) set a noise floor of ΔF1=0 for "any
+reordering, regardless of what it favors"; DocFreq's ΔF1 is also exactly 0 — inside that
+floor, not clearly outside it, so it does not clear the bar even before the
+window-membership cost is weighed in.
+
+**Not shipped.** `sortByScore` stays `PathTieBreak` alone; none of the five goldens a
+shipped change would have to move (`calibration.golden`, `neighbour-sweep.golden`,
+`intent-gate.golden`, `bodypass-window.golden`, `neighbour-frequency.golden`) changed —
+confirmed by a full `go test ./...` pass with no `-update` run on any of them. Question
+(b) is answered: path stays, and here is the quantified reason, not left open. The two
+new harnesses and the `pkg/recall/tiebreak.go` seams stay in the tree as reusable
+measurement infrastructure rather than being reverted — a future candidate tie-break can
+be measured through the same two goldens without rebuilding the harness. One variant
+deliberately not tried, named so a later reader doesn't assume "document-frequency" was
+exhausted: a *query-scoped* specificity signal (idf over only the terms the query itself
+supplied, the same vocabulary `weightsOver` already uses for the tags/stack channels)
+rather than a corpus-global one over the note's full tag/stack set — untried, not
+rejected, and out of scope for this measurement pass.
+
+**Phase 4, performance, measured regardless of the ship decision** (the request's own
+Phase 4 was not conditioned on Phase 2's outcome, unlike Phase 3). The load-bearing claim
+— no alternative tie-break costs a new file open — is checked directly, not asserted:
+`cmd/forge/tiebreak_bench_test.go`'s `TestDocOpenCountIdenticalAcrossStrategies` wraps
+every doc's `LoadBody` with a per-path counter and confirms an identical total across all
+four strategies. `BenchmarkTieBreakStrategies` (10x-cloned corpus, 920 synthetic docs —
+timing only, explicitly not valid for saturation/F1, since uniform cloning shifts every
+`idf()` uniformly rather than reflecting a real vault's own tag distribution) measured
+~4.4ms/`RankPool` for Path, ~4.3ms Recency, ~4.1ms Verified, ~3.6ms DocFreq on an Apple
+M4 — all the same order of magnitude, no outlier, consistent with the structural argument
+that Recency/Verified read fields already on `Candidate` and `DocFreqTieBreak` builds its
+specificity map once at construction, not per comparison.
 
 ---
 

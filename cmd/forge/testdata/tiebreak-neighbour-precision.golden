@@ -1,0 +1,8 @@
+Neighbour precision/recall by tie-break strategy, floor fixed at 0.150 (DefaultThresholds.Neighbour, unmoved) — testdata/neighbour-labels.txt, 15 queries, 58 labelled neighbours. Path is today's shipped row; the other three are B-038 question (b)'s candidates. Precision/recall are micro-averaged, same convention as neighbour-sweep.golden.
+
+| Strategy | Emitted | TP | Precision | Recall | F1 | Median/query | Max/query | Empty queries |
+|---|---|---|---|---|---|---|---|---|
+| Path | 85 | 42 | 0.494 | 0.724 | 0.587 | 5 | 14 | 0 |
+| Recency | 85 | 42 | 0.494 | 0.724 | 0.587 | 5 | 14 | 0 |
+| Verified | 85 | 42 | 0.494 | 0.724 | 0.587 | 5 | 14 | 0 |
+| DocFreq | 85 | 42 | 0.494 | 0.724 | 0.587 | 5 | 14 | 0 |

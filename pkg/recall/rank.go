@@ -2,7 +2,6 @@ package recall
 
 import (
 	"math"
-	"sort"
 	"time"
 )
 
@@ -48,15 +47,45 @@ func RankPool(q Query, docs []Doc, now time.Time) []Candidate {
 // own text forbids. Production code calls RankPool, never this, at any size other than
 // BodyPassSize; treat a second call site as a review flag, not a convenience.
 func RankPoolWithBodyPass(q Query, docs []Doc, now time.Time, bodyPassSize int) []Candidate {
+	return RankPoolWithTieBreak(q, docs, now, bodyPassSize, PathTieBreak)
+}
+
+// RankPoolWithTieBreak is RankPoolWithBodyPass with an explicit tie-break instead of the
+// shipped PathTieBreak. It exists for B-038 question (b)'s measurement harness in
+// cmd/forge, which needs to compare today's path tie-break against an alternative
+// (recency, verified date, document-frequency — tiebreak.go) without moving shipped
+// behavior. Production code calls RankPoolWithBodyPass, never this, at any tie-break
+// other than PathTieBreak; treat a second call site as a review flag, not a convenience.
+func RankPoolWithTieBreak(q Query, docs []Doc, now time.Time, bodyPassSize int, tb TieBreak) []Candidate {
 	s := newScope(q, docs)
 	cands := make([]Candidate, 0, len(docs))
 	for _, d := range docs {
 		cands = append(cands, s.frontmatterScore(d, now))
 	}
-	sortByScore(cands)
+	sortByScoreWith(cands, tb)
 	s.bodyPass(cands, docs, bodyPassSize)
-	sortByScore(cands)
+	sortByScoreWith(cands, tb)
 	return round(nonZero(cands))
+}
+
+// BodyPassWindow returns the Path of every candidate the body pass would open — the
+// leading bodyPassSize candidates after the frontmatter-only sort, before body scores
+// blend in. It exists because RankPoolWithTieBreak's own output can't show this: nonZero
+// drops a body-passed note that gets no body-term hits, which is exactly the population
+// B-038's tie-break comparison needs to diff. Never called by production code.
+func BodyPassWindow(q Query, docs []Doc, now time.Time, bodyPassSize int, tb TieBreak) []string {
+	s := newScope(q, docs)
+	cands := make([]Candidate, 0, len(docs))
+	for _, d := range docs {
+		cands = append(cands, s.frontmatterScore(d, now))
+	}
+	sortByScoreWith(cands, tb)
+	n := min(len(cands), bodyPassSize)
+	out := make([]string, n)
+	for i := 0; i < n; i++ {
+		out[i] = cands[i].Path
+	}
+	return out
 }
 
 // Rank returns the top TopN candidates, highest first — recall-spec.md §4's `candidates`
@@ -134,17 +163,6 @@ func (s scope) bodyPass(cands []Candidate, docs []Doc, size int) {
 		cands[i].Channels = append(cands[i].Channels, s.bodyChannel(d.LoadBody()))
 		cands[i].Score, cands[i].MatchedOn = blend(cands[i].Channels)
 	}
-}
-
-// sortByScore orders by score descending, breaking ties on path so two runs over the
-// same tree return byte-identical JSON. Phase 2b re-measures against these numbers.
-func sortByScore(c []Candidate) {
-	sort.SliceStable(c, func(i, j int) bool {
-		if c[i].Score != c[j].Score {
-			return c[i].Score > c[j].Score
-		}
-		return c[i].Path < c[j].Path
-	})
 }
 
 // Neighbours are the candidates a new note links to on a CREATE verdict (DESIGN §5.3:

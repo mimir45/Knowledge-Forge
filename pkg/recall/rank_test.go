@@ -187,6 +187,54 @@ func TestRankPoolWithBodyPassMatchesRankPoolAtShippedSize(t *testing.T) {
 	}
 }
 
+// TestRankPoolWithBodyPassMatchesRankPoolWithTieBreakAtPathTieBreak pins B-038 question
+// (b)'s new measurement seam (RankPoolWithTieBreak) the same way
+// TestRankPoolWithBodyPassMatchesRankPoolAtShippedSize pins RankPoolWithBodyPass:
+// RankPoolWithBodyPass is now a one-line delegation to
+// RankPoolWithTieBreak(..., PathTieBreak), so the two must always agree.
+func TestRankPoolWithBodyPassMatchesRankPoolWithTieBreakAtPathTieBreak(t *testing.T) {
+	docs := []Doc{
+		{Rel: "b.md", Slug: "b", Title: "unrelated"},
+		{Rel: "a.md", Slug: "a", Title: "also unrelated"},
+	}
+	q := Query{Question: "goroutines"}
+	want := RankPoolWithBodyPass(q, docs, now, BodyPassSize)
+	got := RankPoolWithTieBreak(q, docs, now, BodyPassSize, PathTieBreak)
+	if len(got) != len(want) {
+		t.Fatalf("len = %d, want %d", len(got), len(want))
+	}
+	for i := range want {
+		if got[i].Slug != want[i].Slug || got[i].Score != want[i].Score {
+			t.Errorf("[%d] = {%s %v}, want {%s %v}", i, got[i].Slug, got[i].Score,
+				want[i].Slug, want[i].Score)
+		}
+	}
+}
+
+// TestZeroFrontmatterScoreCapsAt0Point2TimesBody pins B-038's structural ceiling: a
+// candidate tied at 0.000 frontmatter score (no title/tags/stack hits) has only the
+// title channel (Active, Value=0) and the body channel (always Active) surviving into
+// blend, so the post-body-pass score can never exceed wBody/(wTitle+wBody) = 0.2 of the
+// body value — below Update=0.55. This bounds the *verdict* (a tie-break can never push
+// a zero-tied candidate to UPDATE or ANSWER on its own): it does NOT mean Top-1's
+// *identity* is immovable — cmd/forge's tiebreak_comparison_test.go measured two rows
+// where an alternative tie-break changed which of two identically-scored candidates
+// (0.170 == 0.170) sorts first, with the verdict staying CREATE both sides. A tie-break
+// choosing between exactly-tied candidates is what it exists to do; this test pins the
+// score ceiling, not an unchanging Top-1.
+func TestZeroFrontmatterScoreCapsAt0Point2TimesBody(t *testing.T) {
+	body := []byte("goroutines goroutines goroutines goroutines")
+	doc := Doc{Rel: "a.md", Slug: "a", Title: "unrelated title",
+		LoadBody: func() []byte { return body }}
+	got := RankPool(Query{Question: "goroutines"}, []Doc{doc}, now)
+	if len(got) == 0 {
+		t.Fatal("expected the body pass to produce a nonzero score")
+	}
+	if got[0].Score > 0.2 {
+		t.Errorf("score = %v, want <= 0.2 (0.2 x a perfect body match)", got[0].Score)
+	}
+}
+
 // RankPool must never truncate — Rank's TopN cut is the only truncation point, so a
 // corpus with more than TopN nonzero-scoring candidates should return all of them from
 // RankPool, and Rank should return exactly the leading TopN of that same list.

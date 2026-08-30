@@ -630,6 +630,48 @@ Turkish doc — that's parsing robustness for any editor, not shipped platform s
 `bin/forge` is POSIX `sh` and never had a Windows branch. See BACKLOG.md's B-039 for the
 full record and the revert steps.
 
+**B-038 question (b) closed 2026-08-31, out-of-phase — the tie-break design question left
+open when (a) closed 2026-08-30.** Built `pkg/recall/tiebreak.go` (a `TieBreak` type plus
+`PathTieBreak`/`RecencyTieBreak`/`VerifiedTieBreak`/`DocFreqTieBreak`) and two
+measurement-only seams mirroring `RankPoolWithBodyPass`'s own pattern —
+`RankPoolWithTieBreak`, `BodyPassWindow` — to compare the three candidates `docs/TODO.md`
+named against today's path tie-break, via two new goldens
+(`testdata/tiebreak-comparison.golden`, 24 queries × 3 alternatives;
+`testdata/tiebreak-neighbour-precision.golden`, the 15 labelled queries × 4 strategies
+including path, reusing `neighbour_floor_test.go`'s own precision/recall/F1 machinery).
+Production `sortByScore` is untouched — still `PathTieBreak` alone. One thing this
+session's first draft got wrong and corrected the same run: it assumed a tie-break could
+never move Top-1's identity (only window membership), pinned that as a hard assertion, and
+the assertion failed for real — 2 of 72 rows moved Top-1 between two candidates that
+landed on the exact same score post-body-pass (0.170 == 0.170), verdict staying CREATE
+both sides. A tie-break choosing between an exact tie is what it exists to do; the test now
+measures this instead of asserting it away, and a pinned unit test
+(`TestZeroFrontmatterScoreCapsAt0Point2TimesBody`) narrows the surviving claim to what's
+actually true — the *verdict* is bounded (0.2×body, below Update=0.55), not Top-1's
+identity. Measured: `DocFreqTieBreak`'s saturation rate (fraction of tied pairs it can't
+separate) is low, 0.114–0.269 — unlike BACKLOG B-036's rejected min-idf-based signal for a
+different purpose, this one does discriminate — but *what* it discriminates on is a
+corpus-wide "how rare is this note overall" measure, not query relevance, and
+`tiebreak-comparison.golden` shows it accordingly: it repeatedly evicts topically-plausible
+Java/Spring/build-tooling notes in favor of admitting globally-rare-tag notes from
+unrelated ecosystems (Python, React, LLM-wiki) on Java/Spring-adjacent queries. Against
+ground truth, that cost buys nothing — F1 is bit-identical (0.587) across all four
+strategies including path, so DocFreq's ΔF1 sits inside, not outside, the zero-width noise
+floor Recency/Verified (two unmotivated reorderings) themselves set. **Not shipped**, per
+the same decision rule this session pre-committed to before measuring: `sortByScore` stays
+path-only, and none of the five goldens a shipped change would move
+(`calibration.golden`, `neighbour-sweep.golden`, `intent-gate.golden`,
+`bodypass-window.golden`, `neighbour-frequency.golden`) changed — confirmed by a full
+`go test ./...` pass, no `-update` run on any of them. This item's own two motivating
+untagged notes (`transactional-outbox-pattern`, `cqrs-and-event-driven-messaging`) were
+checked directly and neither strategy admits either, consistent with B-031's own closing
+finding that the row's problem is a body-signal gap, not a tie-break gap. The two new
+goldens and the `pkg/recall/tiebreak.go` seams stay in the tree as reusable measurement
+infrastructure. One variant named but not tried: a query-scoped specificity signal (idf
+over only the query's own terms, the vocabulary `weightsOver` already uses) rather than a
+corpus-global one over a note's full tag set — untried, not rejected. See BACKLOG.md's
+B-038 closing section for the full numbers.
+
 **B-022 closed in Phase 4**
 (the schema pattern now covers all nine `cfg.Pipeline` stages minus `critique`); **B-007
 closed in Phase 4** (`agents/forge-librarian.md`'s prompt stamps `Forge-Write: true` on
@@ -747,7 +789,7 @@ project, not a phase gated inside this one; see BACKLOG B-021. One phase per ses
 time runs out the cut order is `6b → 5b → advisor tier`. If work comes up outside the
 current phase's scope, write it to `docs/BACKLOG.md` rather than building it.
 
-**Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004, **B-037**, **B-038** and
+**Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004, **B-037** and
 most of the twelve findings 2b recorded are open; **B-025 is blocked**, not open. B-001 (doc coherence), B-005 (seven note types) and
 B-006 (link rewrite) closed on 2026-08-09; B-007 and B-022 in Phase 4; B-009 and B-024 on
 2026-08-21, when B-023 and B-027 were also half-closed (docs synced, the behavior/design-doc
@@ -767,9 +809,10 @@ the same day once its ecosystem-label prerequisite landed (see the Status note a
 **`docs/TODO.md`'s PLANNED class is empty again, not still empty** — B-037 briefly had a
 PLANNED section on 2026-08-27, scoped to measurement only, ran the same day, and was
 dropped per the file's own rule once its "Done when" was met (see the Status note above).
-B-037 and B-038 are both back to NO STEPS by their own argument, each naming a measurement
-to run before any design is chosen; so nothing in BACKLOG's open list currently has a
-six-field plan to execute; the next phase or out-of-phase item starts by writing one.
+B-037 is back to NO STEPS by its own argument, naming a measurement to run before any
+design is chosen (B-038 closed 2026-08-31, see the Status note above — no longer part of
+this pattern); so nothing in BACKLOG's open list currently has a six-field plan to
+execute; the next phase or out-of-phase item starts by writing one.
 
 **`docs/TODO.md` is the execution half of that file** (written 2026-08-23). BACKLOG records
 *why* an item exists; TODO records *how to close it* — a six-field plan (anchors,
@@ -852,27 +895,15 @@ Each is stated in a different doc and each is easy to violate by accident:
   a rewrite.
 - Telemetry logs the topic and a hash. Never raw question text, code, or file contents.
 - CLI only for v1. Do not build the daemon on speculation — measure first.
+- `pkg/report` must not import `pkg/codeindex`.
+- `pkg/gitsig` shells out to the `git` CLI rather than go-git, deliberately (B-009).
 
 ## Layout and budgets — all built as of 3b
 
-```
-cmd/forge/        CLI
-pkg/vault/        frontmatter + markdown AST (goldmark), mtime-cached
-pkg/recall/       deterministic question -> note scoring; zero model calls
-pkg/similarity/   MinHash + LSH banding
-pkg/graph/        note link graph: components, hubs, orphans, centrality
-pkg/codeindex/    go-tree-sitter (Java + TypeScript) — the only cgo package, tag-gated
-pkg/coderef/      extracts code citations from note bodies and frontmatter
-pkg/gitsig/       churn, ownership, co-change coupling — via the git CLI, not go-git (B-009)
-pkg/drift/        the key package — ADDENDUM §B.6, AST comparison not line diffs
-pkg/linkcheck/    HTTP HEAD on sources, cached, rate-limited
-pkg/report/       renders analyses to markdown; must not import pkg/codeindex
-pkg/store/        SQLite via modernc.org/sqlite, derived cache only except the budget table
-pkg/engine/       none/host/api/advisor backends, per-stage select+fallback, engine_trail
-pkg/config/       the four-layer config chain
-pkg/sentinel/     id-based begin/end managed comment blocks; Upsert/UpsertBefore/Remove
-pkg/scrub/        redacts secret/PII-shaped content from a vault copy; fails closed
-```
+Package layout: `cmd/forge/` (CLI) over `pkg/vault`, `pkg/recall`, `pkg/similarity`,
+`pkg/graph`, `pkg/codeindex` (the only cgo package, tag-gated), `pkg/coderef`, `pkg/gitsig`,
+`pkg/drift`, `pkg/linkcheck`, `pkg/report`, `pkg/store`, `pkg/engine`, `pkg/config`,
+`pkg/sentinel`, `pkg/scrub` — see each package's own doc comment for what it does.
 
 Latency budgets and the **measured** actuals on an Apple M4: `forge drift` <100ms → **60–70ms**
 (the binding constraint — it runs on the git-hook path), `forge index` <200ms → **20ms**,
