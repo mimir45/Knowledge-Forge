@@ -149,6 +149,44 @@ func TestNeighbourWindowMatchesBodyPassSizeToday(t *testing.T) {
 	}
 }
 
+// TestRankPoolWithBodyPassMatchesRankPoolAtShippedSize proves the B-038 measurement seam
+// (RankPoolWithBodyPass) changed nothing about production behavior: RankPool is now a
+// one-line delegation to RankPoolWithBodyPass(..., BodyPassSize), and this pins that
+// equivalence — across both a body-scored doc and a corpus wider than the window — so a
+// future edit to either can't silently diverge them.
+func TestRankPoolWithBodyPassMatchesRankPoolAtShippedSize(t *testing.T) {
+	body := []byte("keyset pagination keyset pagination keyset pagination")
+	wide := make([]Doc, BodyPassSize+5)
+	for i := range wide {
+		wide[i] = Doc{Rel: string(rune('a'+i)) + ".md", Slug: string(rune('a' + i)),
+			Title: "spring boot", Stack: []string{"spring-boot"}}
+	}
+	cases := []struct {
+		name string
+		docs []Doc
+		q    Query
+	}{
+		{"body-scored doc", []Doc{{Rel: "a.md", Slug: "keyset-pagination",
+			Title: "Keyset Pagination", LoadBody: func() []byte { return body }}},
+			Query{Question: "how does keyset pagination work"}},
+		{"corpus wider than the window", wide,
+			Query{Question: "spring boot", Stack: []string{"spring-boot"}}},
+	}
+	for _, c := range cases {
+		want := RankPool(c.q, c.docs, now)
+		got := RankPoolWithBodyPass(c.q, c.docs, now, BodyPassSize)
+		if len(got) != len(want) {
+			t.Fatalf("%s: len = %d, want %d", c.name, len(got), len(want))
+		}
+		for i := range want {
+			if got[i].Slug != want[i].Slug || got[i].Score != want[i].Score {
+				t.Errorf("%s: [%d] = {%s %v}, want {%s %v}",
+					c.name, i, got[i].Slug, got[i].Score, want[i].Slug, want[i].Score)
+			}
+		}
+	}
+}
+
 // RankPool must never truncate — Rank's TopN cut is the only truncation point, so a
 // corpus with more than TopN nonzero-scoring candidates should return all of them from
 // RankPool, and Rank should return exactly the leading TopN of that same list.

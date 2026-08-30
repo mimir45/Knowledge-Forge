@@ -46,8 +46,9 @@ not an oversight:
   section 2026-08-27, ran it the same day, and dropped back to NO STEPS** — its plan was
   scoped to measurement only (widen the labelled corpus, re-measure the margin), never to
   moving `intentGate`, and the margin came back unchanged, so there was no design to do.
-  B-038 is still NO STEPS by its own argument, naming a measurement to run before any
-  design is chosen.
+  B-038 was measured 2026-08-30 against its own named unblock condition (a); it stayed
+  NO STEPS — the measurement didn't settle (b), the tie-break design question, which was
+  never in scope for this pass.
 - **NO STEPS** — open but not actionable by an implementation session: blocked on external
   observation, or a user decision, or "record, don't fix" by standing rule. Listed with
   its unblock condition instead of steps.
@@ -68,7 +69,7 @@ closing note, not restated here.
 | B-004 | Module path has no VCS host prefix | NO STEPS — deferred by decision | [below](#no-steps) |
 | B-012 | `code_refs` has no live producer | NO STEPS — blocked on packaging | [below](#no-steps) |
 | B-037 | Intent gate FIRE/QUIET margin now negative | NO STEPS — measure further (targeted band) | [below](#no-steps) |
-| B-038 | `bodyPass` window allocated by path, not relevance | NO STEPS — measure first | [below](#b-038--bodypasss-top-20-window-is-allocated-by-path-not-by-relevance) |
+| B-038 | `bodyPass` window allocated by path, not relevance | NO STEPS — (a) measured 2026-08-30; (b) still undesigned | [below](#b-038--bodypasss-top-20-window-is-allocated-by-path-not-by-relevance) |
 
 ---
 
@@ -119,23 +120,28 @@ re-derive a number that isn't failing.
 
 ## B-038 — `bodyPass`'s top-20 window is allocated by path, not by relevance
 
-**Measure before designing — see BACKLOG's entry for the full derivation, split out of
-B-031's closure.** `bodyPass` opens `cands[:20]` after sorting by frontmatter score then
-**path ascending**; on any query where more candidates tie at 0.000 frontmatter than fit
-the window, which directory a note lives in (not its content) decides whether its body is
-ever read. Confirmed for one pair: `transactional-outbox-pattern.md` and
-`cqrs-and-event-driven-messaging.md` (`notes/howto/`) carry heavy body signal for a real
-query and are never opened, because `notes/concept/*` fills the window first.
+**Question (a) measured 2026-08-30 — see BACKLOG's entry for the full numbers.**
+`cmd/forge/bodypass_window_test.go` / `testdata/bodypass-window.golden` ran the capped
+(`BodyPassSize=20`) vs. uncapped comparison across 24 queries (9 calibration + 15 from
+`neighbour-labels.txt`), via a new `pkg/recall.RankPoolWithBodyPass` proven
+byte-identical to today's `RankPool` at the shipped size. Top-1 never changed (0/24), but
+`Candidates` changed on 16/24 rows and `Neighbours` on 3/24 (checked: genuine band shifts,
+not verdict flips) — so the window does bind, below Top-1, at corpus scale. `BodyPassSize`
+was not raised; `sortByScore`'s path tie-break was not touched.
 
-**Unblock condition:** run `TestCalibration`'s corpus staging at a widened or removed
-`BodyPassSize` across more than the nine-query calibration set (the entry's own check
-found no change on those nine) to see whether the window ever changes a real verdict —
-that answers question (a) in the BACKLOG entry. If it does, question (b) — what the
-tie-break should be instead of path — needs its own design pass, not a default guess.
+**Unblock condition, narrowed to what's left:** question (a) is answered for "does the
+cap ever change anything" (yes, below Top-1) but not swept across intermediate window
+sizes, and Top-1 — what a caller mostly acts on — never moved on this 24-query set. What's
+left is exclusively **question (b)**: what the tie-break should favor instead of path
+(recency, verified date, a document-frequency signal per §2.3.1), which needs its own
+design pass now that (a) has shown the window is not inert. A follow-up intermediate-size
+sweep is optional, not required, before starting (b) — this measurement didn't find a
+reason one is needed.
 
-**Do not respond to this by simply raising `BodyPassSize`.** The cost (a file open per
-window slot) is real and unmeasured at corpus scale; DESIGN §8 sized "top 20" for latency,
-and nothing here shows a wider window changes an actual verdict yet.
+**Do not respond to this by simply raising `BodyPassSize`.** Still true after the
+measurement: the cost (a file open per window slot) is real and still unmeasured at
+production scale, and the fix this entry argues for is a better tie-break, not a bigger
+window — see BACKLOG's "why this is a defect and not just a cap that's too small."
 
 ## B-003 — repo directory still named `TIL`
 
