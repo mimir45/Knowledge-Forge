@@ -6,7 +6,7 @@
   "author": {
     "name": "Samir"
   },
-  "homepage": "https://github.com/mimir45/Knowledge-Forge/blob/main/docs/ROADMAP.md",
+  "homepage": "https://github.com/mimir45/Knowledge-Forge#readme",
   "repository": "https://github.com/mimir45/Knowledge-Forge",
   "license": "MIT",
   "keywords": ["knowledge-base", "obsidian", "notes", "static-analysis", "drift-detection"]

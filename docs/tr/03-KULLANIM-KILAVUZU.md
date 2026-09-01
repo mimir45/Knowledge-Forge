@@ -1,7 +1,6 @@
 # Knowledge Forge — Kullanım Kılavuzu
 
-> *Neden* için [`01-FIKIR.md`](01-FIKIR.md), *nasıl çalışır* için
-> [`02-MIMARI.md`](02-MIMARI.md), dosya dökümü için [`04-DOSYA-DOSYA.md`](04-DOSYA-DOSYA.md).
+> *Nasıl çalışır* için [`02-MIMARI.md`](02-MIMARI.md).
 
 ---
 

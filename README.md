@@ -1,5 +1,24 @@
 # Knowledge Forge
 
+**Turn "explain X" moments into a verified, linked Obsidian vault — zero model calls required.**
+
+<p>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat" alt="License"></a>
+  <a href="https://github.com/mimir45/Knowledge-Forge/stargazers"><img src="https://img.shields.io/github/stars/mimir45/Knowledge-Forge?style=flat&color=yellow" alt="Stars"></a>
+  <a href="#still-in-beta"><img src="https://img.shields.io/badge/status-beta-orange?style=flat" alt="Beta"></a>
+</p>
+
+<p>
+  <a href="#install">Install</a> ·
+  <a href="#how-to-use-it">Usage</a> ·
+  <a href="#architecture">Architecture</a> ·
+  <a href="#privacy">Privacy</a> ·
+  <a href="#documentation">Documentation</a> ·
+  <a href="#license">License</a>
+</p>
+
+---
+
 Turns "explain X" moments into permanent, linked, verified markdown notes in an
 Obsidian vault — so the second time the question comes up, it's a vault read instead of
 a research run.
@@ -23,9 +42,8 @@ Claude Code discovers all of them from this repo's default component paths, no m
 `settings.json` edits needed.
 
 **Requirements:** `git` on `PATH` (`pkg/gitsig` shells out to the `git` CLI for churn,
-ownership, and co-change coupling — see `docs/adr/0002-go-for-static-core.md` for why).
-Nothing else for the portable build; see "Build lanes" below for what the optional
-code-index feature adds.
+ownership, and co-change coupling analysis). Nothing else for the portable build; see
+"Build lanes" below for what the optional code-index feature adds.
 
 ## How to use it
 
@@ -40,14 +58,46 @@ fresh research run, and captures new explanations into your vault as they happen
   history on `post-commit` / `post-merge` / `post-checkout`, never against the
   uncommitted working tree.
 - `forge check` — the weekly pass: renders every static report into `<vault>/reports/`.
-- `forge gate` — the seven DESIGN §12 quality gates; a failing draft goes to `_inbox/`
-  with `confidence: low`, never a silent publish.
+- `forge gate` — the seven quality gates; a failing draft goes to `_inbox/` with
+  `confidence: low`, never a silent publish.
 - `forge logback` — makes the vault's knowledge discoverable from the code repo itself:
   `docs/knowledge-map.md`, per-module `CLAUDE.md` fragments, opt-in inline markers.
 - `forge scrub` — redacts secret/PII-shaped content from a vault copy; fails closed —
   see `pkg/scrub`.
 
-Run `forge --help`, or any subcommand with `--help`, for the full command reference.
+Run `forge --help`, or any subcommand with `--help`, for the full command reference. For
+a full walkthrough of installation, configuration, and every command in detail, see the
+(Turkish-language) [usage guide](docs/tr/03-KULLANIM-KILAVUZU.md).
+
+## Architecture
+
+Knowledge Forge is built static-first: the core that actually recalls notes, checks
+drift, and gates quality runs with zero model calls, so the system works with no API key
+and no network dependency at all. The vault's markdown is the single source of truth —
+the SQLite cache and every generated report are derived, disposable artifacts that
+`forge reindex` can always rebuild from the vault, never the other way around. Claude
+Code sits on top as the orchestration layer, invoking the `forge` CLI, which in turn
+calls into the `pkg/*` libraries that hold all the actual logic — a strict,
+one-directional dependency chain, top to bottom. That separation is why the static core
+is independently testable and trustworthy: no LLM step is load-bearing for correctness,
+only for optional enrichment.
+
+```mermaid
+flowchart TD
+    L3["Layer 3 — Claude Code integration<br/>.claude-plugin/ · hooks/ · skills/ · agents/"]
+    L2["Layer 2 — CLI: cmd/forge (20 subcommands)<br/>flag parsing · orchestration · output formatting"]
+    L1["Layer 1 — Libraries: pkg/* (18 packages)<br/>all business logic, independently testable"]
+    L0V["Layer 0 — Vault<br/>vault/*.md (source of truth)"]
+    L0C["Layer 0 — Cache<br/>.forge/*.db, .forge/*.json (derived, rebuildable)"]
+
+    L3 -->|exec| L2
+    L2 -->|import| L1
+    L1 -->|read/write| L0V
+    L1 -->|read/write| L0C
+```
+
+For the full layer-by-layer breakdown, package map, and import graph, see the
+(Turkish-language) [architecture doc](docs/tr/02-MIMARI.md).
 
 ## Build lanes
 
@@ -89,8 +139,18 @@ including the one thing redaction deliberately does not hide, is in
 
 ## Documentation
 
-Start at [`docs/ROADMAP.md`](docs/ROADMAP.md) — a condensed index over the full design.
-`CLAUDE.md` has the project's layout, invariants, and commands.
+This is the current, complete set of docs — nothing else is missing, older design
+documents were retired as the project moved from an internal build log to a public
+plugin:
+
+- [`docs/tr/02-MIMARI.md`](docs/tr/02-MIMARI.md) — architecture, package map, import
+  graph (Turkish).
+- [`docs/tr/03-KULLANIM-KILAVUZU.md`](docs/tr/03-KULLANIM-KILAVUZU.md) — full usage
+  guide: install, configuration, every command (Turkish).
+- [`docs/datasets.md`](docs/datasets.md) — training-data capture tiers and privacy
+  detail.
+- [`CLAUDE.md`](CLAUDE.md) — project layout, invariants, and commands, for anyone
+  (human or AI agent) working in this repo.
 
 ## License
 
@@ -105,5 +165,5 @@ actively working through them. If you hit a bug, have an idea for a feature, or 
 think something could work better — please open an issue. Bug reports, feature ideas,
 and blunt feedback are all genuinely welcome and useful right now.
 
-If it's useful to you, a star on the repo and sharing it with someone who might find it
-useful too would mean a lot. Thanks for trying it out. 🙏
+If it's useful to you, a star, a repost, or a note about how it went for you would mean
+a lot — I read all of it. Thanks for trying it out. 🙏

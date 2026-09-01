@@ -1,8 +1,7 @@
 # Knowledge Forge — Mimari
 
-> Bu doküman **nasıl** sorusunu cevaplar. *Neden* için [`01-FIKIR.md`](01-FIKIR.md),
-> kullanım için [`03-KULLANIM-KILAVUZU.md`](03-KULLANIM-KILAVUZU.md), dosya dökümü için
-> [`04-DOSYA-DOSYA.md`](04-DOSYA-DOSYA.md).
+> Bu doküman **nasıl** sorusunu cevaplar. Kullanım için
+> [`03-KULLANIM-KILAVUZU.md`](03-KULLANIM-KILAVUZU.md).
 
 ---
 
