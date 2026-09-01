@@ -45,6 +45,18 @@ Claude Code discovers all of them from this repo's default component paths, no m
 ownership, and co-change coupling analysis). Nothing else for the portable build; see
 "Build lanes" below for what the optional code-index feature adds.
 
+Then run the setup wizard once, before Knowledge Forge is usable — it writes your
+config and developer profile and nothing else:
+
+```
+forge init --vault ~/Documents/Base --language java \
+           --frameworks spring-boot,hibernate --seniority senior
+```
+
+Swap the flags for your own stack (`--vault` is the only required one). See the
+[usage guide](docs/USAGE.md#2-forge-init--the-setup-wizard) for the full flag
+reference.
+
 ## How to use it
 
 Once the plugin is installed, Knowledge Forge mostly works in the background: as you
@@ -67,7 +79,7 @@ fresh research run, and captures new explanations into your vault as they happen
 
 Run `forge --help`, or any subcommand with `--help`, for the full command reference. For
 a full walkthrough of installation, configuration, and every command in detail, see the
-(Turkish-language) [usage guide](docs/tr/03-KULLANIM-KILAVUZU.md).
+[usage guide](docs/USAGE.md).
 
 ## Architecture
 
@@ -97,7 +109,7 @@ flowchart TD
 ```
 
 For the full layer-by-layer breakdown, package map, and import graph, see the
-(Turkish-language) [architecture doc](docs/tr/02-MIMARI.md).
+[architecture doc](docs/ARCHITECTURE.md).
 
 ## Build lanes
 
@@ -143,10 +155,10 @@ This is the current, complete set of docs — nothing else is missing, older des
 documents were retired as the project moved from an internal build log to a public
 plugin:
 
-- [`docs/tr/02-MIMARI.md`](docs/tr/02-MIMARI.md) — architecture, package map, import
-  graph (Turkish).
-- [`docs/tr/03-KULLANIM-KILAVUZU.md`](docs/tr/03-KULLANIM-KILAVUZU.md) — full usage
-  guide: install, configuration, every command (Turkish).
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — architecture, package map, import
+  graph.
+- [`docs/USAGE.md`](docs/USAGE.md) — full usage guide: install, configuration, every
+  command.
 - [`docs/datasets.md`](docs/datasets.md) — training-data capture tiers and privacy
   detail.
 - [`CLAUDE.md`](CLAUDE.md) — project layout, invariants, and commands, for anyone
