@@ -123,11 +123,11 @@ tags = Σ w(t) over t ∈ Q ∩ noteTags  /  Σ w(t) over t ∈ Q
 ```
 
 `w(t)` is the term weight of §2.3.1. The denominator is **every** query term — not
-`|noteTags|`, and, since B-008, no longer the query terms the vault's tag vocabulary
+`|noteTags|`, and no longer the query terms the vault's tag vocabulary
 happens to carry.
 
 Two alternatives are wrong in ways worth recording, and the second is what this spec
-prescribed until B-008:
+prescribed originally:
 
 - **Dividing by `|noteTags|` punishes good tagging.** A note tagged `[goroutines]`
   scores 1.0; a note tagged `[goroutines, concurrency, runtime, scheduler, go,
@@ -161,8 +161,8 @@ whatever the vault's size, so a hapax tag cannot decide a verdict alone. The smo
 form is used rather than `log(N/df)` because the unsmoothed one is exactly zero for a
 term on every note, which would empty the denominator of an active channel.
 
-**A term no note carries weighs the mean of the terms that do.** This is the half of
-B-008 that took two attempts. The weighting above shipped first and moved neither case it
+**A term no note carries weighs the mean of the terms that do.** This half of the fix
+took two attempts. The weighting above shipped first and moved neither case it
 was meant to fix, because the terms carrying a question's meaning were being filtered out
 before any weight was computed — `redis` and `caching` were not weighted lightly, they
 were absent. Admitting them is the fix; giving them a weight is what makes admitting them
@@ -200,7 +200,7 @@ match on the terms it covers, because listing extra technologies is not evidence
 relevance.
 
 The vocabulary filter applies to the hints and not to the question, which is the reverse
-of what it did before B-008, and the asymmetry is the point. **A hint is a user filter; a
+of the naive reading, and the asymmetry is the point. **A hint is a user filter; a
 question term is evidence.** Narrowing a search by `--stack kotlin` in a vault that has
 never seen Kotlin must not thereby make every note match less well — harmless while
 unknown terms weighed nothing, a real regression the moment absent terms carry weight.
@@ -226,7 +226,7 @@ distinction is not academic — 31 of this vault's 91 notes have no `tags:` or `
 after the Phase 1 migration, and zeroing them ranked a correct but under-curated note
 below a well-tagged irrelevant one.
 
-**B-008's absent-term admission does not weaken this.** The two rules answer different
+**The absent-term admission above does not weaken this.** The two rules answer different
 questions and are easy to confuse. Admission is about the *query* side: a term the vault
 tags nowhere still counts in the denominator, because the vault having no such note is
 information. Activation is about the *note* side: a note with no `tags:` at all is not
@@ -235,7 +235,7 @@ rule cannot resurrect a channel the note-side rule switched off — with no quer
 the vocabulary there is no weight to take a mean of, every weight stays zero, and the
 channel deactivates exactly as it did before.
 
-**The asymmetry above was real and is fixed (BACKLOG B-032, closed 2026-08-23).** An
+**The asymmetry above was real and is fixed.** An
 untagged note escaped the absent-term penalty entirely — its tags channel went inactive
 and dropped out of the denominator — while a tagged note with no relevant tags paid the
 same penalty in full, active at a hard 0.000. The note that carried nothing relevant was
@@ -254,7 +254,7 @@ score every note 0.0) generalized to the per-note case.
 **Measured on `examples/vault`, "Redis caching in Spring Boot":** `meterreadingsservice-
 spring-boot-4-x-project` (still untagged) stays at 0.500, and `spring-cli-and-maven-
 commands-for-spring-boot` (the one note with a genuinely matching tag) stays at 0.415 —
-neither of the two notes the entry named moves, and B-008's false positive does not
+neither of the two notes moves, and the earlier false positive does not
 return to first place. What moves is every note in between that carried an *irrelevant*
 tag: across the corpus, 128 active tags/stack channels drop to 84, and all 43 that scored
 a hard 0.000 are gone. One calibration row's winner changes as a result — the Docker
@@ -267,7 +267,8 @@ operating as designed, not a new mechanism, and it is why this fix is scoped to
 activation and does not touch `weightsOver`'s weighting formula.
 
 **Consequence for §3.2's floor and `forge intent`'s gate, both re-measured rather than
-re-tuned.** Every score in the corpus moved by some amount, so both of B-033's derivations
+re-tuned.** Every score in the corpus moved by some amount, so both of the neighbour
+floor's and intent gate's derivations
 were re-run against their original, unedited label files. The neighbour floor's F1 peak
 moved from 0.125 to **0.150** — §3.2 below carries the new sweep. `forge intent`'s gate
 derivation (`cmd/forge/testdata/intent-gate.golden`) still holds mechanically — the gate
@@ -276,7 +277,7 @@ measured separation margin between the two classes went from +0.005 to **-0.036*
 lowest admitted-at-gate FIRE prompt and the highest QUIET prompt now overlap in score
 between 0.407 and 0.443. The gate itself sits safely above both, so nothing is broken
 today, but the classes are no longer cleanly separable everywhere, which is a real finding
-and not something this fix corrects — see **BACKLOG B-037**.
+and not something this fix corrects, and remains an open item.
 
 ```
 score = Σ(w_c · v_c) / Σ(w_c)   over active c
@@ -361,8 +362,8 @@ top_score
 ```
 
 `answer_threshold: 0.85` and `update_threshold: 0.55` are DESIGN §10's config keys.
-Phase 2 hardcodes the defaults in `pkg/recall`; Phase 3 wires them to the config chain
-(AUDIT §8.4 D-7 — `DESIGN:516-518` joins the config union). Do not scatter literals:
+`pkg/recall` hardcodes the defaults; the config chain
+(`DESIGN:516-518` joins the config union) can override them. Do not scatter literals:
 they live in `recall.DefaultThresholds`.
 
 **Stale** means the note's `verified` date — **falling back to `updated`**, in that
@@ -392,7 +393,7 @@ git diff cmd/forge/testdata/calibration.golden     # before -> after, reviewable
 ```
 
 The golden carries a fifth column the table below does not restate: the neighbour set
-each row emits, added closing B-033. Verdict says a note gets created; that column says
+each row emits. Verdict says a note gets created; that column says
 whether it gets created linked or orphaned, and it is the only column a floor change may
 move — score and verdict are functions of `Rank` and `Decide`, which the floor does not
 enter. A golden diff that moves them is a leak into scoring.
@@ -415,7 +416,7 @@ first version of this table was measured against a live vault that then drifted,
 | JPA entity graph to avoid N+1 | `creationtimestamp-and-updatetimestamp…` (unchanged) | 0.333 → **0.119** | CREATE |
 
 Seven of nine winners are unchanged. The two that moved are the same note —
-`spring-cli-and-maven-commands-for-spring-boot`, B-008's original false positive — losing
+`spring-cli-and-maven-commands-for-spring-boot`, the original false positive that motivated the IDF weighting — losing
 the same two inflated channels in two different queries.
 
 **What the fix removed.** Every UPDATE verdict in the "before" column came from the same
@@ -460,12 +461,12 @@ lost their neighbour links as well as their UPDATE verdict. The Storybook query 
 CREATE with **zero** neighbours: both Storybook notes landed at 0.217 and 0.201, under
 §3.2's then-0.30 floor, so the new note would have been written unlinked to the two notes
 obviously related to it. That floor was calibrated against the old scale; re-deriving it
-against the same nine queries used to validate the fix would have been circular, so it
-went to **BACKLOG B-033** and its own session, where the floor was re-derived to **0.125**
+against the same nine queries used to validate the fix would have been circular, so the
+floor was re-derived to **0.125**
 against a separate labelled query set. The same row now emits seven neighbours, five of
-them the Storybook family. §3.2 carries the derivation. Two further consequences are
-**B-031** (the Kafka/Testcontainers miss is a coverage defect, not a precision one, and
-was split out of B-008) and **B-032** (§2.5's untagged-note asymmetry).
+them the Storybook family. §3.2 carries the derivation. Two further consequences worth
+recording separately: the Kafka/Testcontainers miss is a coverage defect, not a precision
+one, and §2.5's untagged-note asymmetry (addressed above).
 
 **The thresholds stay at DESIGN §5.3's 0.85 / 0.55.** Lowering `update_threshold` to 0.45
 was the tempting move when this section was first written, and it remains wrong: on the
@@ -480,9 +481,9 @@ On CREATE, candidates scoring `0.150 – 0.55` are the neighbours the new note l
 They arrive pre-filtered in the `neighbours` array (§4), so the caller never applies a
 threshold itself. The band is not a separate query — it is a slice of the same ranking.
 
-**The floor is 0.150, re-derived 2026-08-23 (BACKLOG B-032), on top of B-033's 0.125.**
-0.30 was chosen before §2.3.1's IDF change moved the scale under it (BACKLOG B-033); 0.125
-was F1's maximum on that scale. B-032's activation fix (§2.5) then moved every note whose
+**The floor is 0.150, re-derived on top of an earlier re-derivation to 0.125.**
+0.30 was chosen before §2.3.1's IDF change moved the scale under it; 0.125
+was F1's maximum on that scale. The activation fix above (§2.5) then moved every note whose
 tags or stack didn't overlap the query — the exact population sitting in the neighbour
 band — which shifted F1's peak again.
 
@@ -502,18 +503,18 @@ becomes a fit. `TestNeighbourFloorSweep` re-runs the sweep and records
 | 0.300 | 0.857 | 0.207 | 0.333 | 1 | 5 |
 
 F1 peaks at 0.150 (0.578, up from 0.125's now-0.550) and no query is left empty until
-0.200 — the same shape of decision B-033 made, re-run on the new scale rather than
+0.200 — the same shape of decision as the earlier re-derivation, re-run on the new scale rather than
 re-argued from scratch.
 
 Precision 0.506 is, as before, a **lower bound**: several counted false positives are
-defensible links the labels simply did not name. Left uncorrected on purpose, same
-reasoning as B-033.
+defensible links the labels simply did not name. Left uncorrected on purpose, for the
+same reason as the earlier derivation.
 
-The cost is on file as **B-036**: §3.1's broadest queries now emit ten neighbours, because
+A known limitation: §3.1's broadest queries now emit ten neighbours, because
 two general Spring notes score on every Spring question. That is a corpus property no
-floor can separate, and a cap on the neighbour count is a different change. B-036's own
-note said to re-measure this after B-032 landed rather than respond to it by raising the
-floor — done: still three of nine queries at the ten-neighbour cap, unchanged in kind.
+floor can separate, and a cap on the neighbour count is a different change — re-measured
+after the activation fix above rather than responded to by raising the
+floor: still three of nine queries at the ten-neighbour cap, unchanged in kind.
 
 ---
 
@@ -548,7 +549,7 @@ entries:
 }
 ```
 
-**`run_id`** is BACKLOG B-035's correlation key, added 2026-08-25 and purely additive to
+**`run_id`** is the D1 outcome-joining correlation key, purely additive to
 this contract. It is minted fresh per call (`telemetry.NewRunID`, 128 random bits, no
 ordering or wall-clock semantics), never repeats, and carries no meaning on its own — a
 caller threads it back through `forge gate --run-id <id>` to join this routing decision
@@ -556,8 +557,8 @@ to whether the note write it led to was actually published. A caller that ignore
 field loses nothing else; the join is optional on both ends.
 
 **The verdict ships in the payload, not in the caller.** §3's tree is implemented once,
-in Go. A skill that restated the thresholds in prose would silently diverge the moment
-AUDIT §8.4 D-7 moves them into Phase 3's config chain, and the divergence would be
+in Go. A skill that restated the thresholds in prose would silently diverge the moment a
+config change moves them, and the divergence would be
 invisible — both copies keep producing plausible numbers.
 
 `matched_on` lists the active channels that scored above zero, in weight order. It is
@@ -587,8 +588,8 @@ verdict: UPDATE(extend)
 
 The `sum` line prints the renormalizing denominator explicitly, because that is the
 number a surprising verdict usually turns on. The `idf` line under a frontmatter channel
-prints §2.3.1's per-term weight and the raw document frequency behind it, because since
-B-008 the hit list alone no longer explains the value — here the channel reads 0.500
+prints §2.3.1's per-term weight and the raw document frequency behind it, because
+the hit list alone no longer explains the value under IDF weighting — here the channel reads 0.500
 rather than 1.000 because `keyset` is tagged by no note in the vault (`df 0`) and still
 counts, at the mean of the present weights. Reading a weight without its `df` cannot
 distinguish a term on every note from a term on none. The `verdict:` line is printed on **every**

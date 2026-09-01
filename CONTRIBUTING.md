@@ -4,16 +4,10 @@
 
 1. [`docs/ROADMAP.md`](docs/ROADMAP.md) — condensed index over the design. Always start
    here.
-2. [`docs/AUDIT.md`](docs/AUDIT.md) §8.4 — the binding decision record (D-1…D-8). The
-   design docs below it were deliberately **not** edited when a decision superseded
-   them, so where §8.4 marks a line stale, the source doc still says the old thing —
-   §8.4 is what you follow, not the doc text.
-3. `CLAUDE.md`'s "Phase workflow" section — this project is built one phase at a time
-   (`0 → 1 → 2 → 2b → 3 → 3b → 4 → 5 → 5b → 6 → 6b`). Don't start phase *N+1* with phase
-   *N* unmerged, and anything out of the current phase's scope goes to
-   [`docs/BACKLOG.md`](docs/BACKLOG.md) rather than getting built on the spot.
-4. [`docs/BACKLOG.md`](docs/BACKLOG.md) — known open items. Check it before assuming
-   something is a new bug.
+2. `CLAUDE.md` — the project's layout, invariants, config chain, and commands.
+3. [`docs/KNOWLEDGE-FORGE-DESIGN.md`](docs/KNOWLEDGE-FORGE-DESIGN.md) and
+   [`docs/KNOWLEDGE-FORGE-ADDENDUM.md`](docs/KNOWLEDGE-FORGE-ADDENDUM.md) — the full
+   spec: schema, pipeline, gates, engine tiers, datasets, config.
 
 ## Build & test
 
@@ -57,11 +51,8 @@ by accident:
   splitting orchestration from the piece doing the actual work (see `cmd/forge/gate.go`
   or `pkg/scrub` for the pattern).
 - Match the surrounding file's comment density and naming — comments here tend to
-  explain *why* a choice was made (a trade-off, a measured number, a backlog item),
-  not just restate what the code does.
-- New backlog items go in `docs/BACKLOG.md` in the same style as existing entries: what
-  was found, why it isn't this change's job to fix, and (if closed later) what the fix
-  did and didn't cover.
+  explain *why* a choice was made (a trade-off, a measured number, a rejected
+  alternative), not just restate what the code does.
 
 ## Fixture vaults — don't touch by accident
 

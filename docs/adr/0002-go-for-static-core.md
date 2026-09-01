@@ -2,9 +2,8 @@
 
 - **Status:** Accepted
 - **Source:** `docs/KNOWLEDGE-FORGE-STACK.md` §1 ("ADR-001 — Go for the T0 static
-  core"), per `docs/AUDIT.md` §8.4 D-3. STACK.md's own doc numbers this ADR-001; this
-  repo's `docs/adr/` sequence numbers it 0002 so the file order matches AUDIT D-3's
-  ordering, not STACK's internal numbering.
+  core"). STACK.md's own doc numbers this ADR-001; this repo's `docs/adr/` sequence
+  numbers it 0002 to match this file's place after 0001, not STACK's internal numbering.
 
 ## Context
 
@@ -74,7 +73,7 @@ second, separate build lane rather than forcing cgo on everything that doesn't n
   constraint, since it runs on the hook path), `forge index` at ~20ms against 200ms, and
   `forge check` at 390ms warm / 930ms cold against a 10s budget. None of this required
   tuning beyond ordinary Go — no budget was a near-miss.
-- `pkg/gitsig` shells out to the `git` CLI instead of using a go-git library (**B-009**,
-  open, kept as a known, accepted deviation) — one place this ADR's "no external runtime
-  dependency" ideal is not quite absolute, since it assumes `git` is already on PATH,
-  which every environment this tool runs in already satisfies.
+- `pkg/gitsig` shells out to the `git` CLI instead of using a go-git library — a known,
+  accepted deviation, and one place this ADR's "no external runtime dependency" ideal is
+  not quite absolute, since it assumes `git` is already on PATH, which every environment
+  this tool runs in already satisfies.

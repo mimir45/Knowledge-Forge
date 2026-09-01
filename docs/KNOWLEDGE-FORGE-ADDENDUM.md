@@ -247,9 +247,7 @@ git
 Everything above is deterministic and takes seconds. It produces
 `.forge/code-index-<repo>.json` — **one file per configured `--repo name=path`, not one
 shared file.** `forge drift`/`check`/`logback` all take `--repo` repeatably, so a single
-name would let the second repo's index overwrite the first's on the very next run. This
-section said the singular `.forge/code-index.json` until 2026-08-23; corrected under
-BACKLOG B-027, which is a filename correction and not a design change.
+name would let the second repo's index overwrite the first's on the very next run.
 
 **The map:** join code → notes with pure matching — a note with `stack: [kafka]` maps
 to files importing `org.apache.kafka`; a note mentioning `OrderConsumer` maps to the

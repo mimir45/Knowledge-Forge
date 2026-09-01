@@ -90,8 +90,8 @@ func TestTagsChannelTwoSidedActivation(t *testing.T) {
 	}
 }
 
-// The question is phrased in terms the vault's stack vocabulary carries, which since
-// B-008 is load-bearing: an absent question term now sits in the denominator and would
+// The question is phrased in terms the vault's stack vocabulary carries, which is
+// load-bearing: an absent question term sits in the denominator and would
 // pull a superset match below 1.000 for a reason that has nothing to do with supersets.
 // That effect has its own test below; this one is about activation and containment.
 func TestStackChannelActivation(t *testing.T) {
@@ -155,7 +155,7 @@ func TestSetOfSplitsHyphenatedValues(t *testing.T) {
 	}
 }
 
-// B-008. Unweighted, "Redis caching in Spring Boot" scored 0.740 against a Spring CLI
+// Before IDF weighting, "Redis caching in Spring Boot" scored 0.740 against a Spring CLI
 // note: every query term counted the same, so two tags half the vault carries stood in
 // for the one that carried the meaning. The shape is reproduced here in miniature.
 func TestTagsChannelWeightsRareTermsHigher(t *testing.T) {
@@ -166,8 +166,8 @@ func TestTagsChannelWeightsRareTermsHigher(t *testing.T) {
 	docs = append(docs, Doc{Slug: "rare", Tags: []string{"spring", "redis"}})
 	s := newScope(Query{Question: "redis caching in spring"}, docs)
 
-	// df(spring) = 10 of 10 -> log(2) = 0.693; df(redis) = 1 -> log(11) = 2.398. Since
-	// B-008's second half "caching" is in the denominator too, at the mean of those two
+	// df(spring) = 10 of 10 -> log(2) = 0.693; df(redis) = 1 -> log(11) = 2.398, and
+	// "caching" is in the denominator too, at the mean of those two
 	// (1.546), which is why both values sit below their pre-admission figures — the note
 	// is being asked to account for a term the vault tags nowhere, and cannot.
 	common := s.tagsChannel(Doc{Tags: []string{"spring"}})
@@ -183,8 +183,8 @@ func TestTagsChannelWeightsRareTermsHigher(t *testing.T) {
 // not evidence, so an unknown hint term must not move the score — narrowing a search by
 // "kotlin" in a vault with no Kotlin cannot make every note match less well.
 //
-// Stated as a comparison, deliberately. Before B-008's second half this was an absolute
-// (value == 1.000), and that is no longer what "undiluted" means: the question's own
+// Stated as a comparison, deliberately, rather than as an absolute (value == 1.000) —
+// that is no longer what "undiluted" means under IDF weighting: the question's own
 // absent terms do count against a note now. Only the hint side is asserted here.
 //
 // This is why the vocabulary filter changed sides rather than being deleted. Question
@@ -228,7 +228,7 @@ func TestIDFCapAndDegenerateCases(t *testing.T) {
 	}
 }
 
-// B-008's second half. A question term no note carries stays in the channel's denominator:
+// A question term no note carries stays in the channel's denominator:
 // the vault holding nothing about "redis" is evidence about the vault, not an absence of
 // evidence. Before, inVocab dropped it before any weight was computed, so the tags channel
 // read 1.000 off the single term the note happened to share and a Spring CLI note answered
@@ -242,7 +242,7 @@ func TestTagsChannelCountsTermsNoNoteCarries(t *testing.T) {
 	near(t, "one term of three", c.Value, 1.0/3.0)
 }
 
-// The absent term's weight is the mean of the present ones. The alternative B-008 sketched
+// The absent term's weight is the mean of the present ones. The alternative considered
 // — flooring document frequency at 1 — would hand it the largest weight any term can have
 // and invert idfCap's purpose, letting a term the vault has never seen outweigh every term
 // it has. A mean of capped values is also still capped, so the guard survives.
@@ -259,7 +259,7 @@ func TestAbsentTermWeighsThePresentMean(t *testing.T) {
 	}
 }
 
-// B-032. Before this fix, activation asked only whether the note carries the field
+// Before this fix, activation asked only whether the note carries the field
 // (len(tags) > 0), so a tagged note with zero overlap paid the absent-term penalty in
 // full while an untagged note skipped the channel entirely — the note that carries
 // nothing relevant was worse off than the note that carries nothing at all. weighted's

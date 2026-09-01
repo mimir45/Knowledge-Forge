@@ -40,8 +40,8 @@ Bu proje sıfırdan doğmadı. Öncesinde çalışan bir v1 vardı ve hâlâ dur
 hook yok, plugin manifest yok.
 
 Kullanıcının global `~/.claude/CLAUDE.md`'si "explain X" tipi promptları bu skill'e
-yönlendiriyor, skill de `/Users/mimir45/Documents/Base/TIL/<konu>/` altına markdown
-yazıyor. Bu, **sürtünme** problemini çözdü: not yazmak artık bedava, arka planda oluyor.
+yönlendiriyor, skill de `<vault>/TIL/<konu>/` altına markdown yazıyor. Bu, **sürtünme**
+problemini çözdü: not yazmak artık bedava, arka planda oluyor.
 
 Ama diğer ikisini çözmedi:
 

@@ -12,7 +12,7 @@ import (
 )
 
 // markerStyles is deliberately narrower than sentinel's Style set: codeindex.Lang only
-// parses Java and TypeScript (AUDIT §7's file-count call, documented on codeindex.Lang
+// parses Java and TypeScript (documented on codeindex.Lang
 // itself), so a Python entry here would gate markers on a language this binary can never
 // find symbols in. Extending codeindex's grammars extends this table too.
 var markerStyles = map[string]sentinel.Style{

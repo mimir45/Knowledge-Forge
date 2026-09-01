@@ -4,8 +4,8 @@
 // forge verify-code is a syntax/compile check, never a dependency resolver: it never
 // runs `npm install`, never resolves Maven/Gradle coordinates, and never touches the
 // network. It shells out to the system toolchain already on the machine (javac, tsc,
-// bash -n), following the same precedent as pkg/gitsig (BACKLOG B-009: shell to the
-// tool, don't embed it). A snippet that references a real dependency the sandbox does
+// bash -n), following the same precedent as pkg/gitsig: shell to the
+// tool, don't embed it. A snippet that references a real dependency the sandbox does
 // not have on its classpath is not a defect in the snippet — see verdictFromDiagnostics.
 package qualitygate
 
@@ -146,7 +146,7 @@ func splitNonEmpty(s string) []string {
 
 // stripDir removes every occurrence of a throwaway temp dir's absolute path from a set
 // of diagnostic lines. Without this, two identical runs of the same snippet produce
-// different os.MkdirTemp paths embedded in Diagnostics, which breaks the B-020
+// different os.MkdirTemp paths embedded in Diagnostics, which breaks this codebase's
 // determinism convention (gate_test.go hashes Report.Outcomes across two runs). The
 // snippet's basename survives — only the random directory prefix is noise.
 func stripDir(lines []string, dir string) []string {

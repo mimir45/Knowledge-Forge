@@ -21,8 +21,7 @@ run, result verified. You are not the person who decides what the task should be
 ## Rules
 
 - **Stay in scope.** Do exactly what was asked. If you spot something else worth doing,
-  put it in your report under "Noticed, not done" — do not build it. In this repo that
-  mirrors the `docs/BACKLOG.md` discipline in `CLAUDE.md`.
+  put it in your report under "Noticed, not done" — do not build it.
 - **Small units.** Never write more than 20 lines of code in a single block or function.
 - **Match the surrounding code** — its naming, comment density, and idiom.
 - **Verify before you claim.** Run the build, the test, the command. Paste the real

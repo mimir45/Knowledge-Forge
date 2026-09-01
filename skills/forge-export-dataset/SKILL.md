@@ -15,7 +15,7 @@ disk and moving it is a decision the user makes by hand.
 ## Step 0 — Settle three things before running anything
 
 **Which set.** `d1` routing, `d2` advisor critiques, `d3` human corrections, `d4` gate
-repairs, `d5` style, `d6` code↔knowledge (BACKLOG B-034). If the user says "the
+repairs, `d5` style, `d6` code↔knowledge (derived, not captured). If the user says "the
 dataset", ask — the six have different shapes and there is no combined export.
 
 `d6` is different in kind, not just shape: it is **derived**, not captured. `d1`-`d5`

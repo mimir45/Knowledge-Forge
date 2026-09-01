@@ -34,20 +34,18 @@ trigger:
   # manual = only on an explicit /forge
 
 # ── recall ───────────────────────────────────────────────────────────────────
-# DESIGN §5.3's decision tree. Moved here from pkg/recall by AUDIT §8.4 D-7.
+# DESIGN §5.3's decision tree.
 #   score >= answer_threshold, fresh  -> ANSWER_FROM_VAULT
 #   score >= answer_threshold, stale  -> UPDATE(refresh)
 #   score >= update_threshold         -> UPDATE(extend)
 #   otherwise                         -> CREATE, linking every neighbour
 #                                        at or above neighbour_min_score
 #
-# neighbour_min_score is the one of the three that has moved: 0.30 -> 0.125 closing
-# BACKLOG B-033, because 0.30 was calibrated before B-008 changed the scale and left most
-# adjacent-topic queries creating a note with no links at all; then 0.125 -> 0.150 closing
-# B-032, because that fix moved every tags/stack channel score whose note didn't actually
-# hit the query, which shifted F1's peak on the same label sweep. Raise it for fewer,
+# neighbour_min_score is the one of the three that has moved, re-derived twice against a
+# labelled query sweep as the scoring blend itself changed (see
+# references/recall-spec.md). Raise it for fewer,
 # surer links; lower it for a denser graph. The other two are DESIGN §5.3's and should not
-# be touched — see docs/BACKLOG.md B-008.
+# be touched to paper over a recall scoring gap — re-derive the calibration table instead.
 recall:
   strategy: lexical        # lexical | hybrid (hybrid is a v2.2 upgrade, not built)
   answer_threshold: 0.85

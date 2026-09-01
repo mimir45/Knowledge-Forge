@@ -5,12 +5,12 @@ description: Use when the user wants to set up Knowledge Forge for a vault they 
 
 # Forge Init
 
-A conversational wrapper around one command. **This skill writes nothing.** Per
-`AUDIT.md` §8.4 D-4, `forge init` (the Go binary) is the only writer of
+A conversational wrapper around one command. **This skill writes nothing.**
+`forge init` (the Go binary) is the only writer of
 `~/.forge/forge.config.md` and `<vault>/profiles/me.md` — this file asks the questions,
 builds one shell command, and reports what the binary did. If you find yourself about to
 `Write` or `Edit` either of those two paths directly, stop: that is a second writer,
-and D-4 exists specifically to keep there being one.
+and the whole point of routing through the binary is to keep there being one.
 
 ---
 

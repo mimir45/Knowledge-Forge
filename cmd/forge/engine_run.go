@@ -86,7 +86,7 @@ func runEngineRun(vaultDir string, cfg *config.Config, stage, prompt, rel string
 }
 
 // onExhausted applies on_exhausted's configured meaning once Resolve has already
-// degraded stage to "none" for lack of budget (B-023's behavior half): "queue" stamps
+// degraded stage to "none" for lack of budget: "queue" stamps
 // pending_advisor and lets the run fall through to none as before; "stop" halts with a
 // real non-zero exit instead of none's usual quiet refusal; "degrade" (or anything else
 // the validator accepts) is today's silent fallthrough, deliberately unchanged.
@@ -108,8 +108,8 @@ func onExhausted(cfg *config.Config, root, stage, rel string) (code int, halt bo
 	return 0, false
 }
 
-// queueNote stamps pending_advisor: true (ADDENDUM §A.4's `queue` behavior) via the same
-// frontmatter writer engine record uses. The run still falls through to none below —
+// queueNote stamps pending_advisor: true via the same frontmatter writer engine record
+// uses. The run still falls through to none below —
 // queuing records that today's advisor call was deferred, it does not retry it inline.
 func queueNote(root, rel string) error {
 	n, s, err := loadNoteAndSchema(root, rel)
@@ -144,8 +144,9 @@ func callAndSpend(cfg *config.Config, st *store.Store, root, name, stage, prompt
 	return emitResult(res)
 }
 
-// captureD2 logs the critique verbatim (ADDENDUM §D.1's D2) when the config chain has
-// opted in. It never fails the run — a dataset write error is a side channel, not the
+// captureD2 logs the critique verbatim (the D2 advisor-distillation dataset) when the
+// config chain has opted in. It never fails the run — a dataset write error is a side
+// channel, not the
 // command's job, the same posture the D3 post-commit hook takes toward its own writes.
 //
 // D2.Enabled now checks dataset.enabled as well as the capture list, which this call site

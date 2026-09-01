@@ -37,8 +37,8 @@ slug-based auto-pairing, so a stale or unrelated draft can never pair silently.
 CREATE/UPDATE split: an UPDATE's target note is never touched, but the proposed edit is
 not silently dropped either — it lands in _inbox/ for a human to find and apply.
 
---run-id is optional and pairs with the run_id a preceding forge recall call emitted
-(BACKLOG B-035): when set and dataset capture includes "d1", this write's outcome
+--run-id is optional and pairs with the run_id a preceding forge recall call emitted:
+when set and dataset capture includes "d1", this write's outcome
 (published or quarantined) is recorded keyed by that id, so export can join a routing
 decision to whether the note it led to was actually published. Omitted --run-id is the
 normal case for any write that did not originate from a recall call, and costs nothing —
@@ -58,7 +58,7 @@ func cmdGate(args []string) int {
 	mode := fs.String("mode", "create", "create or update")
 	targetSlug := fs.String("target-slug", "", "update mode: slug of the note being extended")
 	prevDraft := fs.String("previous-draft", "", "path from a prior quarantine, to pair for D4")
-	runID := fs.String("run-id", "", "run_id from the preceding forge recall call (BACKLOG B-035); optional")
+	runID := fs.String("run-id", "", "run_id from the preceding forge recall call; optional")
 	fs.Usage = func() { fmt.Fprint(os.Stderr, gateUsage); fs.PrintDefaults() }
 	if err := fs.Parse(args); err != nil {
 		return 2
@@ -151,8 +151,8 @@ func reportAndQuarantine(root string, cfg *config.Config, draft *vault.Note, s *
 	return reindexAfterQuarantine(root, cfg.Paths.Index)
 }
 
-// captureD1Outcome closes B-035's join: a --run-id passed back from the recall call that
-// led to this write gets a D1Outcome record, so export can later join a routing decision
+// captureD1Outcome joins a --run-id passed back from the recall call that
+// led to this write to a D1Outcome record, so export can later join a routing decision
 // to whether the note it led to was actually published. Gated on D1's own tier switch,
 // not a new consent surface — an outcome with no corresponding pair (D1 capture off) is
 // dead weight no export can ever join. An empty runID (the normal case for any write that

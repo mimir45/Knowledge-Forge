@@ -35,7 +35,7 @@ func TestRecallCapturesD1WhenEnabled(t *testing.T) {
 	}
 }
 
-// TestRecallD1NeverStoresTheQuestion is ADDENDUM §D's invariant stated as a test: "never
+// TestRecallD1NeverStoresTheQuestion pins the dataset-capture invariant: "never
 // store raw question text — hash + extracted topic only". The slug is derived from the
 // question and is allowed; the sentence itself is not.
 func TestRecallD1NeverStoresTheQuestion(t *testing.T) {
@@ -100,8 +100,8 @@ func TestGateD5SurvivesAMissingProfile(t *testing.T) {
 	}
 }
 
-// TestCaptureD1OutcomeWhenRunIDGiven pins BACKLOG B-035's join half: a --run-id passed
-// back from a recall call records the write's actual outcome, keyed by that id.
+// TestCaptureD1OutcomeWhenRunIDGiven pins the outcome-join half of D1 capture: a --run-id
+// passed back from a recall call records the write's actual outcome, keyed by that id.
 func TestCaptureD1OutcomeWhenRunIDGiven(t *testing.T) {
 	root := t.TempDir()
 	captureD1Outcome(datasetCfg(true), root, "abc123", true)

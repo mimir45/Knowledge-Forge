@@ -20,7 +20,7 @@ import (
 //
 // Third-party imports — an unresolvable dotted Java name, a bare TypeScript specifier that
 // would resolve through node_modules — have no matching directory in this repo and are
-// silently dropped (BACKLOG B-015: do not invent a node for them).
+// silently dropped: never invent a dependency-graph node for them.
 func dependsOn(ix codeindex.Index, files []string) map[string][]string {
 	dirs, fileSet := knownDirs(files), fileSetOf(files)
 	out := map[string]map[string]bool{}
@@ -131,8 +131,8 @@ func trimLastSegment(p string) string {
 
 // matchSuffix picks the lexicographically first match so an ambiguous suffix — two
 // modules sharing a package fragment under different source roots — resolves the same
-// way on every run (B-020's rule) rather than however the caller's slice happened to be
-// ordered.
+// way on every run — a project-wide determinism rule — rather than however the caller's
+// slice happened to be ordered.
 func matchSuffix(suffix string, candidates []string) (string, bool) {
 	var best string
 	for _, c := range candidates {

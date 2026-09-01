@@ -23,7 +23,7 @@ func TestRecallLogsAskWhenTelemetryEnabled(t *testing.T) {
 	}
 }
 
-// TestRecallEmitsRunID pins BACKLOG B-035's envelope addition: every forge recall call
+// TestRecallEmitsRunID pins the run_id envelope addition: every forge recall call
 // prints a non-empty run_id on stdout, distinct from call to call, so a caller can thread
 // it back through forge gate --run-id without the two ever colliding.
 func TestRecallEmitsRunID(t *testing.T) {

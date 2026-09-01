@@ -56,7 +56,8 @@ Unless the caller narrows it, produce all of these:
 Markdown, in this order:
 
 1. **Baseline metrics** — a single table of every scalar (counts, percentages). This is
-   the part that gets copied into `docs/AUDIT.md`, so make it complete and self-contained.
+   the part most likely to get copied into a written baseline audit, so make it complete
+   and self-contained.
 2. **Frontmatter keys** — frequency table.
 3. **Findings** — orphans, near-duplicate pairs, dangling refs. Each as a list of paths.
 4. **Method** — the commands/patterns behind the numbers, briefly.

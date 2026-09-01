@@ -13,9 +13,6 @@
 # --continue/--resume, not re-executed, so a stale hint from an old session is expected
 # and not this shim's problem to solve.
 #
-# Known, un-fixed risk carried from cmd/forge/intent.go: BACKLOG B-008 means the 0.7
-# threshold can false-positive near 0.740.
-#
 # forge binary resolution matches hooks/session-context: $FORGE_BIN, then
 # ~/.forge/bin/forge, then $PATH.
 

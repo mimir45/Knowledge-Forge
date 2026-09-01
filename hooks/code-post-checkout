@@ -1,5 +1,5 @@
 #!/bin/sh
-# Knowledge Forge — git-anchored drift, code repo's post-checkout (STACK/AUDIT §8.2).
+# Knowledge Forge — git-anchored drift, code repo's post-checkout.
 #
 # Installed into a CODE repository's .git/hooks/post-checkout by
 # scripts/install_drift_hook.sh. Git passes three args: $1=previous HEAD, $2=new HEAD,

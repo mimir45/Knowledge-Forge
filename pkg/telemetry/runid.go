@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 )
 
-// NewRunID mints the correlation key BACKLOG B-035 needed: an opaque, collision-resistant
+// NewRunID mints the correlation key D1 outcome-joining needed: an opaque, collision-resistant
 // identifier joining one `forge recall` call to the note write (`forge gate --run-id`)
 // that may follow it minutes later, in a different process. 16 random bytes rather than a
 // counter or a timestamp — a run_id must carry no ordering or wall-clock semantics a

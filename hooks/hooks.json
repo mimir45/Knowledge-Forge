@@ -14,7 +14,7 @@
     "expected on resume, not a bug in forge intent.",
     "",
     "Command paths below use ${CLAUDE_PLUGIN_ROOT}, substituted by Claude Code to the",
-    "plugin's installed directory — they no longer hardcode /Users/mimir45/TIL."
+    "plugin's installed directory — they no longer hardcode a developer's local path."
   ],
 
   "hooks": {

@@ -35,7 +35,7 @@ type layer struct {
 	data map[string]any
 }
 
-// Load resolves AUDIT §8.4 D-2's chain and returns the merged, validated config.
+// Load resolves the four-layer config chain and returns the merged, validated config.
 //
 // Precedence, lowest first: packaged example, ~/.forge/forge.config.md (written by
 // forge init), <project>/.forge.config.md, $FORGE_CONFIG. A missing optional layer is

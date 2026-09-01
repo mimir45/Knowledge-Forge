@@ -9,13 +9,13 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/recall"
 )
 
-// This is B-038's measurement harness: its own "shape when picked up" text asks whether
-// raising or removing BodyPassSize ever moves a verdict, "measured at scale," not just on
-// the one row B-031's closure spot-checked. It changes nothing shipped — RankPool still
+// This is the measurement harness for whether raising or removing BodyPassSize ever
+// moves a verdict, measured at scale rather than spot-checked on one row. It changes
+// nothing shipped — RankPool still
 // calls RankPoolWithBodyPass(..., BodyPassSize) and pkg/recall's
 // TestRankPoolWithBodyPassMatchesRankPoolAtShippedSize pins that delegation — this file
 // only compares today's capped window against an uncapped one and records what differs.
-// B-038's own "do not": this does not raise BodyPassSize, does not touch sortByScore's
+// It deliberately does not raise BodyPassSize, does not touch sortByScore's
 // path tie-break, and does not pick a tie-break replacement. Question (b) — what the
 // tie-break should favor instead of path, if this measurement shows the cap ever binds —
 // stays fully open.
@@ -39,8 +39,8 @@ import (
 const bodyPassGoldenPath = "testdata/bodypass-window.golden"
 
 // TestBodyPassWindowEffect asserts nothing about which window size is correct — that
-// argument, if this measurement shows one is needed, belongs in BACKLOG.md, where a human
-// writes it. What it asserts is that the measurement stays reproducible: a scorer change
+// argument, if this measurement shows one is needed, is a separate design judgment.
+// What it asserts is that the measurement stays reproducible: a scorer change
 // that moves it fails here until it is re-recorded with -update.
 func TestBodyPassWindowEffect(t *testing.T) {
 	got := bodyPassTable(t)
@@ -61,8 +61,8 @@ func TestBodyPassWindowEffect(t *testing.T) {
 }
 
 // bodyPassQueries returns the 9 calibration queries plus neighbour-labels.txt's 15
-// question texts — 24 distinct queries, wider than calibration.golden alone, per B-038's
-// own unblock condition. Ground-truth neighbour labels are discarded; only .question is
+// question texts — 24 distinct queries, wider than calibration.golden alone.
+// Ground-truth neighbour labels are discarded; only .question is
 // read.
 func bodyPassQueries(t *testing.T) []string {
 	qs := append([]string{}, calibrationQueries...)

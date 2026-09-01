@@ -41,8 +41,8 @@ func cmdRecall(args []string) int {
 	return runRecall(root, *question, *stack, *explain, thresholdsFrom(cfg), cfg)
 }
 
-// thresholdsFrom is AUDIT §8.4 D-7 in one function: the decision tree's numbers now come
-// from the config chain rather than from a var in pkg/recall. A zero means the key was
+// thresholdsFrom pulls the decision tree's numbers from the config chain rather than
+// from a var in pkg/recall. A zero means the key was
 // absent from every layer, which cannot happen with the packaged layer present but would
 // silently resolve everything to ANSWER_FROM_VAULT if it did — so each falls back to the
 // compiled-in default rather than to zero.
@@ -64,8 +64,8 @@ const recallUsage = `usage: forge recall --question "..." [--stack a,b] [--vault
 
 Scores the vault against a question and prints the top 10 candidates as JSON on
 stdout, highest first, plus a run_id correlating this call to a later
-"forge gate --run-id" write (BACKLOG B-035). Deterministic and model-free; see
-references/recall-spec.md for the scoring blend and DESIGN 5.3's decision tree.
+"forge gate --run-id" write. Deterministic and model-free; see
+references/recall-spec.md for the scoring blend and threshold decision tree.
 
 `
 
@@ -92,14 +92,14 @@ func runRecall(vaultDir, question, stack string, explain bool, th recall.Thresho
 	return emit(res, runID)
 }
 
-// logAsk records DESIGN §14's ask event when telemetry is enabled. Sources and
+// logAsk records the telemetry ask event when telemetry is enabled. Sources and
 // DurationMS stay zero: forge recall has no research-time or citation-count signal to
 // report — a known limitation, not an omission, until a caller upstream supplies one.
 //
 // It takes the whole Query rather than the question string so Stack gets filled. That
-// field has existed on Event since Phase 5 and production never wrote it, which quietly
-// starved two real readers: pkg/report/index.go:67 and coverage.go:43 both fan out over
-// e.Stack. DESIGN §14's own example line carries a stack.
+// field has existed on Event since early on and production never wrote it, which
+// quietly starved two real readers: pkg/report/index.go:67 and coverage.go:43 both fan
+// out over e.Stack.
 func logAsk(root string, cfg *config.Config, q recall.Query, res recall.Result, runID string) {
 	if cfg == nil || !cfg.Telemetry.Enabled {
 		return
@@ -153,8 +153,8 @@ type recallEnvelope struct {
 }
 
 // emit writes the output contract from recall-spec.md §4: one object carrying the
-// verdict, the candidates, and — since BACKLOG B-035 — a run_id a caller can thread back
-// through `forge gate --run-id` to join this call to the note write it led to. A caller
+// verdict, the candidates, and a run_id a caller can thread back through `forge gate
+// --run-id` to join this call to the note write it led to. A caller
 // that ignores the field gets exactly today's behaviour; the join is optional on both
 // ends. `candidates` and `neighbours` are always arrays, never `null` — a vault that
 // matches nothing prints `[]` for both, so no consumer has to special-case the empty case

@@ -133,8 +133,9 @@ func writeTrend(tw *tabwriter.Writer, store *report.WeeklyStore) {
 	}
 }
 
-// sortedByCount and unwrittenAsks share BACKLOG B-020's deterministic tiebreak (count
-// desc, topic asc) — the same rule pkg/report/gaps.go's own unexported unwritten() uses.
+// sortedByCount and unwrittenAsks share a deterministic tiebreak (count
+// desc, topic asc) — the same rule pkg/report/gaps.go's own unexported unwritten() uses,
+// so two runs over unchanged state produce byte-identical output.
 func sortedByCount(asks []report.Ask) []report.Ask {
 	out := append([]report.Ask(nil), asks...)
 	sort.Slice(out, func(i, j int) bool {

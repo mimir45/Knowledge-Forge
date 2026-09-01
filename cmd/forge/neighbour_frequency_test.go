@@ -11,16 +11,16 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/recall"
 )
 
-// This is B-036's own unblock-condition harness — docs/TODO.md names it explicitly: "a
-// per-note 'appears in N of M query results' column added to TestNeighbourFloorSweep's
-// harness." It lives in its own file rather than inside neighbour_floor_test.go because
-// it isn't a floor sweep: the floor is fixed at recall.DefaultThresholds.Neighbour and
-// nothing varies. It answers a different question — does a note's neighbour eligibility
-// depend on how many unrelated queries it turns up for, a document-frequency property
-// recall-spec.md §2.3.1 computes for terms and never for notes.
+// This harness adds a per-note "appears in N of M query results" column to the
+// neighbour-floor sweep's picture. It lives in its own file rather than inside
+// neighbour_floor_test.go because it isn't a floor sweep: the floor is fixed at
+// recall.DefaultThresholds.Neighbour and nothing varies. It answers a different
+// question — does a note's neighbour eligibility depend on how many unrelated queries it
+// turns up for, a document-frequency property recall-spec.md §2.3.1 computes for terms
+// and never for notes.
 //
-// B-036's hypothesis was "a note scoring on every query in an ecosystem" — not on every
-// query, full stop. A raw N/M count over a query set spanning several unrelated
+// The hypothesis under test is "a note scoring on every query in an ecosystem" — not on
+// every query, full stop. A raw N/M count over a query set spanning several unrelated
 // ecosystems (Spring, Keycloak, React, Docker, ...) cannot tell those apart: a note at
 // 5/15 could be scattered noise, or it could be 5/5 on exactly the Spring-flavored
 // subset, which is the hypothesis confirmed, not refuted. So for every slug that appears
@@ -30,12 +30,12 @@ import (
 // It also counts two different things queries can saturate, which are not the same
 // number: how many queries return a full TopN=10 *nonzero-scored* candidates from
 // recall.Rank (rankCapped — recall.Rank returns nonZero(cands) truncated to TopN, so this
-// only says ten notes overlapped at all), and, since B-036 widened the neighbour band's
-// pool from TopN=10 to NeighbourWindow=20, how many queries exhaust that wider pool itself
-// (poolSaturated — recall.NeighbourPool(pool) hits all 20 slots, meaning even the widened
-// window ran out of room, not just the floor). calibration.golden's JPA row is the proof
-// rankCapped and neighbour admission diverge: it has a nonzero top score (0.119) and 0
-// neighbours in the same run.
+// only says ten notes overlapped at all), and, since the neighbour band's pool was
+// widened from TopN=10 to NeighbourWindow=20, how many queries exhaust that wider pool
+// itself (poolSaturated — recall.NeighbourPool(pool) hits all 20 slots, meaning even the
+// widened window ran out of room, not just the floor). calibration.golden's JPA row is
+// the proof rankCapped and neighbour admission diverge: it has a nonzero top score
+// (0.119) and 0 neighbours in the same run.
 
 const freqGoldenPath = "testdata/neighbour-frequency.golden"
 const ecosystemsPath = "testdata/query-ecosystems.txt"
@@ -43,7 +43,7 @@ const ecosystemsPath = "testdata/query-ecosystems.txt"
 // TestNeighbourDocumentFrequency reports, for every note admitted as a neighbour in at
 // least one of the fifteen testdata/neighbour-labels.txt queries, how many of those
 // queries admit it and which ones. It asserts nothing about which count is too high —
-// that judgment belongs in BACKLOG.md — only that the count and the query list stay
+// that is a separate design judgment — only that the count and the query list stay
 // reproducible.
 func TestNeighbourDocumentFrequency(t *testing.T) {
 	got := frequencyTable(t)
@@ -121,9 +121,10 @@ func frequencyTable(t *testing.T) string {
 	return renderFrequencyTable(queries, eco, freq, rankCapped, poolSaturated, counts)
 }
 
-// loadQueryEcosystems parses testdata/query-ecosystems.txt — B-036's own named
-// prerequisite: which ecosystem cluster each of neighbour-labels.txt's fifteen queries
-// belongs to, written and committed before any scoring change. Format mirrors
+// loadQueryEcosystems parses testdata/query-ecosystems.txt: which ecosystem cluster each
+// of neighbour-labels.txt's fifteen queries belongs to, written and committed before any
+// scoring change so the labelling can't be picked to fit a result seen afterward. Format
+// mirrors
 // loadNeighbourLabels: a "Q:" line followed by an "Ecosystem:" line, "#" and blank lines
 // ignored. Keyed by question text so it joins against labelledQuery without depending on
 // row order matching between the two files.
@@ -131,7 +132,7 @@ func loadQueryEcosystems(t *testing.T) map[string]string {
 	t.Helper()
 	f, err := os.Open(ecosystemsPath)
 	if err != nil {
-		t.Fatalf("%v — B-036's ecosystem rollup needs this file; see its header for the labelling rule", err)
+		t.Fatalf("%v — the ecosystem rollup needs this file; see its header for the labelling rule", err)
 	}
 	defer func() { _ = f.Close() }()
 	out, pending, sc := map[string]string{}, "", bufio.NewScanner(f)
@@ -192,8 +193,8 @@ func renderFrequencyTable(queries []labelledQuery, eco map[string]string, freq m
 	return b.String()
 }
 
-// springClusterRollup answers B-036's actual hypothesis — "a note scoring on every query
-// in an ecosystem" — which the full-fifteen N/M column above cannot: a note scattered
+// springClusterRollup answers the actual hypothesis under test — "a note scoring on
+// every query in an ecosystem" — which the full-fifteen N/M column above cannot: a note scattered
 // across unrelated ecosystems and a note universal within one both produce the same raw
 // count. `spring` is testdata/query-ecosystems.txt's only cluster with M >= 2 in this
 // label set (6 of 15); the others are singletons a ratio can't say anything about.

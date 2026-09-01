@@ -668,7 +668,7 @@ phase N+1 with phase N unmerged.
 - Inventory the current skill: files, triggers, prompts, vault layout.
 - Snapshot metrics: note count, % with frontmatter, % with ≥1 inbound link,
   duplicate clusters, orphan count.
-- Write `docs/AUDIT.md`. **Everything after this is judged against these numbers.**
+- Record a written baseline. **Everything after this is judged against these numbers.**
 
 ### Phase 1 — Contract & migration *(1–2 days)* ← *highest value per hour*
 - `references/schema.yaml`, `templates/*.md`, `forge validate` + `forge slug` (Go).
@@ -712,8 +712,7 @@ phase N+1 with phase N unmerged.
 
 ### Phase 5b — Log-back into the codebase *(1 day)*
 - `docs/knowledge-map.md`, per-module CLAUDE.md fragments, `.forge/code-index-<repo>.json`
-  — one per configured `--repo`, not one shared file. Said the singular name until
-  2026-08-23; corrected under BACKLOG B-027.
+  — one per configured `--repo`, not one shared file.
   Inline markers stay opt-in. Spec: addendum §B.7.
 
 ### Phase 6 — Package & release *(2–3 days)*
@@ -869,7 +868,7 @@ You're a Java/Spring backend dev. Frame this as **systems engineering**, not
 |---|---|
 | The repo, with a real commit history across phases | shows iteration, not a dump |
 | `docs/architecture.md` with the pipeline diagram | 60-second whiteboard-ready explanation |
-| `docs/AUDIT.md` → before/after metrics | before/after numbers are rare and land hard |
+| A written before/after metrics baseline | before/after numbers are rare and land hard |
 | A 90-second demo video | most people won't clone it |
 | One ADR (e.g. "lexical recall vs embeddings") | proves you can write a decision doc |
 

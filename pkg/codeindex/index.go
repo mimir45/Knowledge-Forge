@@ -8,7 +8,7 @@
 // cross-compilable. Release builds set CGO_ENABLED=1.
 //
 // Language coverage is Java and TypeScript. STACK §10 left this open ("start with Java
-// + Kotlin only") and AUDIT §7 settled it with a count: the vault's reference corpus is
+// + Kotlin only") and a file-count check settled it: the vault's reference corpus is
 // 42 Java files, 308 TypeScript, and *zero* Kotlin. Shipping a Kotlin grammar would add
 // a C dependency for a language nothing cites.
 package codeindex
@@ -46,7 +46,7 @@ type File struct {
 	Imports []string `json:"imports,omitempty"`
 }
 
-// Extractor doubles as this cache's format version (BACKLOG B-013): Load rejects any
+// Extractor doubles as this cache's format version: Load rejects any
 // stamp but this, treating a mismatch as a cache miss rather than a bad parse. Bump it
 // whenever declKinds or kindOf changes (an older extractor holds fewer symbols, and a
 // missing symbol is exactly what drift reads as BROKEN) — but also whenever Symbol or

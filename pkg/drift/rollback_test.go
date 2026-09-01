@@ -78,7 +78,7 @@ func TestRollbackSymmetry(t *testing.T) {
 	assertLogCitesBoth(t, vaultDir, broke, restored)
 }
 
-// TestRollbackSymmetryOnDeletion covers B-028 end to end: a file deleted in the very
+// TestRollbackSymmetryOnDeletion covers same-commit deletion end to end: a file deleted in the very
 // commit the hook checks demotes the citing note immediately, an unrelated later commit
 // must not restore it (the flip-flop the gate-ordering fix in checkUnresolvedPath exists
 // to prevent — a naive fix would emit SKIPPED on the unrelated commit, and Apply's

@@ -5,7 +5,7 @@ NeighbourWindow=20.
 candidates (before the floor filters anything).
 5/15 queries exhaust the widened NeighbourWindow=20 pool itself (even
 the window, not just the floor, ran out of room).
-Neighbours per query: min 2, median 5, max 14.
+Neighbours per query: min 2, median 4, max 14.
 
 | Note | N of M (all) | Queries (only listed when N > 1) |
 |---|---|---|
@@ -54,7 +54,6 @@ Neighbours per query: min 2, median 5, max 14.
 | keycloak-realm-export-json-keycloak-realm-definition | 1/15 |  |
 | keyset-cursor-pagination-requires-a-compound-or-predicate | 1/15 |  |
 | keyset-pagination-compound-or-predicate | 1/15 |  |
-| knowledge-forge-claude-code-plugin-design-phase | 1/15 |  |
 | leprecoin-react-next-js-frontend-project | 1/15 |  |
 | liquibase-database-migration-conventions | 1/15 |  |
 | litellm-yaml-litellm-proxy-configuration | 1/15 |  |

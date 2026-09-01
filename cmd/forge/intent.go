@@ -54,8 +54,8 @@ func readPrompt(r io.Reader) (string, error) {
 // Measured, testdata/intent-gate-labels.txt: 25 prompts labelled FIRE (the vault answers
 // it) or QUIET (it does not — ten of them adjacent-topic hard negatives). The old 0.7
 // admitted 3 of 10 FIRE prompts, dropping one at 0.652 that matches a note title almost
-// verbatim. That is the decay this constant already suffered once, silently, when B-008
-// moved the scale under it.
+// verbatim. That is the decay this constant already suffered once, silently, when a
+// recall scoring change moved the scale under it.
 //
 // The labels rule 0.7 out and cannot choose its replacement: the classes separate at
 // 0.402/0.407, so every value in [0.405, 0.7] has identical — zero — false positives.
@@ -76,8 +76,8 @@ func readPrompt(r io.Reader) (string, error) {
 // four-layer chain in here buys a knob nobody turns at the cost of the one budget in the
 // tree that is actually tight.
 //
-// Note the asymmetry with BACKLOG B-033's neighbour floor, derived in the same session:
-// same root cause, opposite trade. A wrong neighbour is one link in a note already under
+// Note the asymmetry with the neighbour floor, derived from the same root cause but the
+// opposite trade. A wrong neighbour is one link in a note already under
 // review, so the floor is derived for recall; a wrong intent hit interrupts a live session
 // on a hook contracted never to disturb it, so this is derived for precision first and
 // recall only inside what precision leaves free.

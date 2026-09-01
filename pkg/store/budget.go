@@ -6,7 +6,7 @@ import (
 )
 
 // budgetSchemaSQL lives apart from schemaSQL so the one table Reset() must never touch
-// stays a one-file diff (AUDIT §8.4 D-8) rather than a line buried in store.go's list.
+// stays a one-file diff rather than a line buried in store.go's list.
 const budgetSchemaSQL = `
 CREATE TABLE IF NOT EXISTS budget (
   day  TEXT NOT NULL,

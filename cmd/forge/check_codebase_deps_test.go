@@ -11,7 +11,7 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/report"
 )
 
-// TestDependsOnResolvesJavaClassImport is B-015's ordinary case: one file imports a
+// TestDependsOnResolvesJavaClassImport covers the ordinary case: one file imports a
 // class declared in a sibling package, and the two packages' directories are the modules
 // CodeGroup groups by.
 func TestDependsOnResolvesJavaClassImport(t *testing.T) {
@@ -101,8 +101,8 @@ func TestDependsOnIsDedupedAndSorted(t *testing.T) {
 	assertDeps(t, got, "src/pages", want)
 }
 
-// TestDependsOnIsDeterministicAcrossRuns guards against exactly the bug B-020 named
-// four times over in 2b: Go's map iteration order is randomized per run, so a slice built
+// TestDependsOnIsDeterministicAcrossRuns guards against a recurring class of bug
+// elsewhere in this codebase: Go's map iteration order is randomized per run, so a slice built
 // from map keys without a sort is nondeterministic even though every individual value is
 // "correct". Enough files share a directory here that an unsorted build would show it.
 func TestDependsOnIsDeterministicAcrossRuns(t *testing.T) {

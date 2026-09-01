@@ -16,7 +16,7 @@ const datasetStatsUsage = `usage: forge dataset-stats [--vault DIR]
 Reports how much training data each of ADDENDUM D.1's six datasets holds, and what that
 volume is honestly enough for. Zero model calls; a tier that has captured nothing is a
 zero row, not an error. Five (d1-d5) accumulate over time via a capture path; the sixth
-(d6, BACKLOG B-034) is derived and recomputed live on every run — its row is what
+(d6) is derived and recomputed live on every run — its row is what
 exporting it right now would produce, not a running total.
 
 The second half is deliberately unexciting. ADDENDUM D.2 exists because these pitches

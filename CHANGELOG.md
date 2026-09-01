@@ -8,11 +8,10 @@ on, entries follow `.goreleaser.yml`'s own changelog convention: commits prefixe
 ## Phase 6 — Package & release (in progress)
 
 - `pkg/scrub` / `forge scrub`: redacts secret/PII-shaped content from a vault copy;
-  fails closed (AUDIT §8.4 D-6).
+  fails closed.
 - `.claude-plugin/plugin.json` + `.claude-plugin/marketplace.json`: this repo is now an
   installable Claude Code plugin (`claude plugin marketplace add mimir45/Knowledge-Forge`).
-- `docs/adr/0001-lexical-recall-vs-embeddings.md`, `docs/adr/0002-go-for-static-core.md`
-  (AUDIT §8.4 D-3).
+- `docs/adr/0001-lexical-recall-vs-embeddings.md`, `docs/adr/0002-go-for-static-core.md`.
 - README, LICENSE (MIT), CONTRIBUTING, this changelog.
 
 ## Phase 5b — Log-back into the codebase
@@ -41,9 +40,8 @@ on, entries follow `.goreleaser.yml`'s own changelog convention: commits prefixe
   user's project, always a throwaway directory.
 - `forge gate` + `pkg/qualitygate`: the seven DESIGN §12 gates, `_inbox/` quarantine on
   a blocking failure.
-- B-007 closed: `agents/forge-librarian.md` stamps `Forge-Write: true` on every commit
-  it authors.
-- B-022 closed: the schema pattern now covers all nine `cfg.Pipeline` stages.
+- `agents/forge-librarian.md` stamps `Forge-Write: true` on every commit it authors.
+- The engine_trail schema pattern now covers all nine `cfg.Pipeline` stages.
 
 ## Phase 3b — Engine abstraction
 
@@ -85,6 +83,6 @@ on, entries follow `.goreleaser.yml`'s own changelog convention: commits prefixe
 
 ## Phase 0 — Audit baseline
 
-- `docs/AUDIT.md` (including the §8.4 binding decision record, D-1…D-8), the design
+- A written baseline audit, the design
   docs, `go.mod`, the `testdata/vault/` fixture (F1–F12), the workflow-agent crew
   (`finder`, `executor`, `explainer`, `vault-analyst`, `doc-auditor`, `cross-checker`).

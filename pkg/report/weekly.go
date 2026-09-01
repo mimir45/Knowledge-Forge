@@ -157,10 +157,10 @@ func deadCountByNote(cs []Citation) map[string]int {
 // healthy vault rather than printing a bare "none" that reads as a bug report.
 func writeActNowCaveat(b *strings.Builder) {
 	b.WriteString("_Nothing to act on right now. Two known reasons this can stay thin " +
-		"regardless of vault health: BACKLOG B-017 (the churn window can leave " +
-		"\"undocumented and moving\" empty on repos with low recent churn) and BACKLOG " +
-		"B-019 (near-duplicate pairs almost never clear the 0.85 spec threshold this " +
-		"section requires)._\n")
+		"regardless of vault health: the churn window can leave " +
+		"\"undocumented and moving\" empty on repos with low recent churn, and " +
+		"near-duplicate pairs almost never clear the 0.85 spec threshold this " +
+		"section requires._\n")
 }
 
 func writeReview(b *strings.Builder, in WeeklyInput) {

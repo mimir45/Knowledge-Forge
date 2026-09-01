@@ -18,16 +18,16 @@ const TopN = 10
 
 // NeighbourWindow bounds how many top-ranked, already body-scored candidates
 // Thresholds.Neighbours may draw from — wider than TopN=10 so a genuinely-scoring 11th+
-// candidate is not discarded by TopN truncation before the neighbour band ever sees it
-// (BACKLOG B-036: on a broad query, all 10 truncated candidates can already clear the
-// neighbour floor, so no floor value can surface an 11th that Rank never computed).
+// candidate is not discarded by TopN truncation before the neighbour band ever sees it:
+// on a broad query, all 10 truncated candidates can already clear the
+// neighbour floor, so no floor value can surface an 11th that Rank never computed.
 //
 // It equals BodyPassSize today because both cite DESIGN §8 step 3's "top 20 files" — a
 // neighbour can only be as informed as a candidate that was actually body-scored. But the
 // two are kept as separate named constants on purpose: BodyPassSize is a scoring-cost
 // boundary (which candidates get opened and body-rescored) and NeighbourWindow is an
 // output-truncation boundary (how much of the ranked list a downstream caller may see).
-// B-038 may move the former without silently moving the latter, and vice versa — see
+// A future change may move the former without silently moving the latter, and vice versa — see
 // rank_test.go's TestNeighbourWindowMatchesBodyPassSizeToday, which fails on purpose if
 // the two drift apart without a deliberate decision either way.
 const NeighbourWindow = 20
@@ -42,10 +42,10 @@ func RankPool(q Query, docs []Doc, now time.Time) []Candidate {
 }
 
 // RankPoolWithBodyPass is RankPool with an explicit body-pass window instead of the
-// package constant BodyPassSize. It exists for B-038's measurement harness in cmd/forge,
+// package constant BodyPassSize. It exists for a measurement harness in cmd/forge,
 // which needs to compare today's window against a widened or removed one without moving
-// the shipped constant — that would be exactly the unmeasured performance change B-038's
-// own text forbids. Production code calls RankPool, never this, at any size other than
+// the shipped constant — that would be an unmeasured performance change, not a
+// measurement. Production code calls RankPool, never this, at any size other than
 // BodyPassSize; treat a second call site as a review flag, not a convenience.
 func RankPoolWithBodyPass(q Query, docs []Doc, now time.Time, bodyPassSize int) []Candidate {
 	s := newScope(q, docs)
@@ -60,8 +60,8 @@ func RankPoolWithBodyPass(q Query, docs []Doc, now time.Time, bodyPassSize int) 
 }
 
 // Rank returns the top TopN candidates, highest first — recall-spec.md §4's `candidates`
-// contract. Byte-identical in shape and behaviour to before B-036: forge intent's top-1
-// pick and every caller that only wants candidates keeps using this unchanged.
+// contract. Byte-identical in shape and behaviour to before the neighbour-window widening
+// above: forge intent's top-1 pick and every caller that only wants candidates keeps using this unchanged.
 func Rank(q Query, docs []Doc, now time.Time) []Candidate {
 	return truncate(RankPool(q, docs, now), TopN)
 }
@@ -119,7 +119,7 @@ func (s scope) frontmatterScore(d Doc, now time.Time) Candidate {
 // bodyPass opens the leading candidates and rescores them with the 0.1 channel. Notes
 // outside the window keep their frontmatter-only score, which is correct: the body
 // channel can move a score by at most 0.1 and never lifts a non-match into the band.
-// size is BodyPassSize in production (see RankPool); RankPoolWithBodyPass lets B-038's
+// size is BodyPassSize in production (see RankPool); RankPoolWithBodyPass lets a
 // measurement harness vary it without touching the shipped constant.
 func (s scope) bodyPass(cands []Candidate, docs []Doc, size int) {
 	byRel := map[string]Doc{}

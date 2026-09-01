@@ -21,10 +21,11 @@ func closedStore(t *testing.T) *store.Store {
 	return st
 }
 
-// B-029. writeRows must report what the old refresh() dropped. This is the whole value of
-// the split: the error has to exist before ignoring it can be a decision rather than an
-// accident, and before this fix three of them — Begin, Put and Commit — were discarded in
-// a function that then returned nil on every path.
+// writeRows must report the errors an earlier version of this cache refresh silently
+// dropped. This is the whole value of the split: the error has to exist before ignoring
+// it can be a decision rather than an accident, and before this fix three of them —
+// Begin, Put and Commit — were discarded in a function that then returned nil on every
+// path.
 func TestWriteRowsReportsAFailedCacheWrite(t *testing.T) {
 	if err := writeRows(closedStore(t), []store.Row{{Rel: "notes/concept/a.md"}}); err == nil {
 		t.Error("writeRows on a closed store returned nil")

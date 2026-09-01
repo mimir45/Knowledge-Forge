@@ -8,7 +8,7 @@ import (
 )
 
 // initOpts is the wizard's five answers plus the two preset choices derived from them.
-// AUDIT §8.4 D-4: this command is the ONLY writer of ~/.forge/forge.config.md and
+// This command is the ONLY writer of ~/.forge/forge.config.md and
 // <vault>/profiles/me.md. skills/forge-init/ asks the questions and shells out to here;
 // it writes nothing itself, so there is exactly one implementation of the file format.
 //
@@ -104,9 +104,9 @@ func (o *initOpts) normalize() error {
 	return checkVault(o.vault)
 }
 
-// depthFor maps seniority onto DESIGN §9's default_depth. A junior gets fewer sections
+// depthFor maps seniority onto the profile's default_depth. A junior gets fewer sections
 // each carrying a worked example; a senior gets more sections and no worked examples for
-// the basics. An unrecognised value lands on the doc's own default of 3.
+// the basics. An unrecognised value lands on the default of 3.
 func depthFor(seniority string) int {
 	switch seniority {
 	case "junior":

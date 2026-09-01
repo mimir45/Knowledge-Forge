@@ -43,8 +43,8 @@ func explainOne(w io.Writer, c recall.Candidate) {
 		den += ch.Weight
 		fmt.Fprintf(w, "  %-6s %.3f x %.1f = %.3f%s\n",
 			ch.Name, ch.Value, ch.Weight, ch.Weight*ch.Value, hitList(ch.Hits))
-		// Since B-008 the terms in a hit list no longer count equally, so the list alone
-		// no longer explains the value. Print the weights that produced it.
+		// Terms in a hit list don't count equally (IDF-weighted), so the list alone
+		// doesn't explain the value. Print the weights that produced it.
 		if len(ch.Terms) > 0 {
 			fmt.Fprintf(w, "         idf %s\n", weightList(ch.Terms, ch.DF))
 		}
@@ -62,8 +62,8 @@ func staleMark(stale bool) string {
 // weightList renders a channel's per-term IDF and the document frequency behind it,
 // sorted so the line is byte-stable. df is printed because a weight is ambiguous at zero:
 // a term every note carries and a term no note carries both weigh nothing, and only the
-// second is evidence about the vault. B-008's second pass had to count df by hand to see
-// that, which is the whole reason this column exists.
+// second is evidence about the vault. Distinguishing the two by hand — counting df
+// manually — is exactly what this column exists to make unnecessary.
 func weightList(terms map[string]float64, df map[string]int) string {
 	keys := make([]string, 0, len(terms))
 	for t := range terms {

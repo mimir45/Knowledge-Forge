@@ -90,7 +90,7 @@ func fenceLang(m []byte) string {
 // Resolution is deliberately extension-agnostic: [[log]] and [[log.md]] name the same
 // note. The fixture vault contains exactly one link of the second form — index.md's
 // [[log.md]] — and a resolver that blindly appends ".md" reads it as dangling, dropping
-// log.md's inbound count to zero. See docs/AUDIT.md section 11.
+// log.md's inbound count to zero.
 func LinkKey(target string) string {
 	t := strings.TrimSpace(strings.TrimPrefix(target, "./"))
 	t = strings.TrimSuffix(t, ".md")

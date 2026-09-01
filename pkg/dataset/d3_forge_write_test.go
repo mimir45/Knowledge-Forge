@@ -8,7 +8,7 @@ import (
 )
 
 // fixtureSrc mirrors cmd/forge/e2e_test.go's constant: testdata/vault must never be
-// written to or git-init-ed in place (BACKLOG B-002), so every test that mutates a vault
+// written to or git-init-ed in place, so every test that mutates a vault
 // works on a copy staged into a temp dir.
 const fixtureSrc = "../../testdata/vault"
 
@@ -36,8 +36,8 @@ func seedFromFixture(t *testing.T) *repo {
 	return r
 }
 
-// TestForgeWriteTrailerSuppressesCapture is BACKLOG B-007's acceptance test: once
-// forge-librarian stamps Forge-Write on its own commits, those commits must not enter D3
+// TestForgeWriteTrailerSuppressesCapture is the acceptance test for a core D3 invariant:
+// forge-librarian stamps Forge-Write on its own commits, and those commits must not enter D3
 // as (model, model) pairs — see d3.go's ForgeTrailer doc comment. Step 2 is the pin: it
 // proves step 1's zero-pairs result is the trailer guard firing, not a setup bug that
 // would report zero regardless of what the commit trailer says.

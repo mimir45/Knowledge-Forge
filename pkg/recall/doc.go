@@ -17,8 +17,8 @@ type Query struct {
 	Stack    []string
 }
 
-// Thresholds is DESIGN §5.3's decision tree. Phase 2 hardcodes the defaults; Phase 3
-// wires them to the config chain (AUDIT §8.4 D-7). They live here so no literal is
+// Thresholds is DESIGN §5.3's decision tree. The defaults below live here and are also
+// wired into the config chain, so no literal is
 // scattered — a threshold in two places is a threshold that drifts.
 type Thresholds struct {
 	Answer    float64 // ≥ this and fresh → ANSWER_FROM_VAULT; ≥ this and stale → UPDATE(refresh)
@@ -28,22 +28,24 @@ type Thresholds struct {
 
 // DefaultThresholds are DESIGN §10's recall.answer_threshold / update_threshold.
 //
-// Answer and Update are DESIGN §5.3's and do not move — B-008 forbids it by name.
-// Neighbour was re-derived from 0.30 to 0.125 closing BACKLOG B-033: 0.30 was calibrated
-// against the pre-B-008 scale, and after that change it left 6 of 15 adjacent-topic
+// Answer and Update are DESIGN §5.3's and do not move — an IDF re-weighting of the
+// scoring blend is the wrong place to paper over a recall gap; a re-derivation of the
+// calibration table is the right one, and neither of those numbers moved by it.
+// Neighbour was re-derived from 0.30 to 0.125 after that same weighting change: 0.30 was
+// calibrated against the older scale, and after the change it left 6 of 15 adjacent-topic
 // queries with zero neighbours, i.e. writing a new note orphaned in a vault whose graph
 // report already tracks 21 orphans of 94. Swept over labelled ground truth
 // (cmd/forge/testdata/neighbour-labels.txt, TestNeighbourFloorSweep), 0.125 was F1's
 // maximum at the time.
 //
-// Moved again, 0.125 -> 0.150, closing BACKLOG B-032: that fix changed tagsChannel's and
+// Moved again, 0.125 -> 0.150, after a later fix changed tagsChannel's and
 // stackChannel's activation from "the note carries the field" to "the note carries a hit,"
 // which moves the score of every note whose tags or stack didn't overlap the query — the
 // exact population the neighbour floor sits in. Re-swept against the same label file
 // (unedited — re-labelling after seeing new scores is how a derivation becomes a fit),
-// 0.150 is F1's new maximum (0.578, up from 0.125's now-0.550). The full argument is in
-// docs/BACKLOG.md's B-032 closure note; changing this number without re-running that sweep
-// is tuning.
+// 0.150 is F1's new maximum (0.578, up from 0.125's now-0.550). Changing this number
+// without re-running that sweep
+// is tuning, not derivation.
 //
 // This is the Go default and every un-configured install sees it. It has a twin in
 // config/forge.config.example.md's neighbour_min_score, which must move with it.
@@ -80,12 +82,13 @@ func (t Thresholds) Decide(top *Candidate) Decision {
 // of the denominator. See recall-spec.md §2.5 for why that distinction decides the
 // verdict rather than merely the scale.
 // Terms carries the per-term IDF weights behind Value on the channels that use them.
-// Without it the number is unauditable: after B-008 "tags 0.136, hits: [spring]" cannot
-// be re-derived from the hit list, because the terms no longer count equally. The map is
+// Without it the number is unauditable: "tags 0.136, hits: [spring]" cannot
+// be re-derived from the hit list alone, because terms are IDF-weighted, not counted equally. The map is
 // query-scope and shared by every candidate, so it is read-only and costs no allocation.
 //
-// DF carries the raw document frequency behind each of those weights. B-008's second pass
-// had to count it by hand to explain why the weighting had changed nothing, because a
+// DF carries the raw document frequency behind each of those weights, which otherwise
+// has to be counted by hand to explain why a weighting change did or didn't move a score,
+// because a
 // printed weight of 0.00 reads identically whether a term is on every note or on none —
 // and after this fix those two cases have opposite consequences. Both maps stay out of
 // the §4 output contract.

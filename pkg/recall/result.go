@@ -1,9 +1,9 @@
 package recall
 
 // Result is the recall output envelope (recall-spec.md §4). The verdict travels with
-// the candidates rather than being left for the caller to derive: AUDIT §8.4 D-7 moves
-// the thresholds into Phase 3's config union, and a skill that restated DESIGN §5.3's
-// tree in prose would silently diverge from the config the next phase introduces. One
+// the candidates rather than being left for the caller to derive: the thresholds live in
+// the config chain, and a skill that restated DESIGN §5.3's
+// tree in prose would silently diverge from a config change. One
 // implementation, in Go, is the only copy.
 type Result struct {
 	Question   string      `json:"question"`
@@ -16,7 +16,7 @@ type Result struct {
 // ResultFrom decides the verdict for a full, untruncated candidate pool (RankPool's
 // output) and packages both output views: Candidates is truncated to TopN (recall-spec.md
 // §4's contract, unchanged), while Neighbours — on a CREATE verdict only — band-filters
-// NeighbourPool's wider view of the same pool (BACKLOG B-036), so a real 11th+ candidate
+// NeighbourPool's wider view of the same pool, so a real 11th+ candidate
 // that TopN truncation would otherwise discard can still be admitted as a neighbour.
 //
 // Neighbours are populated on CREATE only. The 0.150–0.55 band exists to answer "what

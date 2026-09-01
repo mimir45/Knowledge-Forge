@@ -22,7 +22,8 @@ func TestInboundCounts(t *testing.T) {
 	}
 }
 
-// TestRootDetectionIsNotInboundCount is the regression test for docs/AUDIT.md §11.
+// TestRootDetectionIsNotInboundCount guards against conflating root detection with
+// inbound-link count.
 // index.md has zero inbound links and must not be reported as an orphan; a buried note
 // with zero inbound must be.
 func TestRootDetectionIsNotInboundCount(t *testing.T) {

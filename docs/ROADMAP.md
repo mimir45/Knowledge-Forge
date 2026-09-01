@@ -10,11 +10,9 @@
 >
 > [`KNOWLEDGE-FORGE-B2B.md`](./KNOWLEDGE-FORGE-B2B.md) describes a **separate
 > project**, kept here only for reference/history — see "Sequencing notes"
-> below and BACKLOG B-021.
+> below.
 >
-> The roadmap below is complete. For what's left before the first tagged release —
-> open backlog items, unverified release mechanics, pending PRs — see
-> [`RELEASE-READINESS.md`](./RELEASE-READINESS.md).
+> The roadmap below is complete.
 
 ## What it is
 
@@ -46,7 +44,7 @@ N+1 with phase N unmerged.
 
 | # | Phase | Goal | Key deliverables | Done when | Est. |
 |---|---|---|---|---|---|
-| 0 ✅ | **Audit** | Establish the factual baseline before changing anything | `docs/AUDIT.md`: current file map, vault metrics (notes, frontmatter coverage, links, orphans, dup clusters), grading vs. design §6-14, F1-F10 confirmation, drift baseline if a repo sits alongside the vault | Baseline numbers exist and every later phase is measured against them | 0.5 day |
+| 0 ✅ | **Audit** | Establish the factual baseline before changing anything | A written baseline: current file map, vault metrics (notes, frontmatter coverage, links, orphans, dup clusters), grading vs. design §6-14, F1-F10 confirmation, drift baseline if a repo sits alongside the vault | Baseline numbers exist and every later phase is measured against them | 0.5 day |
 | 1 ✅ | **Contract & migration** | Give every note a machine-readable, validated shape | `references/schema.yaml`, `templates/*.md` per type, `forge slug`, `forge validate`, `forge index`, one-time `migrate_vault.py` (dry-run default), D3 human-edit capture hook | 100% of notes validate; `_index.md` builds in one command | 1-2 days ⭐ highest value/hour |
 | 2 ✅ | **Recall** | The compounding feature: answer from the vault instead of re-researching | `forge recall` (deterministic scoring, JSON output, `--explain`), `references/recall-spec.md`, `SKILL.md` rewritten around the pipeline (<200 lines) | Known question → `ANSWER_FROM_VAULT` in <5s, zero new files created | 1 day (mostly hardening — recall largely exists) |
 | 2b ✅ | **Static core** ⭐ | The no-AI engineering layer — the most defensible part of the project | Go binary (`bin/forge`): `pkg/{vault,similarity,graph,codeindex,gitsig,drift,linkcheck,report,store}`, all 10 reports, `moc/codebase.md`, git-anchored drift with rollback symmetry, cross-compile + goreleaser | `forge drift` <100ms, `forge index` <200ms, full check <10s warm — measured, not assumed | 4-6 days (incl. Go ramp) — **never cut** |
@@ -54,16 +52,16 @@ N+1 with phase N unmerged.
 | 3b ✅ | **Engine abstraction** ⭐ | One interface, four backends, cost-aware routing | `pkg/engine` interface, per-stage config with fallback chains, hard locks on recall/write/index, advisor in critique-only mode, budget accounting, `engine_trail` in frontmatter | Same question runs cleanly under all 4 presets (`offline`/`claude-only`/`byo-api`/`max`); `offline` degrades usefully instead of failing | 1-2 days |
 | 4 | **Subagents & verification** | Catch bad notes before they publish; ground notes in the actual repo | 4 agent defs (`forge-researcher`, `forge-codebase-scout`, `forge-verifier`, `forge-librarian`), parallel researcher+scout, quality gates (schema/citation/code/freshness/anti-slop/link/duplicate), `_inbox/` quarantine | A deliberately wrong snippet gets caught and demoted, not published | 2-3 days |
 | 5 | **Hooks & weekly checker** | Make it a system, not a command you remember to run | `hooks/hooks.json` (SessionStart/UserPromptSubmit/SessionEnd/PostToolUse shims), `/forge-check` (T0-only weekly report), `/forge-stats` | A fresh session's first response cites an existing note unprompted | 2 days |
-| 5b | **Log-back into codebase** | Knowledge discoverable from code, not just the vault | `docs/knowledge-map.md`, per-module `CLAUDE.md` fragments (sentinel-managed), `.forge/code-index-<repo>.json` kept fresh (one per `--repo`, B-027); inline markers opt-in only | Generated knowledge-map and one CLAUDE.md fragment shown and correct | 1 day |
+| 5b | **Log-back into codebase** | Knowledge discoverable from code, not just the vault | `docs/knowledge-map.md`, per-module `CLAUDE.md` fragments (sentinel-managed), `.forge/code-index-<repo>.json` kept fresh (one per `--repo`); inline markers opt-in only | Generated knowledge-map and one CLAUDE.md fragment shown and correct | 1 day |
 | 6 | **Package & release** | Ship as a public, installable plugin | `.claude-plugin/plugin.json` + `marketplace.json`, `bin/forge` shim w/ checksum verify, evals (`triggers.yaml`, golden notes, CI), README in the prescribed order, ADRs, `examples/vault/` | `claude plugin marketplace add <you>/forge` works from a clean box | 2-3 days |
 | 6b | **Dataset capture & export** | Turn normal use into an owned, exportable training corpus | D1-D5 capture wired (`.forge/datasets/*.jsonl`), `/forge-export-dataset`, datasheets per export, `/forge-dataset-stats` with honest trainability claims | Exports run with anonymization + datasheet; stats report doesn't overclaim on volume | 1-2 days |
 
 **Total: ~4-5 weeks of focused evenings** to a public v2.0 (Go ramp + release
 tooling adds ~1-1.5 weeks vs. the original Python estimate). This repo's
 engineered roadmap **ends at 6b** — see "After 6b" below for what follows
-without being a numbered phase, and BACKLOG B-021 for why Phase 7 (as
-`KNOWLEDGE-FORGE-DESIGN.md:726` and `CLAUDE-CODE-PROMPT.md:563` still name
-it) isn't in this table.
+without being a numbered phase (as `KNOWLEDGE-FORGE-DESIGN.md:726` and
+`CLAUDE-CODE-PROMPT.md:563` still name it, that old Phase 7 isn't in this
+table — it's the separate B2B project described in "Sequencing notes" below).
 
 ## After 6b — run it and measure (not a phase)
 
@@ -94,8 +92,8 @@ repo anymore; nothing here blocks on them.
 - **Phase 1's vault migration is the one irreversible step.** Dry-run is the
   default everywhere; it refuses to run on a dirty git tree.
 - **B2B (`KNOWLEDGE-FORGE-B2B.md`) is a fully separate project, not a phase
-  inside this repo.** It is not phase-gated here — see BACKLOG B-021 for the
-  decision record. The old readiness condition ("OSS v2.0 shipped, 30 days
+  inside this repo.** It is not phase-gated here. The old readiness condition
+  ("OSS v2.0 shipped, 30 days
   of real usage, ≥3 outside users reporting value") still applies, but
   informally, to that separate project's own start — not as a gate this
   repo's roadmap enforces.

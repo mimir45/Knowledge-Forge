@@ -14,7 +14,7 @@ const fixtureSrc = "../../testdata/vault"
 
 // fixtureCopy stages the fixture vault in a temp dir. Everything that mutates a vault is
 // rehearsed on a copy: testdata/vault carries twelve deliberate defects that are the test
-// surface, and it must never be written to or git-init-ed in place (BACKLOG B-002).
+// surface, and it must never be written to or git-init-ed in place.
 func fixtureCopy(t *testing.T) string {
 	t.Helper()
 	dst := filepath.Join(t.TempDir(), "vault")
@@ -140,7 +140,7 @@ func TestE2EIndexIsIdempotentOnDisk(t *testing.T) {
 	}
 }
 
-// TestE2EIndexRespectsTheBudget and covers the DESIGN §7.1 4KB SessionStart budget.
+// TestE2EIndexRespectsTheBudget covers the 4KB SessionStart budget.
 func TestE2EIndexRespectsTheBudget(t *testing.T) {
 	root := fixtureCopy(t)
 	runIndex(root, "_index.md", 4096, false)
@@ -156,7 +156,7 @@ func TestE2EIndexRespectsTheBudget(t *testing.T) {
 	}
 }
 
-// TestE2ESessionContextRespectsTheBudget: DESIGN §7.1's SessionStart budget applies to
+// TestE2ESessionContextRespectsTheBudget: the SessionStart budget applies to
 // the index and the profile independently — each section must fit on its own, matching
 // readTrimmed's per-section contract, not just the combined total.
 func TestE2ESessionContextRespectsTheBudget(t *testing.T) {

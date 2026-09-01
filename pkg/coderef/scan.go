@@ -8,7 +8,7 @@ import (
 
 // runGit runs one git subcommand rooted at root and returns its trimmed stdout. Every
 // function below shells out through it — pkg/gitsig makes the same CLI-not-go-git choice
-// (B-009) — so the exec.Command boilerplate lives in one place instead of four.
+// — so the exec.Command boilerplate lives in one place instead of four.
 func runGit(root string, args ...string) (string, error) {
 	out, err := exec.Command("git", append([]string{"-C", root}, args...)...).Output()
 	if err != nil {
@@ -75,7 +75,7 @@ type ChangedFile struct {
 
 // ChangedFilesStatus is ChangedFiles' status-aware sibling: it can tell "this path was
 // edited" from "this path is gone" without a second git subprocess, which is what a
-// drift hook needs to verdict a same-commit deletion immediately (B-028) instead of
+// drift hook needs to verdict a same-commit deletion immediately instead of
 // waiting for the next full sweep. Filtered to sourceExt for the same reason ScanRepo
 // is: a deleted .md can't explain an Unresolved code citation. --no-renames carries
 // over unchanged from ChangedFiles, for the same reason: a moved file must still report

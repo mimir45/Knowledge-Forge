@@ -2,7 +2,7 @@
 // nothing here is authoritative and `forge reindex` rebuilds all of it from the vault.
 // Pure Go driver (modernc.org/sqlite) so the binary stays static under CGO_ENABLED=0.
 //
-// One exception: budget.go's table. AUDIT §8.4 D-8 makes per-day USD spend the one
+// One exception: budget.go's table. Per-day USD spend is the one
 // value SQLite holds that markdown does not — Reset() never lists it, on purpose.
 package store
 

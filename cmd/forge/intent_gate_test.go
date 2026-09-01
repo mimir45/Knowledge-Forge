@@ -12,8 +12,8 @@ import (
 )
 
 // This is the derivation behind intent.go's gate, and the reason the literal there is
-// defended by a test rather than by a config key. Promoting it to config.Recall was the
-// other option B-033's plan named; it was rejected because printIntent runs on
+// defended by a test rather than by a config key. Promoting it to config.Recall was
+// considered and rejected because printIntent runs on
 // UserPromptSubmit under a 50ms budget and loads no config today, so wiring the chain in
 // buys a knob nobody turns at the cost of the one budget in the tree that is tight.
 //
@@ -33,11 +33,11 @@ type intentPrompt struct {
 // minFireAdmitted is the recall floor, and it is set to exactly what intentGate measures
 // today rather than to a comfortable value below it. That is deliberate: the failure this
 // pins is the one that already happened once, when 0.7 decayed to admitting 3 of 10 as
-// B-008 moved the scale under it and nothing failed. A tripwire with slack in it would
-// have let that happen again more slowly. Any loss of recall stops the build and gets
+// a recall scoring change moved the scale under it and nothing failed. A tripwire with
+// slack in it would have let that happen again more slowly. Any loss of recall stops the build and gets
 // argued about; that is the whole job.
 //
-// Rescaled 8 -> 16 by B-037's wide-sweep plan (docs/TODO.md), when
+// Rescaled 8 -> 16 when
 // intent-gate-labels.txt widened 10 FIRE prompts -> 20. This is a proportional rescale,
 // not a loosened bar: the widened set measures 16/20 admitted, the same 80% the original
 // 8/10 measured, so 16 pins exactly what's true today, the same way 8 did. Leaving 8 in

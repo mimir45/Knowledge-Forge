@@ -26,7 +26,7 @@ Claude Code discovers all of them from this repo's default component paths, no m
 
 - `git` on `PATH`. `pkg/gitsig` (churn, ownership, co-change coupling) shells out to the
   `git` CLI rather than a Go library — a deliberate, documented trade-off, not an
-  oversight (see BACKLOG B-009).
+  oversight (see `docs/adr/0002-go-for-static-core.md`).
 - Nothing else, for the portable build. See "Build lanes" below for what the optional
   code-index feature adds.
 
@@ -89,9 +89,7 @@ including the one thing redaction deliberately does not hide, is in
 ## Documentation
 
 Start at [`docs/ROADMAP.md`](docs/ROADMAP.md) — a condensed index over the full design.
-`docs/AUDIT.md` §8.4 is the binding decision record for anything the design docs
-disagree with each other on. `CLAUDE.md` has the phase-by-phase build history and the
-project's working invariants.
+`CLAUDE.md` has the project's layout, invariants, and commands.
 
 ## License
 

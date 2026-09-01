@@ -101,8 +101,8 @@ func render(o initOpts, delta map[string]any) (cfg, prof []byte, err error) {
 	return cfg, prof, err
 }
 
-// renderConfig wraps the delta as frontmatter-only markdown, the format DESIGN §10 fixes
-// so the file is readable in Obsidian. yaml.Marshal sorts map keys, so re-running init
+// renderConfig wraps the delta as frontmatter-only markdown so the file is readable in
+// Obsidian. yaml.Marshal sorts map keys, so re-running init
 // with the same answers produces a byte-identical file.
 func renderConfig(delta map[string]any) ([]byte, error) {
 	body, err := yaml.Marshal(delta)

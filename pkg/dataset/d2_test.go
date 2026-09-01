@@ -20,7 +20,8 @@ func TestEnabledRequiresTheD2Tag(t *testing.T) {
 	if !D2.Enabled(on("d1", "d2")) {
 		t.Error("D2.Enabled() = false with d2 present")
 	}
-	// The pre-B-024 spelling must not keep working, or the mismatch could silently return.
+	// The old "d2_advisor" spelling must not keep working, or the config/code mismatch
+	// it once caused could silently return.
 	if D2.Enabled(on("d2_advisor")) {
 		t.Error("D2.Enabled() = true for the old d2_advisor spelling")
 	}

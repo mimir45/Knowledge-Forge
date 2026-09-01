@@ -1,6 +1,6 @@
 ---
 name: doc-auditor
-description: Reads a set of design docs and reports contradictions between them — especially ones the docs do not self-flag. Resolves each conflict by a stated precedence rule. Use for the Backlog B-001 coherence pass or any "do these specs actually agree" question. Reports conflicts; never edits a doc.
+description: Reads a set of design docs and reports contradictions between them — especially ones the docs do not self-flag. Resolves each conflict by a stated precedence rule. Use for a doc-coherence pass or any "do these specs actually agree" question. Reports conflicts; never edits a doc.
 tools:
   - Read
   - Glob
@@ -24,8 +24,8 @@ The docs in `docs/` were written incrementally. Three conflicts are already know
 2. STACK ADR-002 supersedes B2B §8's Spring Boot assumption.
 3. DESIGN's rev-2 note reinterprets every `scripts/*.py` reference as a `forge` subcommand.
 
-Your target is everything **else** — the contradictions the docs do not announce. Per
-Backlog B-001, no pass has ever been made for these. Look specifically for:
+Your target is everything **else** — the contradictions the docs do not announce. Look
+specifically for:
 
 - The same thing numbered or named differently in two docs (phases, stages, failure modes).
 - A deliverable named in one doc that no phase in another doc produces.
@@ -38,7 +38,7 @@ Backlog B-001, no pass has ever been made for these. Look specifically for:
 
 When two docs conflict, resolve by the rule in `CLAUDE.md`: **STACK/ADR wins on stack
 questions**, then DESIGN (the master spec), then ADDENDUM. B2B (`KNOWLEDGE-FORGE-B2B.md`)
-describes a fully separate project (BACKLOG B-021) — it does not enter this precedence
+describes a fully separate project — it does not enter this precedence
 order at all; treat any conflict it has with the other four as out of scope, not
 UNRESOLVED. State the winner and the rule you applied. If precedence does not settle it,
 say so and mark it **UNRESOLVED — needs a human decision** rather than inventing an answer.

@@ -8,7 +8,7 @@ import (
 
 // OpenQuestions turns a Report's failing outcomes into vault.WriteToInbox's
 // openQuestions bullets, one per Fail, gate order — the same order Run built Outcomes
-// in, so two runs on unchanged state produce byte-identical bullets (B-020).
+// in, so two runs on unchanged state produce byte-identical bullets.
 func OpenQuestions(rep Report) []string {
 	var qs []string
 	for _, o := range rep.Outcomes {

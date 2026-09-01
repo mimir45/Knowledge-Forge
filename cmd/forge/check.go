@@ -191,6 +191,6 @@ func jobs(cfg checkCfg, d *checkData) []job {
 		js = append(js, job{"reports/drift.md", d.drift}, job{"moc/codebase.md", d.codebase})
 	}
 	// weekly runs unconditionally, unlike drift/codebase — it has no --repo dependency
-	// and degrades gracefully (B-017/B-019 caveats) when there is nothing to act on.
+	// and degrades gracefully when there is nothing to act on.
 	return append(js, job{"moc/weekly/" + report.WeekKey(d.now) + ".md", d.weekly})
 }

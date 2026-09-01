@@ -200,7 +200,7 @@ func registryOf(repos []drift.Repo) (*coderef.Registry, error) {
 // repo-qualified, so a path present in two repos over-includes rather than
 // under-includes — the safe direction for a gate whose only job is to keep work off the
 // hook path. Deleted paths are repo-qualified, because a BROKEN finding built from one
-// needs a real repo to resolve against (B-028).
+// needs a real repo to resolve against.
 //
 // It fails closed. An empty gate and an unresolvable anchor produce the same findings —
 // none — but they mean opposite things, and the second is drift silently never running on

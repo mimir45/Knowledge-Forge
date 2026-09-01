@@ -19,7 +19,7 @@ type Event struct {
 	DurationMS     int64     `json:"duration_ms"`
 	Sources        int       `json:"sources"`
 	Project        string    `json:"project"`
-	// RunID is BACKLOG B-035's correlation key, added after DESIGN §14 shipped — an
+	// RunID is the D1 outcome-joining correlation key, added after DESIGN §14 shipped — an
 	// addition to the schema, not a rename, so an older log line simply decodes with it
 	// empty. See NewRunID and cmd/forge/recall.go's runRecall.
 	RunID string `json:"run_id,omitempty"`

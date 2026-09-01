@@ -1,5 +1,5 @@
-// Package config loads AUDIT §8.4 D-2's four-layer configuration chain and exposes it
-// as one typed value. The schema is D-7's union: ADDENDUM §E's blocks plus the DESIGN
+// Package config loads the four-layer configuration chain and exposes it
+// as one typed value. The schema is a union: ADDENDUM §E's blocks plus the DESIGN
 // §10 keys §E never restates. Where the two overlap §E wins; where §E is merely silent,
 // §10 survives.
 //
@@ -51,7 +51,8 @@ type Trigger struct {
 	Mode string `yaml:"mode"`
 }
 
-// Recall is DESIGN §5.3's decision tree, moved here by AUDIT §8.4 D-7. Neighbour is not
+// Recall is DESIGN §5.3's decision tree, moved into the config chain from a compiled-in
+// var. Neighbour is not
 // in §10 — it is pkg/recall's third threshold, and leaving it compiled in while the
 // other two moved would be exactly the "threshold in two places" doc.go warns about.
 type Recall struct {

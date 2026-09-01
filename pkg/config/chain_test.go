@@ -197,8 +197,9 @@ func TestOptionalLayersMayBeMissing(t *testing.T) {
 }
 
 // TestThresholdOrdering enforces answer >= update >= neighbour. It deliberately checks
-// ordering rather than values: BACKLOG B-008 forbids moving the thresholds to paper over
-// a recall defect, but a user tuning their own vault is not that.
+// ordering rather than values: moving the thresholds to paper over
+// a recall scoring defect is a different matter from a user tuning their own vault, and
+// only the latter is this validation's job.
 func TestThresholdOrdering(t *testing.T) {
 	o := isolated(t)
 	writeLayer(t, projectCfg(o.ProjectDir),

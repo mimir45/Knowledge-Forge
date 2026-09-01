@@ -57,7 +57,7 @@ func NewIndex() *Index {
 // paired. For notes the group is the note type, and that restriction is what makes the score
 // mean anything — the real vault's highest-scoring pairs are all cross-type
 // (decision↔pitfall, concept↔decision) and they are not duplicates, they are the seven-type
-// taxonomy of BACKLOG B-005 doing its job. Scoring them dropped the fixture's real
+// taxonomy of the vault's seven note types doing its job. Scoring them dropped the fixture's real
 // near-duplicate below five vault non-duplicates; scoping to one type puts it back on top.
 //
 // Text with no shingles at all is skipped rather than stored: an empty signature is

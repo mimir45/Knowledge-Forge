@@ -1,7 +1,7 @@
-# Neighbour ground truth — the query set B-033's floor is derived from.
+# Neighbour ground truth — the query set the neighbour floor is derived from.
 #
 # NOT recall-spec.md §3.1's nine queries. Re-deriving the neighbour floor against the
-# same rows that validated B-008 would be circular: the number would be chosen to make
+# same rows that validated the IDF weighting fix would be circular: the number would be chosen to make
 # those rows produce links. These fifteen are a separate set, and every label below was
 # written from the corpus slug list alone, before any score was measured — the git
 # history is the evidence, since this file lands in the same commit as the "before"

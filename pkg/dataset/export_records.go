@@ -30,7 +30,7 @@ func loadTier(root string, t Tier) ([]any, error) {
 	return nil, fmt.Errorf("tier %q has no reader", t.Tag)
 }
 
-// loadD1 reads D1's own pairs plus the separate outcome file BACKLOG B-035 added
+// loadD1 reads D1's own pairs plus the separate outcome file
 // (d1_outcome.go) and joins them by RunID before boxing. The join happens here, not in
 // render, so `since`, anonymizeAll and roundTripAll all see the already-joined shape —
 // Outcome is an export-time-only field and never round-trips back into the capture file.
@@ -47,7 +47,7 @@ func loadD1(root, path string) ([]any, error) {
 }
 
 // joinD1Outcomes matches each pair to the outcome sharing its RunID, if any. A pair with
-// no RunID (captured before B-035) and a pair whose gate call never received --run-id
+// no RunID and a pair whose gate call never received --run-id
 // both stay unjoined — Outcome is left nil, which the renderers read as "no outcome
 // recorded", not "not published".
 //

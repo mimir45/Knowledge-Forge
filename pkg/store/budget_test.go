@@ -55,7 +55,7 @@ func TestRemainingIsFullCapWithNoSpend(t *testing.T) {
 	}
 }
 
-// TestResetPreservesBudget is AUDIT §8.4 D-8's whole point: `forge reindex` wipes the
+// TestResetPreservesBudget pins the whole point of keeping budget out of Reset(): `forge reindex` wipes the
 // derived tables and must never touch spend, which markdown does not record.
 func TestResetPreservesBudget(t *testing.T) {
 	s := open(t)

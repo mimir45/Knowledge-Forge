@@ -102,7 +102,7 @@ taşıyan somut implementasyon dışarıda kalır.
 | `pkg/graph` | Not link grafiği: bileşenler, hub'lar, orphan'lar, merkezilik. |
 | `pkg/codeindex` | go-tree-sitter (Java + TypeScript). **Tek cgo paketi**, build-tag'li. |
 | `pkg/coderef` | Not gövdesinden ve frontmatter'dan kod atıflarını çıkarır ve çözer. |
-| `pkg/gitsig` | Churn, ownership, co-change coupling — git CLI üzerinden (go-git değil, B-009). |
+| `pkg/gitsig` | Churn, ownership, co-change coupling — git CLI üzerinden (go-git değil). |
 | `pkg/drift` | **Anahtar paket.** AST karşılaştırması ile çürüme tespiti, satır diff'i değil. |
 | `pkg/linkcheck` | Kaynaklara HTTP HEAD, cache'li, rate-limit'li. |
 | `pkg/report` | Analizleri markdown'a render eder. `pkg/codeindex`'i import etmemeli. |
@@ -182,9 +182,8 @@ Kurallar, `pkg/config/load.go` ve `merge.go`'da:
 
 **Yazıcı kim?** Sadece `forge init`. Ve sadece iki dosyaya:
 `~/.forge/forge.config.md` ve `<vault>/profiles/me.md`. **Asla**
-`config/forge.config.md`'ye — o paketlenmiş bir şablon olarak kalır. Bu ayrım AUDIT
-§8.4 D-1'in bağlayıcı kararıdır; ihlali, bir sonraki `go build`'in kullanıcının
-ayarlarını ezmesi demek olurdu.
+`config/forge.config.md`'ye — o paketlenmiş bir şablon olarak kalır. Bu ayrımın ihlali,
+bir sonraki `go build`'in kullanıcının ayarlarını ezmesi demek olurdu.
 
 Şema, ADDENDUM §E ile DESIGN §10'un **birleşimidir** — §E'nin yeniden ifade etmediği
 §10 anahtarları da geçerlidir.
@@ -281,11 +280,11 @@ engine: pipeline.write: "api" is not allowed — [recall write index] are locked
   bütçe sıfırlama hilesi olurdu.
 - `Exhausted()` "bugün bütçe yok" ile "burada hiç ölçülen tier yok" arasını ayırır;
   `on_exhausted: queue` bu ayrım olmadan yanlış çalışırdı.
-- `on_exhausted` varsayılanı **`queue`** (AUDIT §8.4 D-2). Kabul edilen üç değer
-  `queue | degrade | stop`; dokümanlardaki `fail` 2026-08-21'de düzeltildi. Kalan açık
-  kısım davranışsal: `stop` hiçbir şeyi durdurmuyor ve `degrade` varsayılan sessiz
-  none-fallback'ten ayrı bir kod yolu değil — `pkg/engine` `OnExhausted`'ı hiç okumuyor,
-  yalnızca `"queue"` bir dala giriyor (**B-023**, yarısı açık).
+- `on_exhausted` varsayılanı **`queue`**. Kabul edilen üç değer `queue | degrade | stop`:
+  `queue` bir sonraki bütçe döngüsünde işlenmek üzere `pending_advisor: true` damgalar ve
+  `none` tier'a düşer; `degrade` bugün `none`'a sessizce düşmekle aynı şey, çünkü kelimenin
+  dürüst okuması zaten bu; `stop` gerçek, sıfır olmayan bir çıkışla durur — `pkg/engine`'in
+  kendisi `OnExhausted`'ı okumaz, bu ayrım bir katman yukarıda `cmd/forge`'da yapılır.
 
 ### 5.5 engine_trail
 
@@ -355,14 +354,15 @@ func f2(hits, queryTerms, titleTokens int) float64 {
 `bodyChannel` her terimi **3 tekrarda doyurur** (saturate). Bir kelimeyi 50 kez geçen
 bir not, 3 kez geçenden daha alakalı değildir.
 
-### 6.6 Bilinen açık defekt — B-008
+### 6.6 IDF ağırlıklandırmasının bulduğu ve düzelttiği kalibrasyon açığı
 
-IDF ağırlıklandırması shipped edildi ve **hedeflediği iki vakayı da düzeltmedi.** Neden:
+İlk IDF ağırlıklandırması shipped edildiğinde hedeflediği vakayı düzeltmemişti. Neden:
 bir sorunun anlamını taşıyan terimler, hiçbir not onları taşımadığında paydadan filtrelenir
-— yani "kimse bilmiyor" durumu, "önemsiz" gibi davranır.
-
-Backlog'un açık talimatı: **buna eşikleri oynatarak cevap verme.** Doğru cevap §3.1
-kalibrasyon tablosunun tamamen yeniden türetilmesidir ve kendi oturumunu hak eder.
+— yani "kimse bilmiyor" durumu, "önemsiz" gibi davranıyordu. Düzeltme iki değişiklik
+istedi: `inVocab` filtresi soruya değil `--stack` ipucuna uygulanacak şekilde taraf
+değiştirdi, ve eksik bir terimin ağırlığı sıfır yerine mevcut terimlerin ortalaması oldu.
+**Eşikleri buna cevaben oynatmayın** — düzeltme §3.1 kalibrasyon tablosunun ölçülerek
+yeniden türetilmesiyle geldi, sabit değiştirerek değil.
 
 ---
 
@@ -408,29 +408,25 @@ hedefi, asla bir verdict girdisi.
 | `drift.Apply` çağırır mı? | `--apply` ile evet | **Hayır** |
 | Bütçe | **< 100 ms** (bağlayıcı kısıt) | < 10 s |
 
-Bu ayrım iki backlog kaydının konusu oldu ve mimariyi anlamak için öğretici:
+Bu ayrım silinmiş-dosya atıflarının nasıl `Broken` verdict aldığını anlamak için önemli:
 
-**B-026** (kapandı 2026-08-16): `registryOf` registry'yi her zaman güncel `HEAD`
-ağacından kurduğu için, tamamen silinmiş bir dosyaya yapılan atıf asla `Broken`
-veremiyordu — sonsuza kadar `Skipped` kalıyordu. Çözüm: full sweep'te (`opts.Deep`,
-`--since-commit` yok) doğrulanmış-era bir `ResolveAt` taramasına düşmek. Ama
-`forge check`'in full sweep'i `drift.Apply`'ı hiç çağırmadığı için, B-026 tek başına
-`drift.md`'yi doğru yaptı ve **hiçbir şeyi otomatik demote etmedi.**
+`registryOf` registry'yi her zaman güncel `HEAD` ağacından kurduğu için, tamamen silinmiş
+bir dosyaya yapılan atıf asla `Broken` veremiyordu — sonsuza kadar `Skipped` kalıyordu.
+Çözüm iki parçalı: full sweep'te (`opts.Deep`, `--since-commit` yok) doğrulanmış-era bir
+`ResolveAt` taramasına düşmek — ama `forge check`'in full sweep'i `drift.Apply`'ı hiç
+çağırmadığı için bu tek başına `drift.md`'yi doğru yapar, **hiçbir şeyi otomatik demote
+etmez.** Otomatik demote hook yolunda oluyor: hook zaten ucuz bir kapı hesaplıyordu
+(`coderef.ChangedFilesStatus`); `--name-only` yerine `--name-status` kullanılarak bu kapı
+**silme kanıtı** taşır hale getirildi (`drift.Changed{Touched, Deleted}`). Artık aynı
+commit'teki bir silmeyle eşleşen `Unresolved` bir atıf, `--apply` altında **anında**
+`Broken` verdict alır — `--deep` ve tarihsel registry taraması gerekmeden. Bu, silinmiş-
+dosya atıfının sahip olduğu tek otomatik demote yoludur.
 
-**B-028** (kapandı 2026-08-17): O yüzden hook yoluna anında silme kanıtı eklendi. Hook
-zaten ucuz bir kapı hesaplıyordu (`coderef.ChangedFilesStatus`); `--name-only` yerine
-`--name-status` kullanılarak bu kapı **silme kanıtı** taşır hale getirildi
-(`drift.Changed{Touched, Deleted}`). Artık aynı commit'teki bir silmeyle eşleşen
-`Unresolved` bir atıf, `--apply` altında **anında** `Broken` verdict alır — `--deep` ve
-tarihsel registry taraması gerekmeden. Bu, silinmiş-dosya atıfının sahip olduğu tek
-otomatik demote yoludur.
+Mimari açıdan kritik bir ayrıntı: hook yolunda eşleşmeyen bir kaçırma **hiç finding
+üretmez**, asla `Skipped` üretmez. Aksi halde alakasız, sonraki bir commit hâlâ bozuk bir
+notu `high`'a geri çevirebilirdi. `TestRollbackSymmetryOnDeletion` bunu sabitler.
 
-B-028'in backlog'un kendi taslağına göre bir **düzeltmesi** de var ve bu düzeltme
-mimari açıdan kritik: hook yolunda eşleşmeyen bir kaçırma **hiç finding üretmez**, asla
-`Skipped` üretmez. Aksi halde alakasız, sonraki bir commit hâlâ bozuk bir notu `high`'a
-geri çevirebilirdi. `TestRollbackSymmetryOnDeletion` bunu sabitler.
-
-Her iki düzeltmenin de artık bir sınırı var: basename çakışması.
+Bu yaklaşımın bilinen bir sınırı var: basename çakışması.
 
 ### 7.4 AST karşılaştırması, satır diff'i değil
 
@@ -728,7 +724,7 @@ alındı, canlı bir oturumun ölçümü değil.
 ## 14. Veri katmanının fiziksel yerleşimi
 
 ```
-<vault>/                          (bir git reposu, /Users/mimir45/Documents/Base)
+<vault>/                          (bir git reposu, örn. ~/Documents/Vault)
 ├── notes/<type>/<slug>.md        7 tip: concept howto api pattern pitfall incident decision
 ├── moc/                          Map of Content; moc/weekly/YYYY-WW.md rollup
 ├── _inbox/                       karantina, confidence: low
@@ -741,21 +737,15 @@ alındı, canlı bir oturumun ölçümü değil.
     ├── forge-bin                 vault hook'unun çağıracağı mutlak yol
     ├── capture.log               D3 hook'unun tek teşhis kanalı
     ├── <cache>.db                SQLite — türetilmiş + budget tablosu
-    ├── code-index-<repo>.json    repo başına kod indeksi cache'i (B-027)
+    ├── code-index-<repo>.json    repo başına kod indeksi cache'i
     ├── weekly-stats.json         hafta-üstü-hafta delta kalıcılığı
     └── cache/<url-hash>.md       WebFetch kaynak cache'i, TTL'li
 ```
 
-**B-027** (kapandı 2026-08-23): `pkg/drift/gitindex.go` cache'i repo başına
-`.forge/code-index-<repo>.json` olarak yazıyor, oysa ADDENDUM ve DESIGN tekil
-`.forge/code-index.json` diyor. Davranış **doğru** — `--repo` tekrarlanabilir olduğu için
-tek bir paylaşılan isim repolar arasında çakışırdı. 2026-08-21'de kod tarafı dokümante
-edildi (`persist`'in doc comment'i sapmanın gerekçesini taşıyor) ve ağacın içindeki üç
-yanlış iddia düzeltildi — bunlardan `agents/forge-codebase-scout.md` gerçek bir sorundu:
-bir agent'a diskte hiç var olmayan bir yoldan arama tohumlamasını söylüyordu. Tasarım
-dokümanlarındaki sekiz satır 2026-08-23'te düzeltildi: yol haritası bittiği için akışta
-bozulacak bir faz kalmadı ve bu bir *karar* değil, yanlış yazılmış bir **dosya adı**ydı —
-AUDIT §8.4'ün "doküman eski, §8.4 bağlayıcı" mekanizmasına dokunulmadı.
+`pkg/drift/gitindex.go` cache'i kasıtlı olarak repo başına
+`.forge/code-index-<repo>.json` olarak yazar, tekil bir `.forge/code-index.json` değil —
+`--repo` tekrarlanabilir olduğu için tek bir paylaşılan isim repolar arasında çakışırdı.
+`persist`'in doc comment'i bu gerekçeyi taşır.
 
 ---
 
@@ -800,7 +790,7 @@ vault'tan `forge scrub` ile üretilmiş 93 dosya, sadece `notes/` + `moc/` kapsa
 
 | Faz | Ne eklendi |
 |---|---|
-| 0 | Audit: v1'in haritası, 13 doküman çelişkisi, AUDIT §8.4 bağlayıcı karar kaydı |
+| 0 | Audit: v1'in haritası, tasarım dokümanları arasındaki çelişkilerin çözümü |
 | 1 | `pkg/vault`, `forge slug/validate/index/reindex/capture`; vault migration (91 not) |
 | 2 | `pkg/recall`, `pkg/similarity`; `forge recall` |
 | 2b | `pkg/drift`, `pkg/codeindex`, `pkg/coderef`, `pkg/gitsig`, `pkg/graph`, `pkg/linkcheck`, `pkg/report`, `pkg/store`; `forge drift/check`; cross-compile |
@@ -814,40 +804,17 @@ vault'tan `forge scrub` ile üretilmiş 93 dosya, sadece `notes/` + `moc/` kapsa
 
 **Faz kuralları:** Oturum başına bir faz. Faz N merge edilmeden N+1 başlamaz. **2b asla
 kesilmez**; zaman biterse kesim sırası `6b → 5b → advisor tier`. Mevcut fazın kapsamı
-dışında iş çıkarsa, inşa etmek yerine `docs/BACKLOG.md`'ye yazılır.
+dışında iş çıkarsa, inşa etmek yerine bir backlog kaydına yazılır.
 
 ---
 
-## 17. Açık defektler (mimariyi anlamak için gerekli)
+## 17. Bilinen kısıtlar
 
-2026-08-21'de bir temizlik geçişi yapıldı (faz değil, faz dışı iş). Tablo o geçişin
-sonrasını gösteriyor; kapanan girdiler tarihçe için aşağıda ayrı listede.
-
-| ID | Durum | Özet |
-|---|---|---|
-| **B-008** | Açık — **kendi oturumunu hak ediyor** | Recall §3.1 kalibrasyonu yeniden türetilmeli. **Eşikleri oynatarak cevap verme.** Gizli ön koşul: tabloyu üreten **hiçbir harness yok** (dokuz sorgu yalnızca prose; `evals/run.sh` sadece determinism ölçüyor), ve vault kaydığı için "önce" sütunu bile yeniden ölçülmeli. Ayrıca düzeltme **iki** değişiklik istiyor: `inVocab` gevşetmesi *ve* absent-term ağırlığının seçimi — asıl açık tasarım kararı ikincisi. |
-| **B-029** | Açık — **kendi oturumunu hak ediyor** | `.golangci.yml`'de `errcheck` repo genelinde kapalı. Yeniden ölçüldü: ham **95** bulgu ("~20" değil), varsayılan istisnalardan sonra ~37, bunun 10'u üretim kodu. İçinden çıkan en değerli şey lint değil **correctness**: `cmd/forge/recall_load.go`'nun `refresh()`'i her hata yolunda `nil` dönüyor — başarısız bir commit başarı olarak raporlanıyor. |
-| **B-023** | **Yarısı açık** | Doküman senkronu yapıldı (`fail` → `stop`, dört satır). Açık kalan: `stop` bugün hiçbir şeyi durdurmuyor ve `degrade`'den ayrı bir kod yolu değil. Davranış kararı bilinçli olarak doküman commit'ine sıkıştırılmadı. |
-| **B-027** | **Yarısı açık** | Kod yorumları ve `agents/forge-codebase-scout.md` düzeltildi — sonuncusu bir agent'a diskte var olmayan bir yol söylüyordu, tek operasyonel sonuç. Tasarım dokümanları (ADDENDUM §B.6, DESIGN §15) bilerek tekil adı söylemeye devam ediyor: "record, don't fix". |
-| **B-025** | **Bloke** | `forge cache-source`'un `PostToolUse`/WebFetch `tool_response` şekli resmi dokümandan doğrulanamadı (üç deneme). **WebFetch tekrar denenmez.** Kilidi açan şey gözlemsel: canlı bir hook ateşlemesinin payload'ı. Kod bugünkü hâliyle "bilmemenin" doğru karşılığı, geçici çözüm değil. |
-| **B-030** | Açık (yeni) | `dataset.capture` beş girdi kabul ediyor, yalnızca `d2` ve `d4` bir kapıyı besliyor. `d3` sinsi olanı: implementasyonu **var** ama listeye hiç bakmıyor — yani `d3`'ü silmek yakalamayı durdurmuyor, sessizce. |
-
-**2026-08-21'de kapananlar:**
-
-| ID | Nasıl kapandı |
-|---|---|
-| **B-009** | Aslında Phase 6'da kapanmıştı, kimse status'ü güncellememişti: `README.md:25-31` `git`'in `PATH`'te olmasını bir gereksinim olarak listeliyor ve sapmayı "bilinçli, dokümante edilmiş bir ödünleşim" diye adlandırıyor. Kod değişikliği yok — `pkg/gitsig` shell out etmeye devam ediyor. |
-| **B-024** | `D2Tag` → `"d2"`. Bug'ın yeşil ship etme sebebi kapatıldı: `pkg/dataset/capture_gate_test.go` artık paketlenmiş config ile kodun uyuştuğunu pinliyor, ve eski yazım geri konunca gerçekten kırıldığı doğrulandı. **Uçtan uca doğrulanmadı** — her iki çağrı yolu da canlı, ölçümlü bir advisor çağrısının arkasında. |
-
-**Not:** Bu tablo 2026-08-21 temizliğinden sonrasını gösteriyor ve daha sonraki
-kapanışlarla (B-008, B-029, B-023, B-027, B-030, ...) senkron değil — `CLAUDE.md`'nin
-Status bölümü güncel referans. **B-003 ve B-004, ikisi de 2026-09-01'de kapandı**:
-kullanıcı önce dizini `/Users/mimir45/TIL`'den `/Users/mimir45/knowledge-forge`'a
-yeniden adlandırdı, ardından `go.mod`'un bare modül adını düzeltmesini istedi —
-`module github.com/mimir45/Knowledge-Forge`, GitHub remote'un tam yazımıyla eşleşiyor.
-Artık dizin, modül adı ve remote üçü de aynı adı taşıyor.
-
-Doğrulanmamış ve **iddia edilmeyen** iki şey: `bin/forge` shim'inin gerçek
-indir-ve-checksum yolu, ve tertemiz bir makinede
-`claude plugin marketplace add mimir45/Knowledge-Forge`. İkisi de tag'lenmiş bir release
-gerektiriyor.
+- `pkg/gitsig` çekirdek go-git kütüphanesi yerine `git` CLI'yi shell-out ile çağırıyor —
+  bilinçli, dokümante edilmiş bir ödünleşim; her ortamda `git`'in `PATH`'te olmasını
+  varsayıyor.
+- Recall §3.1 kalibrasyon eşikleri ölçülerek türetildi (bkz. §6.6); yeni bir kalibrasyon
+  açığı bulunursa doğru cevap eşikleri elle oynatmak değil, tabloyu yeniden ölçmektir.
+- `bin/forge` shim'inin indir-ve-checksum yolu ve `claude plugin marketplace add`'in
+  tertemiz bir makineden çalışması, henüz gerçek bir tag'lenmiş release ile uçtan uca
+  doğrulanmadı.

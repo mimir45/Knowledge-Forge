@@ -6,8 +6,8 @@ import "time"
 // triples, captured when `forge gate --previous-draft` sees a retry that now passes.
 // Like D2, its trigger is one CLI call with no legitimate re-fire to guard against, so
 // every capture is appended as its own line — no Key(), no dedup. D4Tag matches the
-// packaged dataset.capture list verbatim ("d4"), as D2Tag now does too — B-024 closed the
-// mismatch that once made D2 inert under the shipped config. TestPackagedCaptureListGates
+// packaged dataset.capture list verbatim ("d4"), as D2Tag now does too.
+// TestPackagedCaptureListGates
 // pins both against the packaged layer so neither can drift again.
 const (
 	D4Kind = "d4-gate-repair"

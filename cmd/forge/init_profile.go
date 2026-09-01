@@ -29,7 +29,8 @@ type profileData struct {
 	Generated       string
 }
 
-// defaultAvoid is DESIGN §9's list verbatim. It is seniority-independent on purpose:
+// defaultAvoid is the default "avoid" list for a generated profile. It is
+// seniority-independent on purpose:
 // nobody at any level wants the note to open with "in this article we will".
 var defaultAvoid = []string{
 	"marketing language", "history lessons", "'in this article we will'",
@@ -113,7 +114,7 @@ func yamlList(items []string) string {
 	return "[" + strings.Join(out, ", ") + "]"
 }
 
-// yamlScalar quotes anything that is not a bare identifier. DESIGN §9's own avoid list
+// yamlScalar quotes anything that is not a bare identifier. defaultAvoid above
 // is the forcing case: it contains spaces, and one entry is already single-quoted, so
 // emitting these raw produces frontmatter that stops parsing at the first apostrophe.
 // Simple values stay unquoted so the common lists still read as prose in Obsidian.

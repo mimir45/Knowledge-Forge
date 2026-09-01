@@ -8,7 +8,7 @@ package profiles
 
 import _ "embed"
 
-// Template is DESIGN §9's profile, as a text/template. AUDIT §8.4 D-4: `forge init` is
+// Template is DESIGN §9's profile, as a text/template. `forge init` is
 // the only writer of the rendered file, and the forge-init skill shells out to it rather
 // than writing a second copy of this shape in prose.
 //

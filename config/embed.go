@@ -1,10 +1,10 @@
 // Package config carries the packaged configuration templates as compiled-in bytes.
 //
 // It holds no logic — pkg/config does the loading. It exists as its own package for one
-// reason: go:embed cannot reach outside its own directory, and AUDIT §8.4 D-2 fixes these
-// files at the repo root under config/, where a reader looks for them. Embedding rather
+// reason: go:embed cannot reach outside its own directory, so these
+// files live at the repo root under config/, where a reader looks for them. Embedding rather
 // than reading from disk means a stranger who unpacks only the binary still has a
-// complete base layer; D-2's rule that the packaged layer is never user-edited is then
+// complete base layer; the rule that the packaged layer is never user-edited is then
 // enforced by construction, because there is nothing on disk to edit.
 package config
 
@@ -13,8 +13,8 @@ import (
 	_ "embed"
 )
 
-// Example is the lowest layer of the chain: the union of ADDENDUM §E and the DESIGN §10
-// keys §E never restates (AUDIT §8.4 D-7).
+// Example is the lowest layer of the chain: the schema is the union of ADDENDUM §E and
+// the DESIGN §10 keys §E never restates.
 //
 //go:embed forge.config.example.md
 var Example []byte

@@ -51,7 +51,7 @@ func anonLabel(rep ExportReport) string {
 		return fmt.Sprintf("yes, %d redactions", rep.Redactions)
 	}
 	if rep.Set == D6Tag {
-		return "**no** — this export is raw text (BACKLOG B-034: derived sets cannot be anonymized)"
+		return "**no** — this export is raw text (a derived set cannot be anonymized)"
 	}
 	return "**no** — this export contains raw captured text"
 }
@@ -114,7 +114,7 @@ func commonLimits(rep ExportReport) []string {
 func accumulationLimit(set string) string {
 	if set == D6Tag {
 		return "This is a point-in-time derivation over `forge logback`'s map, not a " +
-			"forward-accumulating capture (BACKLOG B-034). Re-running the export later can " +
+			"forward-accumulating capture. Re-running the export later can " +
 			"emit *fewer* pairs than before if a citation stops resolving or a repo's cached " +
 			"code index goes stale — unlike D1-D5, an old record here is not guaranteed to " +
 			"still be present."
@@ -129,7 +129,7 @@ func tierLimits(rep ExportReport) []string {
 		return []string{
 			fmt.Sprintf("**Outcome label is partial: %s (%d of %d records).** A joined pair "+
 				"carries whether the note it led to was actually published or quarantined "+
-				"(BACKLOG B-035, closed 2026-08-25); the rest are (question features → routing "+
+				"when the join succeeded; the rest are (question features → routing "+
 				"decision) pairs only — supervision on the router's own output, not evidence "+
 				"the router is correct. A pair joins only when the caller threaded recall's "+
 				"run_id back through `forge gate --run-id`; forgetting it degrades to the "+

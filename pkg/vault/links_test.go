@@ -36,8 +36,8 @@ func TestWikilinks(t *testing.T) {
 	}
 }
 
-// TestResolveExtensionAgnostic is the regression test for docs/AUDIT.md §11: a resolver
-// that blindly appends ".md" reads the fixture's [[log.md]] as dangling.
+// TestResolveExtensionAgnostic guards against a resolver
+// that blindly appends ".md" and reads the fixture's [[log.md]] as dangling.
 func TestResolveExtensionAgnostic(t *testing.T) {
 	ix := NewIndex([]string{"log.md", "index.md", "issues/hibernate-column-mismatch.md"})
 	cases := []struct {

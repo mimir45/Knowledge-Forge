@@ -10,8 +10,9 @@ import (
 
 // loadAskLog reads .forge/log.jsonl and returns the same ask counts in the two shapes
 // staleness.md and gaps.md need: slug-keyed (StalenessInput.Asks) and topic-keyed
-// ([]report.Ask). Written is resolved by exact match against slugs — DESIGN §14's topic
-// field is already a slug-shaped label (recall's logAsk writes vault.Slug output), so no
+// ([]report.Ask). Written is resolved by exact match against slugs — the telemetry
+// event's topic field is already a slug-shaped label (recall's logAsk writes
+// vault.Slug output), so no
 // fuzzy matching is attempted. Tolerant of a missing file: every vault before its first
 // telemetry-enabled `forge recall` run has none.
 func loadAskLog(path string, slugs map[string]string) (bySlug map[string]int, asks []report.Ask) {

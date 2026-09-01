@@ -27,7 +27,7 @@ cp -R "$fixture" "$vault"
 fail=0
 
 echo "== forge recall: determinism =="
-# run_id (B-035) is a fresh random correlation key minted per call by design — it must
+# run_id is a fresh random correlation key minted per call by design — it must
 # differ every run, so it's excluded here the same way a timestamp field would be from
 # any other snapshot comparison. Everything else in the envelope must still match.
 q="how does kafka consumer group rebalancing work"
