@@ -7,7 +7,7 @@ description: Use when the user asks what training data the vault has accumulated
 
 A thin wrapper around one deterministic command. **This skill writes nothing.**
 `forge dataset-stats` reads the five capture files under `.forge/datasets/`, plus `d6`
-(BACKLOG B-034, recomputed live rather than read from a file), and reports how much each
+(a derived set, recomputed live rather than read from a file), and reports how much each
 holds and what that volume is honestly enough for. It is a direct user command with a
 normal error-exit contract — if it fails, show the error.
 

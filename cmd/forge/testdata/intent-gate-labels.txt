@@ -1,7 +1,7 @@
 # Intent-gate ground truth — the prompts cmd/forge/intent.go's threshold is derived from.
 #
-# B-033 pairs the neighbour floor with intent.go's hardcoded 0.7 because both were
-# calibrated against the pre-B-008 scale. They share a root cause, not an answer: the two
+# The neighbour floor and intent.go's hardcoded 0.7 (now 0.50) share a root cause, not an
+# answer: both were calibrated against a scale the IDF weighting fix later moved. The two
 # gates have opposite cost functions. A neighbour false positive is one wrong wikilink in
 # a note under review. An intent false positive interrupts a user prompt with injected
 # context, on every prompt, in a hook contracted never to disturb the session. So this
@@ -43,7 +43,7 @@ QUIET: write a regex that matches an email address
 QUIET: how do I set up a Kubernetes ingress with cert-manager
 QUIET: what is the difference between a mutex and a semaphore
 
-# --- Widened 2026-08-27, B-037's wide-sweep plan (docs/TODO.md) ---
+# --- Widened to cover under-represented ecosystems ---
 #
 # Same rule as above and as neighbour-labels.txt/query-ecosystems.txt: written from the
 # corpus's note titles/topics before any score was measured on this batch, targeting

@@ -113,9 +113,10 @@ func oneOf(key, got string, allowed []string) error {
 }
 
 // validateThresholds enforces the ordering DESIGN §5.3's decision tree assumes. It does
-// not enforce the *values* — 0.85 / 0.55 are now the packaged defaults and a user may
-// move them. BACKLOG B-008 forbids moving them to fix a recall defect; it does not
-// forbid a user from tuning their own vault.
+// not enforce the *values* — 0.85 / 0.55 are the packaged defaults and a user may
+// move them for their own vault. Moving them to paper over a recall scoring defect is a
+// different matter: that argument belongs in a re-derivation of the calibration table,
+// not a config edit.
 func validateThresholds(c *Config) error {
 	r := c.Recall
 	if r.AnswerThreshold < r.UpdateThreshold {

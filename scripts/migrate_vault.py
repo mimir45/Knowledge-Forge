@@ -257,7 +257,7 @@ def axis_fields(fm_src, vocab):
 # ---------------------------------------------------------------- link rewriting
 
 # A path-qualified link names a directory that is about to change, so it always has to be
-# retargeted. A bare [[name]] resolves by basename (AUDIT §11) and normally survives a
+# retargeted. A bare [[name]] resolves by basename and normally survives a
 # move untouched -- but not when the destination slug differs from the old filename, and
 # the real vault has a six-note series that cross-links entirely in the bare form.
 WIKILINK = re.compile(r"\[\[([^\]|#]+/[^\]|#]+?)(\.md)?([#|][^\]]*)?\]\]")

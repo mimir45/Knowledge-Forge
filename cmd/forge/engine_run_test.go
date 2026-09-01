@@ -25,8 +25,9 @@ func TestQueueNoteStampsPendingAdvisor(t *testing.T) {
 	}
 }
 
-// TestOnExhaustedBehaviorDiverges is B-023's behaviour half: before this, all three
-// on_exhausted values reached the same silent none-fallthrough. Each case forces the
+// TestOnExhaustedBehaviorDiverges pins that the three on_exhausted values now reach
+// genuinely different outcomes, rather than all three converging on the same silent
+// none-fallthrough. Each case forces the
 // same exhausted-budget path (cap $0.00, no fallback in the chain) and checks the exit
 // code and, for queue, the note write that used to be the only distinguishable effect.
 func TestOnExhaustedBehaviorDiverges(t *testing.T) {

@@ -3,7 +3,7 @@ run:
 
 issues:
   # golangci-lint truncates by default (max-issues-per-linter: 50, max-same-issues: 3), so
-  # a repeated finding can be hidden rather than reported — measuring B-029 gave 22 findings
-  # truncated and 35 whole. A lint gate that under-reports is worse than one that is noisy.
+  # a repeated finding can be hidden rather than reported — measured once at 22 findings
+  # truncated versus 35 whole. A lint gate that under-reports is worse than one that is noisy.
   max-issues-per-linter: 0
   max-same-issues: 0

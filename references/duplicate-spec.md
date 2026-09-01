@@ -40,7 +40,7 @@ pair.
 This is the load-bearing constraint. Scored across all types, the real vault's top pairs are
 0.609 / 0.593 / 0.531 / 0.529 — all `decision`↔`pitfall` or `concept`↔`decision`, and none of
 them a duplicate. A decision note and the pitfall that caused it share nearly all their
-vocabulary *by design*; that separation is exactly what BACKLOG B-005's seven-type taxonomy
+vocabulary *by design*; that separation is exactly what the vault's seven-type taxonomy
 exists to create. Cross-type scoring ranked five vault non-duplicates above F7 and made the
 report unusable at every threshold. Restricted to same-type pairs the real vault's ceiling is
 0.504 and F7 (0.575) is top of its corpus.

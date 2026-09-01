@@ -11,20 +11,20 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/recall"
 )
 
-// This is B-033's derivation harness. It exists as a test rather than as numbers in a
-// commit message for one reason: B-032 is next in the queue and moves blend's
-// denominator, so every score shifts and the floor has to be re-derived against a scale
-// that does not exist yet. A sweep that lives in prose cannot be re-run; this one can,
-// with -update, and the diff is the review surface.
+// This is the neighbour floor's derivation harness. It exists as a test rather than as
+// numbers in a commit message for one reason: any change to the scoring blend's
+// denominator shifts every score, so the floor has to be re-derivable against whatever
+// scale the scorer produces, not pinned against one snapshot of it. A sweep that lives in
+// prose cannot be re-run; this one can, with -update, and the diff is the review surface.
 //
 // It deliberately does not route through calibration.golden. The floor is a property of
 // Thresholds.Neighbours, so the sweep constructs Thresholds directly per candidate value
 // and never touches Decide, which the floor must not influence.
 //
-// Since B-036 (widened NeighbourWindow, docs/BACKLOG.md), the sweep scores via RankPool
-// and filters recall.NeighbourPool(pool[i]) per floor — the same wider pool
-// Thresholds.ResultFrom uses in production — rather than the old TopN=10-truncated Rank
-// output. Rank itself is still untouched by this file.
+// The sweep scores via RankPool and filters recall.NeighbourPool(pool[i]) per floor —
+// the same wider pool (NeighbourWindow, wider than TopN) Thresholds.ResultFrom uses in
+// production — rather than the old TopN=10-truncated Rank output. Rank itself is still
+// untouched by this file.
 
 const (
 	labelsPath      = "testdata/neighbour-labels.txt"
@@ -39,9 +39,10 @@ type labelledQuery struct {
 }
 
 // TestNeighbourFloorSweep reports precision, recall and link volume at each candidate
-// floor. It asserts nothing about which floor is best — that argument belongs in
-// BACKLOG.md, where a human wrote it. What it asserts is that the argument stays
-// reproducible: a scorer change that moves the sweep fails here until it is re-recorded.
+// floor. It asserts nothing about which floor is best — that argument is a separate
+// design judgment, made by a human reading this table. What it asserts is that the
+// argument stays reproducible: a scorer change that moves the sweep fails here until it
+// is re-recorded.
 func TestNeighbourFloorSweep(t *testing.T) {
 	got := sweepTable(t)
 	if *updateGolden {

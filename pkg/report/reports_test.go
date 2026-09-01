@@ -351,9 +351,10 @@ func TestCodebaseRanksUndocumentedChurnFirst(t *testing.T) {
 	}
 }
 
-// TestCodebaseRendersDependsOn: B-015 populated CodeGroup.DependsOn (cmd/forge), and this
-// was the render's own untested half — writeGroup's "Depends on:" line existed since it
-// was declared but nothing before B-015 ever gave it a non-empty slice to prove out.
+// TestCodebaseRendersDependsOn covers the render's own untested half once
+// CodeGroup.DependsOn (cmd/forge) started being populated: writeGroup's "Depends on:"
+// line existed since it was declared but nothing before had ever given it a non-empty
+// slice to prove out.
 func TestCodebaseRendersDependsOn(t *testing.T) {
 	got := string(RenderCodebase(CodebaseInput{
 		Repo: "leprecoin", Days: 90, Now: at,
@@ -410,11 +411,11 @@ func TestTopUncoveredMatchesTheReportsOwnRanking(t *testing.T) {
 
 // TestTopDuplicatePairRequiresTheSpecThreshold: check.ai_pass's merge-proposal sub-task
 // must use the same 0.85 bar duplicates.md's header and weekly.go's Act now cite, not the
-// lower operating threshold pairs is otherwise filtered at — BACKLOG B-019 is about this bar.
+// lower operating threshold pairs is otherwise filtered at — a bar few real pairs clear.
 func TestTopDuplicatePairRequiresTheSpecThreshold(t *testing.T) {
 	pairs := []similarity.Pair{{A: "x", B: "y", Score: 0.60}, {A: "p", B: "q", Score: 0.40}}
 	if _, ok := TopDuplicatePair(pairs); ok {
-		t.Error("TopDuplicatePair found a pair below 0.85; B-019 says this almost never clears")
+		t.Error("TopDuplicatePair found a pair below 0.85, which almost never clears")
 	}
 	pairs = append([]similarity.Pair{{A: "m", B: "n", Score: 0.90}}, pairs...)
 	got, ok := TopDuplicatePair(pairs)

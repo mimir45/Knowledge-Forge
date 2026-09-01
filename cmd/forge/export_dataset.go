@@ -26,7 +26,7 @@ and only d3 and d4 have one; csv is d1's alone. An undefined combination is refu
 a message naming what is valid — the alternative is inventing an output shape the data
 does not support.
 
-d6 (BACKLOG B-034) is different from d1-d5: it is derived, not captured — recomputed on
+d6 is different from d1-d5: it is derived, not captured — recomputed on
 every export from the vault's code citations against whatever
 .forge/code-index-<repo>.json caches this machine holds, not accumulated over time by a
 capture path. --since is refused for it (no per-record timestamp), and so is
@@ -133,7 +133,7 @@ func warnRawExport(set string) {
 	if set == dataset.D6Tag {
 		fmt.Fprintln(os.Stderr, "  The export will contain repo, path and symbol names, and")
 		fmt.Fprintln(os.Stderr, "  the vault-relative path of the note citing each, exactly as")
-		fmt.Fprintln(os.Stderr, "  they are — d6 cannot be anonymized (BACKLOG B-034).")
+		fmt.Fprintln(os.Stderr, "  they are — d6 cannot be anonymized.")
 	} else {
 		fmt.Fprintln(os.Stderr, "  The export will contain captured text exactly as recorded:")
 		fmt.Fprintln(os.Stderr, "  note bodies, drafts, critiques, source URLs and file paths.")

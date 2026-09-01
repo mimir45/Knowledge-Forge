@@ -12,7 +12,7 @@ import (
 // references/schema.yaml defines how a body claim gets tagged with one of those three
 // categories — require_citation_for names the categories a strict pipeline cares about,
 // not the mechanism a T0 tool could detect one with, and inventing body markup here
-// would be a note-contract change, not a gate. See BACKLOG for the open item.
+// would be a note-contract change, not a gate. That gap is a known, open limitation.
 //
 // What is checkable without a model call: whether this note's type requires a source at
 // all (schema.yaml's sources.min_items_by_type — decision/incident may cite nothing,

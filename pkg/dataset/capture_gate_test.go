@@ -6,8 +6,8 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/config"
 )
 
-// TestPackagedCaptureListGates is B-024's regression guard, and it exists because the
-// mismatch it pins shipped green: the tag tests above check hand-written lists and
+// TestPackagedCaptureListGates is a regression guard against config/code drift, and it
+// exists because that exact mismatch once shipped green: the tag tests above check hand-written lists and
 // pkg/config's tests check that the packaged layer parses, so nothing ever asserted that
 // the two agree. D2Tag read "d2_advisor" while the packaged dataset.capture said "d2", so
 // the gate returned false forever — silently, since a capture write is a side channel
@@ -18,9 +18,9 @@ import (
 // cycle. Loading with no optional layers gives the packaged base alone, which is exactly
 // what a fresh install runs under.
 //
-// It now covers all five tiers. Through Phase 6 it was scoped to D2 and D4 with a comment
-// saying d1/d3/d5 were "read by nothing — see BACKLOG B-030", and that is the thing this
-// phase changed: every tag in the packaged list now gates a real write path, so every tag
+// It now covers all five tiers. It used to be scoped to just D2 and D4, from a time when
+// d1/d3/d5 were read by nothing in the capture path; every tag in the packaged list now
+// gates a real write path, so every tag
 // is worth pinning. Assert against the packaged layer, never a hand-written list — the
 // whole point is that config and code are checked against each other.
 func TestPackagedCaptureListGates(t *testing.T) {
@@ -33,7 +33,7 @@ func TestPackagedCaptureListGates(t *testing.T) {
 		t.Fatal("packaged dataset.enabled = false; the gates below are moot")
 	}
 	for _, tier := range Tiers() {
-		// D6 (BACKLOG B-034) has no write path and is deliberately absent from
+		// D6 has no write path and is deliberately absent from
 		// dataset.capture — Enabled would correctly report false for it forever, which is
 		// not the mismatch this test guards against.
 		if tier.Derived {

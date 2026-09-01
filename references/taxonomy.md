@@ -2,11 +2,11 @@
 
 How `stack` and `tags` in `references/schema.yaml` were derived, and how to extend them.
 
-Nothing here was invented. Every value traces to a tag that actually appears in
-`/Users/mimir45/Documents/Base`, measured 2026-08-09 by walking the vault and parsing
-YAML frontmatter: **128 distinct tags across 434 assignments**, of which **81 (63%) are
-used exactly once**. (`docs/AUDIT.md` reports 131/431 from a slightly different parser;
-the delta is inline-vs-block `tags:` handling and does not change any decision below.)
+Nothing here was invented. Every value traces to a tag that actually appears in a real
+personal vault, measured 2026-08-09 by walking the vault and parsing YAML frontmatter:
+**128 distinct tags across 434 assignments**, of which **81 (63%) are used exactly
+once**. (An earlier count with a slightly different parser reported 131/431; the delta is
+inline-vs-block `tags:` handling and does not change any decision below.)
 
 ---
 
@@ -68,7 +68,7 @@ what a recall query should filter on, so `local-ai` stays a tag. `leprecoin` (8)
 ## 3. Alias map — rejected values and their canonical form
 
 `forge validate` reports these as errors. `forge validate --fix` rewrites them.
-The first five are the collisions the audit named explicitly (`docs/AUDIT.md` §9); the
+The first five are the collisions the initial audit named explicitly; the
 rest were found in the same measurement pass.
 
 | Written | Canonical | Field | Why |
@@ -98,10 +98,10 @@ The `type` enum in DESIGN §6.1 has seven values, but two other places imply few
 `docs/CLAUDE-CODE-PROMPT.md` item 2 lists six templates (no `incident`), and DESIGN §7's
 topology sketch shows five `notes/` subdirs. Phase 1 treats the **enum as authoritative**
 and builds seven templates and seven subdirs, because the alternative is a schema-valid
-`type` with no template and nowhere to live. Recorded as `BACKLOG.md` B-005.
+`type` with no template and nowhere to live.
 
-Nothing in the existing vault constrains this choice: the audit found `type` used
-**zero** times vault-wide (`docs/AUDIT.md`, baseline metrics). Every value is assigned
+Nothing in the existing vault constrains this choice: the initial audit found `type` used
+**zero** times vault-wide, in its baseline metrics. Every value is assigned
 for the first time by the migration.
 
 ### Mapping the old topology onto `type`
@@ -123,9 +123,9 @@ inferred value is written with `confidence: low`.
 
 ## 5. What the vocabulary deliberately does not cover
 
-- **`raw/daily/`** (5 notes) are symlinks to
-  `/Users/mimir45/claude-memory-compiler/daily/`. They are ingest input, not vault notes.
-  They are excluded from the contract and from `forge validate --all`.
+- **`raw/daily/`** (5 notes) are symlinks to an external daily-notes tool's output. They
+  are ingest input, not vault notes. They are excluded from the contract and from
+  `forge validate --all`.
 - **`sources/daily/`** (9 notes) are compiled digests of the above. Same treatment.
 - **Non-note root files** — `CLAUDE.md`, `lint-report.md`, `CCFA_…_TR.md` — are excluded.
 - **`status`** is not a schema field. The audit found it carries no information: 72 of

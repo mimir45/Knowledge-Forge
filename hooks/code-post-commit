@@ -1,5 +1,5 @@
 #!/bin/sh
-# Knowledge Forge — git-anchored drift, code repo's post-commit (STACK/AUDIT §8.2: drift
+# Knowledge Forge — git-anchored drift, code repo's post-commit (drift
 # is git-tree anchored, never file-save anchored — see the invariant in CLAUDE.md).
 #
 # Installed into a CODE repository's .git/hooks/post-commit by

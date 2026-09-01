@@ -19,8 +19,8 @@ const defaultCacheTTLDays = 30
 // window can later be short-circuited (nothing reads/enforces the TTL yet in Phase 5 —
 // this command only writes the cache).
 //
-// PostToolUse's tool_response shape for WebFetch was unconfirmed until a live hook
-// payload was captured 2026-08-28 (see docs/BACKLOG.md B-025's closure note): it is an
+// PostToolUse's tool_response shape for WebFetch was confirmed by capturing a live hook
+// payload, since it was never documented officially: it is an
 // object {result, url, code, codeText, bytes, durationMs}, and result carries the actual
 // fetched/summarized text. cacheBody extracts result when present; see its doc comment
 // for the fallback chain that still applies to any other shape.
@@ -70,9 +70,9 @@ func cacheFetch(root string, p postToolUsePayload) {
 	_ = os.WriteFile(path, []byte(content), 0o644)
 }
 
-// cacheBody extracts the fetched text from tool_response. The confirmed shape (B-025,
-// captured 2026-08-28) is an object carrying the text under a "result" key; that key is
-// looked up by name via a map decode, not a fixed struct, so a present-but-empty result
+// cacheBody extracts the fetched text from tool_response. The confirmed shape (captured
+// from a live hook payload) is an object carrying the text under a "result" key; that
+// key is looked up by name via a map decode, not a fixed struct, so a present-but-empty result
 // ("" — a real, if unlikely, fetch outcome) is still returned rather than falling through.
 // Two fallbacks cover anything else without asserting a schema this can't confirm: a bare
 // JSON string (kept in case the shape ever simplifies) unmarshals cleanly and is used

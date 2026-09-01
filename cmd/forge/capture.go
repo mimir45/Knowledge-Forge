@@ -32,8 +32,9 @@ func cmdCapture(args []string) int {
 	return runCapture(root, *commit, *out, *days, *dry, *quiet)
 }
 
-// captureConsented closes BACKLOG B-030: the packaged dataset.capture list names "d3" but
-// nothing here ever read it, so deleting the entry did not stop capture. Every branch
+// captureConsented makes dataset.capture's list a real gate: it used to be read by
+// only some tiers, so deleting an entry from the packaged list did not always stop
+// capture for it. Every branch
 // returns without an error code and speaks only on stderr, because hooks/vault-post-commit
 // binds this command to two rules — never fail a commit, never print to the terminal — and
 // its own redirect is what turns stderr into .forge/capture.log.

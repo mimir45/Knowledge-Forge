@@ -69,15 +69,15 @@ func TestWeeklyActNowRanksByKindAndFiltersLooseDuplicates(t *testing.T) {
 	}
 }
 
-// An empty Act now must explain itself by BACKLOG ID, not print a bare "none" that reads
+// An empty Act now must explain itself, not print a bare "none" that reads
 // like a bug.
-func TestWeeklyActNowCitesBacklogWhenEmpty(t *testing.T) {
+func TestWeeklyActNowExplainsWhenEmpty(t *testing.T) {
 	in := weeklyFixture()
 	in.Broken, in.Uncovered, in.DuplicatePairs, in.DeadCitations = nil, nil, nil, nil
 	got := string(RenderWeekly(in))
-	for _, want := range []string{"B-017", "B-019"} {
+	for _, want := range []string{"churn window", "0.85 spec threshold"} {
 		if !strings.Contains(got, want) {
-			t.Errorf("empty Act now should cite %s, got:\n%s", want, got)
+			t.Errorf("empty Act now should explain itself with %q, got:\n%s", want, got)
 		}
 	}
 }

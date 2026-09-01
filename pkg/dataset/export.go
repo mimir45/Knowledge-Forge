@@ -73,7 +73,7 @@ type ExportReport struct {
 	To          time.Time      `json:"to"`
 	Stacks      map[string]int `json:"stacks,omitempty"`
 	EngineTrail map[string]int `json:"engine_trail,omitempty"`
-	// D1Joined is D1-only (BACKLOG B-035): how many of Records joined a gate outcome by
+	// D1Joined is D1-only: how many of Records joined a gate outcome by
 	// run_id, so the datasheet can say what fraction of the corpus is genuinely
 	// outcome-labelled rather than implying the whole export is.
 	D1Joined  int    `json:"d1_joined,omitempty"`
@@ -83,7 +83,7 @@ type ExportReport struct {
 
 // Export reads one tier, filters, anonymizes, renders, and writes — in that order, with
 // every byte held in memory until the whole run has succeeded. That buffer-then-commit
-// shape is pkg/scrub's (scrub.go's `file` slice) and it is what AUDIT §8.4 D-6 requires:
+// shape is pkg/scrub's (scrub.go's `file` slice): it means
 // on any failure --out is left exactly as it was, rather than holding a partial export
 // whose unwritten tail is the part nobody scrubbed.
 func Export(vaultRoot string, o ExportOptions) (ExportReport, error) {
@@ -145,7 +145,7 @@ func tagList() string {
 // refusals automatically. Neither flag has a safe silent behaviour here: --since has no
 // per-record timestamp to filter on (a filtered-looking export that never filtered), and
 // no redaction of a derived set's whole reason for existing — its repo/path/symbol
-// content — has been found that leaves it useful (BACKLOG B-034's closing note).
+// content — has been found that leaves it useful.
 func refuseDerivedOptions(t Tier, o ExportOptions) error {
 	if !t.Derived {
 		return nil

@@ -82,7 +82,7 @@ type Source interface {
 // across repos is the safe direction, since its only job is keeping work off the hook
 // path. Deleted is the subset git reported gone, mapped to the repo that reported it:
 // same-commit evidence that lets an Unresolved citation verdict BROKEN immediately
-// instead of waiting for the next full sweep (B-028).
+// instead of waiting for the next full sweep.
 type Changed struct {
 	Touched map[string]bool
 	Deleted map[string]string // repo-relative path -> repo name
@@ -144,7 +144,7 @@ func checkRef(n Note, ref coderef.Ref, rg *coderef.Registry, src Source,
 
 // checkUnresolvedPath is the Unresolved dispatch checkRef delegates to. On the hook path
 // (changed != nil), same-commit deletion evidence already sits in changed.Deleted, so a
-// match verdicts BROKEN immediately (B-028) and a miss produces no finding at all — never
+// match verdicts BROKEN immediately and a miss produces no finding at all — never
 // SKIPPED, because a note whose citations produced no findings reads as "not looked at",
 // and Apply must never confuse that with "not broken" (see apply.go's Apply doc comment).
 // changed == nil means a true full sweep, which is unresolvedPath's own case to decide.

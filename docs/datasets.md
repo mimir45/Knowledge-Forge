@@ -25,9 +25,11 @@ Each lands in `<vault>/.forge/datasets/<set>.jsonl`, one JSON object per line, a
 `.forge/` is derived state and gitignored in the vault, so capture files are not
 committed by the vault's own history.
 
-D6 in `ADDENDUM §D.1`'s table — code↔knowledge retrieval pairs — is **not** built. It is
-derivable from what `forge logback` already generates rather than from a capture path,
-and it is filed as BACKLOG **B-034**.
+D6 in `ADDENDUM §D.1`'s table — code↔knowledge retrieval pairs — is a **derived** set, not
+a captured one: it is recomputed from what `forge logback` already generates rather than
+read from an append-only capture file, so it has no `Path` of its own and cannot be
+anonymized or scoped with `--since` (both refused outright, since a derived set has no
+per-record timestamp).
 
 ## Consent, and how to turn it off
 

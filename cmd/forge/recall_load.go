@@ -79,7 +79,7 @@ func rowFor(root, rel string, cached map[string]store.Row, st *store.Store, ix *
 
 // docOf resolves the freshness window: the note's own freshness_days when it carries
 // one, else the type default from references/schema.yaml. Both can legitimately be 0,
-// which means never stale (DESIGN §10 — decisions get superseded, not expired).
+// which means never stale — decisions get superseded, not expired.
 func docOf(root string, r store.Row, s *vault.Schema) recall.Doc {
 	days := r.FreshnessDays
 	if days == 0 {
@@ -100,13 +100,12 @@ func docOf(root string, r store.Row, s *vault.Schema) recall.Doc {
 // fresh markdown is still correct. rowFor re-parses whatever the cache does not match, so
 // a write that never lands costs a re-parse on the next run and nothing else.
 //
-// BACKLOG B-029 filed this as a correctness bug and prescribed propagating the error
-// through the `commit` helper. Tracing the callers says otherwise: loadDocs' error reaches
+// Propagating the error through the `commit` helper looks like the obvious fix and is
+// wrong: tracing the callers shows loadDocs' error reaches
 // runRecall (recall.go:77), which prints it and returns 1 **without emitting the
 // candidates it has already scored correctly**. A concurrent `forge intent` on the
 // UserPromptSubmit hook holding the SQLite write lock is enough to produce that, so
-// propagating would trade a stale cache for a discarded correct answer. The entry was
-// sized from errcheck output rather than from that call trace.
+// propagating would trade a stale cache for a discarded correct answer.
 //
 // What was actually wrong is the signature. Every path returned nil, so
 // `return docs, refresh(...)` read as propagation while guaranteeing the opposite — and a

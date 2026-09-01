@@ -77,8 +77,8 @@ func TestCacheSourceObjectResponseCachedVerbatim(t *testing.T) {
 }
 
 // TestCacheSourceExtractsResultField pins the real WebFetch PostToolUse shape, captured
-// live 2026-08-28 (docs/BACKLOG.md B-025's closure note): tool_response is an object
-// {result, url, code, codeText, bytes, durationMs}, and only result's text belongs in the
+// from a live hook payload since it was never documented officially: tool_response is an
+// object {result, url, code, codeText, bytes, durationMs}, and only result's text belongs in the
 // cache — the wrapper fields must not leak into the cached body.
 func TestCacheSourceExtractsResultField(t *testing.T) {
 	root := t.TempDir()

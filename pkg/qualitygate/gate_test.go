@@ -141,7 +141,7 @@ func TestRunDuplicateNearMatchFailsButDoesNotBlockWrite(t *testing.T) {
 	}
 }
 
-// TestRunDeterminism pins the B-020 convention: two runs on byte-identical inputs must
+// TestRunDeterminism pins this codebase's determinism convention: two runs on byte-identical inputs must
 // produce byte-identical Outcomes, in the same order, so a retry's open-questions bullets
 // never drift for reasons unrelated to the draft itself.
 func TestRunDeterminism(t *testing.T) {

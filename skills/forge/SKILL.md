@@ -72,7 +72,7 @@ Recall is deterministic and makes **zero model calls**. It costs ~5 ms. There is
 budget argument for skipping it.
 
 **Hold onto `run_id` from the JSON output.** It correlates this recall call to whatever
-note write follows it (BACKLOG B-035) — pass it back as Stage 4's `forge gate --run-id`
+note write follows it — pass it back as Stage 4's `forge gate --run-id`
 if you reach a write for this same question. Dropping it costs nothing beyond that one
 join; every other behavior is unaffected.
 
@@ -118,8 +118,8 @@ Target is `candidates[0].path`.
 5. Append one line to `## Changelog`: the date, what section was added, and why.
 6. Show the user the added section and the frontmatter delta.
 
-If the top candidate is clearly the wrong note — recall's tag/stack channels over-weight
-ecosystem-wide terms like `spring` (BACKLOG B-008) — **say so and propose CREATE
+If the top candidate is clearly the wrong note — recall's tag/stack channels can still
+over-weight ecosystem-wide terms like `spring` in some cases — **say so and propose CREATE
 instead.** Do not extend a note that is not about the topic. Check `candidates[1..]`
 first; the right target is often second.
 
@@ -168,8 +168,8 @@ Merge their reports into the draft:
 - Researcher's findings + numbered sources → the note's `sources:` frontmatter and
   `## Sources` section.
 - Scout's `file:line` examples → the `## In {{primary_stack}}` section (concept,
-  pattern, api templates) — this section is the differentiator BACKLOG and DESIGN §11
-  both call out; do not fill it with generic material the researcher could have found.
+  pattern, api templates) — this section is the differentiator DESIGN §11
+  calls out; do not fill it with generic material the researcher could have found.
 - If the scout found no local usage, say so in that section rather than omitting it —
   "not used in this repo yet" is a fact worth stating, not a gap to paper over.
 
@@ -218,7 +218,7 @@ forge gate --file <rendered draft> --rel <intended vault-relative path> \
 ```
 
 Pass `--run-id` when Stage 1's recall call led to this write — it joins the routing
-decision to whether the note actually got published (BACKLOG B-035). Omit it for any
+decision to whether the note actually got published. Omit it for any
 write that did not start from a recall call; the gate behaves identically either way.
 
 Read the JSON `Report` it prints. Branch on `Report.Quarantine` and the individual gate
@@ -262,14 +262,14 @@ one agent with `Edit`/`Bash` in this pipeline and it never publishes a note that
 already passed the gate — if you find yourself asking it to write something Stage 4
 hasn't cleared, that is a bypass, not a shortcut.
 
-- It populates `code_refs` (BACKLOG B-012) from the scout's `file:line` findings.
+- It populates `code_refs` from the scout's `file:line` findings.
 - It adds outbound/inbound links and MOC entries to satisfy the link gate's minimums.
 - It runs `forge index` after writing.
 - It commits with `git commit --trailer "Forge-Write: true"` on **every** commit it
   makes in the run — the note-write commit and any index-rebuild or link-fix commit
-  alike (BACKLOG B-007; requires git ≥2.32). A commit missing the trailer reads to
+  alike (requires git ≥2.32). A commit missing the trailer reads to
   `pkg/dataset`'s D3 capture as a human correction, not a librarian action — that is the
-  entire mechanism B-007 exists to close, so do not skip it "just for" a follow-up
+  entire mechanism this trailer exists to close, so do not skip it "just for" a follow-up
   commit.
 
 ---

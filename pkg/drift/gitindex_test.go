@@ -34,7 +34,7 @@ func TestNameMapOrdersDeclarationsWithinOneFile(t *testing.T) {
 	}
 }
 
-// TestResolveAtFindsFileDeletedFromHistory is B-026's real-git twin of
+// TestResolveAtFindsFileDeletedFromHistory is the real-git twin of
 // TestUnresolvedPathFallback: everything in that test answers ResolveAt by map
 // membership, which cannot fail the way production code can. Only GitSource.registryAt
 // exercises coderef.ScanRepo against real git objects at a past revision, so this test
@@ -95,7 +95,7 @@ func sameOrder(got, want []loc) bool {
 	return true
 }
 
-// TestGitSourceRebuildsFromScratchOnStaleExtractor is B-015's own cache-invalidation
+// TestGitSourceRebuildsFromScratchOnStaleExtractor is the cache-invalidation
 // check, over the real hook path rather than codeindex.Load in isolation: a cache file
 // stamped by an older Extractor must make GitSource.build take the full-rebuild branch,
 // not Patch the bogus stale entry forward as if it still described the tree.

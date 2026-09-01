@@ -46,7 +46,7 @@ that summary rather than re-deriving it from the file list yourself.
 dependency, unlike drift/codebase). Read it and lead with it:
 
 - `## 🔴 Act now` and `## 🟡 Review` — the ranked items. If either section prints a
-  caveat line instead of a list (BACKLOG B-017's churn window, or B-019's duplicate
+  caveat line instead of a list (a thin churn window, or the 0.85 duplicate
   threshold), relay that caveat verbatim — it's the honest reason the section reads
   empty, not evidence nothing needs attention.
 - `## 📊 Vault` — counts and week-over-week deltas. Omitted on the very first run ever;
@@ -93,7 +93,7 @@ what the advisor tier said, it never writes the patch in.
   `ai_pass`'s approved proposals) the normal `forge` write pipeline do that.
 - The weekly file is always the lead; the nine `reports/*.md` files are detail, not the
   headline.
-- An empty "Act now" section gets its caveat relayed verbatim (B-017/B-019), never
+- An empty "Act now" section gets its caveat relayed verbatim, never
   reported as "nothing needs attention" without that context.
 - `ai_pass` proposals are shown and approved individually, never auto-applied.
 - `--offline` runs are reported as offline, not silently presented as a full network run.

@@ -46,10 +46,10 @@ niteliğindedir.
 | `CHANGELOG.md` | Sürüm geçmişi. Phase 6'da eklendi. |
 | `CONTRIBUTING.md` | Katkı kuralları: iki build lane, `make test`'in ikisini de çalıştırması, faz disiplini. |
 | `Makefile` | Altı hedefli cross-compile matrisi + `build full test bench vet fmt lint dist checksums install-hook clean help`. `install-hook` binary'yi `$HOME/.forge/bin`'e kopyalar — bu yol config'e değil Makefile'a bilerek gömülü. |
-| `go.mod` | Modül adı artık **`github.com/mimir45/Knowledge-Forge`** (2026-09-01'de düzeltildi, **B-004 kapandı** — GitHub remote'un tam yazımıyla eşleşiyor). Dizin de `/Users/mimir45/knowledge-forge` (aynı gün, **B-003 kapandı**). |
+| `go.mod` | Modül adı GitHub remote'un tam yazımıyla eşleşir (`github.com/<owner>/Knowledge-Forge`). |
 | `go.sum` | Bağımlılık checksum'ları. |
 | `.gitignore` | `dist/`, `.forge/`, build artefaktları. |
-| `.golangci.yml` | Lint config. **`errcheck` repo genelinde kapalı** — bilinçli, **B-029** olarak kayıtlı. 2026-08-21'de yeniden ölçüldü: ham **95** bulgu (girdinin "~20" iddiası eksikti), golangci-lint'in varsayılan istisnaları elle uygulanınca ~37 — bunun 10'u üretim kodu. |
+| `.golangci.yml` | Lint config. `errcheck` açık; `max-issues-per-linter`/`max-same-issues` sıfırlanmış — varsayılan limitlerin tekrarları sessizce düşürdüğü ölçülerek bulundu. |
 | `.goreleaser.yml` | Release paketleme. Altı hedef, arşiv içeriği (README/LICENSE), checksum üretimi. |
 | `docs/tr/…` | Bu dört Türkçe doküman (`01-FIKIR`, `02-MIMARI`, `03-KULLANIM-KILAVUZU`, `04-DOSYA-DOSYA`). |
 
@@ -71,11 +71,11 @@ karıştırma.
 
 | Dosya | Açıklama |
 |---|---|
-| `finder.md` | *find* fiili. Salt-okunur arama; `file:line` isabetleri raporlar. `/Users/mimir45/Documents/Base` vault'unu da tarar. |
+| `finder.md` | *find* fiili. Salt-okunur arama; `file:line` isabetleri raporlar. `<vault>` dizinini de tarar. |
 | `executor.md` | *do* fiili. Read/Write/Edit/Bash. Kapsamda kalır, gerçek komut çıktısıyla doğrular. |
 | `explainer.md` | *explain* fiili. Salt-okunur — **hiçbir şey yazmaz**, böylece TIL notları `til-writer` skill'inde kalır. |
 | `vault-analyst.md` | Salt-okunur vault metrikleri: sayımlar, frontmatter anahtar frekansı, gelen linkler, orphan'lar, near-dupe'lar. |
-| `doc-auditor.md` | Tasarım dokümanları arasında **kendilerinin bayrak dikmediği** çelişkileri bulur (Backlog B-001). Çatışmaları raporlar, dokümanı asla düzenlemez. |
+| `doc-auditor.md` | Tasarım dokümanları arasında **kendilerinin bayrak dikmediği** çelişkileri bulur. Çatışmaları raporlar, dokümanı asla düzenlemez. |
 | `cross-checker.md` | Başka bir agent'ın sayılarını bağımsız yeniden türetir; strict JSON, iddia başına bir verdict, her biri primary'nin bulgu ID'sine `links`'li. **Primary ile paralel spawn edilir, sonra değil** — cevabı görmüş bir checker ona demir atar. Bu yüzden `vault-analyst` ve `doc-auditor` raporlarını, ID'leri düzyazılarıyla eşleşen bir JSON bloğuyla bitirir: iki koşu mekanik olarak birleşsin diye. |
 
 ---
@@ -96,7 +96,7 @@ karıştırma.
 | `forge-researcher.md` | Araştırma stage'i: kaynak bulur, alıntı toplar. |
 | `forge-codebase-scout.md` | Kod tabanını gezer, `code_refs` için aday atıflar üretir. |
 | `forge-verifier.md` | Taslağı iddialarına karşı doğrular. |
-| `forge-librarian.md` | Notları vault'a yazar/bağlar. **Authored ettiği her commit'e `Forge-Write: true` damgası basar** — basmasaydı `pkg/dataset` kendi çıktısını *insan düzeltmesi* olarak kaydeder ve D3 eğitim verisi kirlenirdi (**B-007**, Phase 4'te kapandı; `pkg/dataset/d3_forge_write_test.go` koruyucuyu iki yönde de pinliyor). |
+| `forge-librarian.md` | Notları vault'a yazar/bağlar. **Authored ettiği her commit'e `Forge-Write: true` damgası basar** — basmasaydı `pkg/dataset` kendi çıktısını *insan düzeltmesi* olarak kaydeder ve D3 eğitim verisi kirlenirdi (`pkg/dataset/d3_forge_write_test.go` koruyucuyu iki yönde de pinliyor). |
 
 Phase 6'ya kadar bunlar **canlı, dispatch edilebilir agent değildi** — sadece doğru
 spesifikasyondu. `skills/forge/SKILL.md`'nin bunlara dispatch'i bugün açık bir tool
@@ -191,7 +191,7 @@ değil.
 | `session_context.go` | `SessionStart`. `printSessionContext` **kurabildiği her şeyi** yazar — *"index tek başına da yardımcı olur profil eksikse, ve tersi"* — sadece okuma hatalarını loglar. `--max-bytes` index'e ve profile **ayrı ayrı** uygulanır. |
 | `intent.go` | `UserPromptSubmit`. `readPrompt` stdin payload'unu decode eder; *"forge intent yalnızca `user_prompt` diye isimlendirdiği tek alana ihtiyaç duyar."* 0.7 üstü isabette `additionalContext` yayar. |
 | `session_capture.go` | `SessionEnd`. `maxStubs` bir tetiklemenin yazabileceği stub sayısını sınırlar — planın kendi ifadesi ("küçük bir maks, ör. 3"), *"böylece konuşkan bir oturum `_inbox/`'ı sel altında bırakamaz."* |
-| `cache_source.go` | `PostToolUse`/WebFetch. `defaultCacheTTLDays` `Static.CacheTTLDays` unset (sıfır) olduğunda uygulanır — *"config alanının kendi doc comment'iyle eşleşir: sıfır 'unset' demek, 'hemen expire et' değil."* **B-025:** `tool_response` JSON şekli resmi dokümandan doğrulanmadı, bu yüzden `cacheBody` bir alan adı tahmin etmek yerine ham baytları cache'ler. |
+| `cache_source.go` | `PostToolUse`/WebFetch. `defaultCacheTTLDays` `Static.CacheTTLDays` unset (sıfır) olduğunda uygulanır — *"config alanının kendi doc comment'iyle eşleşir: sıfır 'unset' demek, 'hemen expire et' değil."* `tool_response` JSON şekli resmi dokümandan doğrulanmadığı için canlı bir hook payload'ı yakalanarak doğrulandı; `cacheBody` metni bir map decode ile `result` alanından okur, tanımadığı başka bir şekle düşerse ham baytları cache'ler. |
 | `session_context_test.go`, `intent_test.go`, `session_capture_test.go`, `cache_source_test.go` | Testler. |
 
 ### 7.10 Logback (Phase 5b)
@@ -238,18 +238,16 @@ değil.
 
 | Dosya | Açıklama |
 |---|---|
-| `AUDIT.md` | **Önce bunu oku.** §8 on üç çelişkiyi listeler (dokümanların kendilerinin bayrak dikmediği); sekizi precedence kuralıyla çözülür. **§8.4 bağlayıcı bir karar kaydıdır (D-1…D-8)** ve precedence'ın çözemediği altısını kapatır. Tasarım dokümanları **bilerek düzenlenmedi**: §8.4 bir satırı bayat işaretlediğinde doküman hâlâ eskisini söyler ve **takip edilecek olan §8.4'tür.** |
 | `ROADMAP.md` | Her şeyin üstünde yoğunlaştırılmış index. Her zaman buradan başla. |
 | `KNOWLEDGE-FORGE-STACK.md` | **ADR-001. Her stack sorusunu kazanır.** ADDENDUM §B'yi (Python'u belirtiyordu — dokümanın kendisi "bu yanlıştı" diyor) ve B2B §8'i (Spring Boot varsayıyordu — artık açık bir karar, ADR-002) geçersiz kılar. |
 | `KNOWLEDGE-FORGE-DESIGN.md` | Master spec: şema, pipeline, kapılar, vault topolojisi, subagent'lar. Rev-2 notu gereği her `scripts/*.py` referansı bir `forge` subcommand'ı olarak okunur. |
 | `KNOWLEDGE-FORGE-ADDENDUM.md` | Engine tier'ları (§A), AI-siz yetenek sınırı ve raporlar (§B), drift (§B.6), haftalık checker (§C), dataset'ler (§D), tam config YAML + preset'ler (§E). |
 | `CLAUDE-CODE-PROMPT.md` | Gerçek yürütme mekanizması: faz başına yapıştırılmaya hazır bir prompt. *(Dokümanların repo kökünde olmasını söyler; `docs/`'talar. Prompt metnine uydurmak için dosya taşıma.)* |
-| `BACKLOG.md` | Açık maddeler. Mevcut fazın kapsamı dışında iş çıkarsa **inşa etme, buraya yaz.** |
-| `KNOWLEDGE-FORGE-B2B.md` | **Ayrı bir proje**, bu projenin bir fazı değil (**B-021**). Repoda yalnızca referans/tarih için. |
+| `KNOWLEDGE-FORGE-B2B.md` | **Ayrı bir proje**, bu projenin bir fazı değil. Repoda yalnızca referans/tarih için. |
 | `adr/0001-lexical-recall-vs-embeddings.md` | DESIGN §8'den: neden leksik recall, neden embedding yok. |
 | `adr/0002-go-for-static-core.md` | STACK §1'den: neden statik çekirdek Go. |
 
-STACK §6 için üçüncü bir ADR **yok** — B2B ayrı bir proje olduğundan (B-021).
+STACK §6 için üçüncü bir ADR **yok** — B2B ayrı bir proje olduğundan.
 
 ---
 
@@ -313,10 +311,11 @@ Hepsi POSIX `sh`. Shim'lerin tek işi forge binary'sini bulmak ve stdout/stderr'
 | `result.go` | Verdict zarfı — eşik ağacı burada, downstream'de değil. |
 | `rank_test.go`, `result_test.go`, `score_test.go` | Testler. |
 
-> **Açık defekt B-008.** Reçete edilen IDF ağırlıklandırma ship edildi ve isimlendirilen iki
-> vakanın hiçbirini düzeltmedi: *bir sorunun anlamını taşıyan terimler, hiçbir not onları
-> taşımadığında paydadan filtreleniyor.* Sonraki deneme **§3.1 kalibrasyonunun tamamını
-> yeniden türetmeye** sahiplik ediyor. **Buna eşikleri oynatarak cevap verme.**
+> **Kalibrasyon geçmişi.** İlk IDF ağırlıklandırma shipped edildiğinde hedeflediği vakayı
+> düzeltmemişti: *bir sorunun anlamını taşıyan terimler, hiçbir not onları taşımadığında
+> paydadan filtreleniyordu.* Düzeltme **§3.1 kalibrasyonunun tamamının ölçülerek yeniden
+> türetilmesiyle** geldi. **Bir kalibrasyon açığına eşikleri elle oynatarak cevap
+> vermeyin** — `TestCalibration -update` ile yeniden ölçün.
 
 ### 12.3 `pkg/similarity/` (3) — MinHash + LSH
 
@@ -340,13 +339,13 @@ Hepsi POSIX `sh`. Shim'lerin tek işi forge binary'sini bulmak ve stdout/stderr'
 
 | Dosya | Açıklama |
 |---|---|
-| `index.go` | `Extractor` ve `ErrUnavailable` (*"cgo'suz derlendiğinde `Parse` bunu döner"*). Doc comment'i **cache-format/serialize-edilmiş-şekil versiyonlamayı** açıkça kapsar, yalnızca extraction-logic versiyonlamayı değil — kendi "ilk release edilmiş binary'den önce inmeli" metnine göre (**B-013**, Phase 6'da kapandı). |
+| `index.go` | `Extractor` ve `ErrUnavailable` (*"cgo'suz derlendiğinde `Parse` bunu döner"*). Doc comment'i **cache-format/serialize-edilmiş-şekil versiyonlamayı** açıkça kapsar, yalnızca extraction-logic versiyonlamayı değil — ilk release edilmiş binary'den önce inmesi gereken bir invariant. |
 | `parse_cgo.go` | go-tree-sitter yolu. `Available()` burada `true`. |
 | `parse_nocgo.go` | Saf-Go yolu. `Available()` `false`, *"böylece çağıranlar nil sonuç yerine net bir mesajla degrade olabilir."* |
 | `build.go` | İndeksi kurar; sonuç *"tree state'in saf bir fonksiyonu — drift'in verdict'lerinin bağlı olduğu aynı özellik."* |
 | `catfile.go` | `git cat-file --batch` sürücüsü. `drainBlobs` cevapları **istek sırasında** yürür — *"git girdi satırı başına bir tane garanti ediyor, yani anahtar istenen yol, cevaptaki hiçbir şey değil."* |
 | `deps.go` | `Deps` deklare edilmiş bağımlılık versiyonlarını repo'nun sahip olduğu build manifest'lerinden okur. *"Drift'in beşinci verdict'i — 'deklare edilmiş dep versiyonu yükseldi, not eski davranışı anlatıyor olabilir' — bu map'lerden ikisinin karşılaştırması, yani birim map, tek tek dosya değil."* |
-| `store.go` | `Save` **çağıranın verdiği yola** yazar; bu paket kendi dosya adını belirlemez (`pkg/drift` repo başına bir dosya yazar). *"`.forge/` altındaki diğer her dosya gibi türetilmiş bir cache: silmek bir yeniden kurulum maliyeti ve başka hiçbir şey."* Doc comment'i 2026-08-21'de düzeltildi — eskiden tekil `.forge/code-index.json` iddia ediyordu; bkz. **B-027**. |
+| `store.go` | `Save` **çağıranın verdiği yola** yazar; bu paket kendi dosya adını belirlemez (`pkg/drift` repo başına bir dosya yazar). *"`.forge/` altındaki diğer her dosya gibi türetilmiş bir cache: silmek bir yeniden kurulum maliyeti ve başka hiçbir şey."* |
 | `parse_test.go` | Testler. |
 
 ### 12.6 `pkg/coderef/` (6) — atıf çıkarımı ve çözümü
@@ -356,7 +355,7 @@ Hepsi POSIX `sh`. Shim'lerin tek işi forge binary'sini bulmak ve stdout/stderr'
 | `ref.go` | `Kind` *"extractor'ın bulduğu şeyden ne kadar emin olduğunu kaydeder, ki çözümün sonra ihtiyacı olur: çıplak bir CamelCase token bir sembol *adayıdır* ve sırf adını taşıyan bir dosya yok diye broken raporlanmamalı."* **Kritik:** kanonik `code_refs:` biçimi (`repo:path#Symbol`) `KindPath` + `Symbol` set olarak parse olur. |
 | `extract.go` | `sourceExt` bir atıfın isimlendirebileceği uzantı kümesi. **Bilerek dar:** *"vault, kod referansı değil konfigürasyon muhabbeti olan `.md`, `.yml` ve `.json` span'leriyle dolu ve her biri hiçbir şeye çözülüp NF-4'ün dürüstçe ölçmeye çalıştığı unresolved sayısını şişirirdi."* |
 | `resolve.go` | `Repo` = vault'un atıf yaptığı bir kod reposu. `Name` kanonik bir ref'in söylediği şey; `Files` forward-slash'li repo-göreli yollar. |
-| `scan.go` | `runGit` tek bir git subcommand'ı kök altında çalıştırır. *"Aşağıdaki her fonksiyon bunun üzerinden shell out ediyor — `pkg/gitsig` aynı CLI-değil-go-git seçimini yapıyor (B-009) — böylece `exec.Command` boilerplate'i dörde değil bir yere yaşıyor."* |
+| `scan.go` | `runGit` tek bir git subcommand'ı kök altında çalıştırır. *"Aşağıdaki her fonksiyon bunun üzerinden shell out ediyor — `pkg/gitsig` aynı CLI-değil-go-git seçimini yapıyor — böylece `exec.Command` boilerplate'i dörde değil bir yere yaşıyor."* |
 | `extract_test.go`, `resolve_test.go` | Testler. |
 
 ### 12.7 `pkg/gitsig/` (4)
@@ -368,7 +367,7 @@ Hepsi POSIX `sh`. Shim'lerin tek işi forge binary'sini bulmak ve stdout/stderr'
 | `rank.go` | `FileCount` = bir dosya ve kaç commit'in ona dokunduğu. |
 | `gitsig_test.go` | Testler. |
 
-**Bilinçli sapma B-009:** go-git yerine `git` CLI'ına shell out eder.
+**Bilinçli sapma:** go-git yerine `git` CLI'ına shell out eder.
 
 ### 12.8 `pkg/drift/` (9) — **kilit paket**
 
@@ -377,10 +376,10 @@ Hepsi POSIX `sh`. Shim'lerin tek işi forge binary'sini bulmak ve stdout/stderr'
 | `drift.go` | `Verdict` = bir atıfın sonucu (`OK`/`Repaired`/`Suspect`/`Broken`/`Skipped`). Sözleşme tipleri. |
 | `check.go` | `checkPath` ADDENDUM §B.6'nın merdivenini **addendum'un belirttiği sırayla** yürür: dosya gitti → sembol gitti → satır kaydı → gövde değişti. *"Sıra önemli: silinmiş bir dosya aksi halde kaymış satır olarak raporlanırdı."* |
 | `gitsource.go` | `Repo` = drift'in bakmasına izin verilen kod reposu. `Source` arayüzü (`At`/`RevBefore`/`Head`/`Find`/`ResolveAt`) `pkg/drift`'i saf Go tutan şeydir — tree-sitter buranın arkasında kalır. |
-| `gitindex.go` | `build` kalıcı indeksi tercih eder ve onu ileri doğru yamalar, *"böylece hook yolundaki tek tree-sitter işi commit'in dokunduğu bir avuç dosya. HEAD'in bir commit gerisinde bir cache **normal** durumdur — hook post-commit ateşliyor — ve 'HEAD'deki sembol tablosu' ifadesini yaklaşık değil gerçek yapan şey yamalamadır."* Cache adı repo başına: `.forge/code-index-<repo>.json`. `persist`'in doc comment'i 2026-08-21'den beri sapmanın **neden** gerekli olduğunu açıklıyor: `--repo` tekrarlanabilir olduğu için tek paylaşılan ad, ikinci repo'nun indeksinin birincisininkini ezmesine yol açardı (**B-027**). |
+| `gitindex.go` | `build` kalıcı indeksi tercih eder ve onu ileri doğru yamalar, *"böylece hook yolundaki tek tree-sitter işi commit'in dokunduğu bir avuç dosya. HEAD'in bir commit gerisinde bir cache **normal** durumdur — hook post-commit ateşliyor — ve 'HEAD'deki sembol tablosu' ifadesini yaklaşık değil gerçek yapan şey yamalamadır."* Cache adı repo başına: `.forge/code-index-<repo>.json`. `persist`'in doc comment'i sapmanın **neden** gerekli olduğunu açıklıyor: `--repo` tekrarlanabilir olduğu için tek paylaşılan ad, ikinci repo'nun indeksinin birincisininkini ezmesine yol açardı. |
 | `apply.go` | `Result` = bir notun confidence hareketi, CLI çıktısı ve `drift.md` için. `--apply` olmadan hiçbir şey taşınmaz. |
 | `demotions.go` | Demote geçmişi. Sadece demote-öncesi confidence saklanır — *"en fazla bir notun confidence'ının ne olduğunun hafızasına mal olur, yanlış bir cevaba değil."* Not gövdesinde asla. |
-| `check_test.go`, `gitindex_test.go`, `rollback_test.go` | Testler. `rollback_test.go` `TestRollbackSymmetryOnDeletion`'ı içerir — **B-028**'in kapanış kanıtı: eşleşmeyen bir hook-yolu ıskası **hiç bulgu üretmez, asla `Skipped` değil**, böylece alakasız bir sonraki commit hâlâ bozuk bir notu `high`'a geri çeviremez. |
+| `check_test.go`, `gitindex_test.go`, `rollback_test.go` | Testler. `rollback_test.go` `TestRollbackSymmetryOnDeletion`'ı içerir: eşleşmeyen bir hook-yolu ıskası **hiç bulgu üretmez, asla `Skipped` değil**, böylece alakasız bir sonraki commit hâlâ bozuk bir notu `high`'a geri çeviremez. |
 
 ### 12.9 `pkg/linkcheck/` (4)
 
@@ -420,7 +419,7 @@ Hepsi POSIX `sh`. Shim'lerin tek işi forge binary'sini bulmak ve stdout/stderr'
 |---|---|
 | `store.go` | `Store` cache veritabanını sarar. `modernc.org/sqlite` — saf Go, cgo yok. Şema burada. |
 | `read.go` | `attach` bir çocuk tablonun değerlerini zaten yüklenmiş satırların üstüne katlar. |
-| `budget.go` | **Tek istisna.** `budgetSchemaSQL` `schemaSQL`'den ayrı yaşar *"böylece `Reset()`'in asla dokunmaması gereken tek tablo, `store.go`'nun listesine gömülü bir satır yerine tek-dosyalık bir diff olarak kalır (AUDIT §8.4 D-8)."* Yani **budget `forge reindex`'ten sağ çıkar.** |
+| `budget.go` | **Tek istisna.** `budgetSchemaSQL` `schemaSQL`'den ayrı yaşar *"böylece `Reset()`'in asla dokunmaması gereken tek tablo, `store.go`'nun listesine gömülü bir satır yerine tek-dosyalık bir diff olarak kalır."* Yani **budget `forge reindex`'ten sağ çıkar.** |
 | `store_test.go`, `budget_test.go` | Testler. |
 
 ### 12.12 `pkg/config/` (7) — dört katmanlı zincir
@@ -466,7 +465,7 @@ Hepsi POSIX `sh`. Shim'lerin tek işi forge binary'sini bulmak ve stdout/stderr'
 | `antislop.go` | 5. kapı. `structuralFail` `writing-rules.md`'nin Go'da zorlanan tek yapısal kuralını kontrol eder: *"howto/api notlarının bir gösterime ihtiyacı var, sadece bir iddiaya değil. Diğer beş tipin neden muaf olduğu için o dosyanın Structural requirements bölümüne bak."* Yasaklı-ifade taraması `vault.StripCode`'u kullanır. |
 | `link.go` | 6. kapı — **yazmayı bloke etmez.** *"…bu `Fail` dürüstçe raporlanır ama `Report.Quarantine`'i set etmez (`gate.go`'nun `blocksWrite`'ı `DelegateToLibrarian`'ı dışlıyor) — not yine de `notes/`'a iner ve librarian'ın işi bir takip, bir tutma değil."* |
 | `duplicate.go` | 7. kapı — bu da bloke etmez. Bir kullanıcının *"yine de aynı konuda iki not yayınlamak için belirtilmiş bir sebebi (DESIGN §12) olabilir."* |
-| `quarantine.go` | `_inbox/` karantinası. `OpenQuestions` bir `Report`'un başarısız sonuçlarını `vault.WriteToInbox`'ın openQuestions madde işaretlerine çevirir — *"`Fail` başına bir tane, kapı sırasında; `Run`'ın `Outcomes`'ı kurduğu aynı sıra, böylece değişmemiş state üzerinde iki koşu byte-özdeş madde işaretleri üretir (B-020)."* |
+| `quarantine.go` | `_inbox/` karantinası. `OpenQuestions` bir `Report`'un başarısız sonuçlarını `vault.WriteToInbox`'ın openQuestions madde işaretlerine çevirir — *"`Fail` başına bir tane, kapı sırasında; `Run`'ın `Outcomes`'ı kurduğu aynı sıra, böylece değişmemiş state üzerinde iki koşu byte-özdeş madde işaretleri üretir."* |
 | `gate_test.go`, `gate_adversarial_test.go`, `antislop_test.go`, `freshness_test.go`, `compile_test.go`, `quarantine_test.go`, `helpers_test.go` | Testler. `gate_adversarial_test.go` kapıları atlatmaya çalışan taslakları sürer. |
 
 ### 12.15 `pkg/sentinel/` (6) — yönetilen bloklar
@@ -487,13 +486,13 @@ Hepsi POSIX `sh`. Shim'lerin tek işi forge binary'sini bulmak ve stdout/stderr'
 | Dosya | Açıklama |
 |---|---|
 | `d3.go` | *"ADDENDUM §D.1'in insan-düzeltmesi dataset'i: (model notu, senin düzenlediğin not) çiftleri, vault'un git geçmişinden hasat edilir. §D ona beşin en değerlisi diyor, ve Phase 6b yerine Phase 1'de inşa edilmesinin sebebi verinin yalnızca ileriye doğru birikmesi — sonradan kurulan bir hook, kurulmadan önce yapılmış düzenlemeleri kurtaramaz."* |
-| `d2.go` | *"ADDENDUM §D.1'in advisor-distilasyon dataset'i: (taslak, kritik) çiftleri. D3 bir hook'un meşru olarak yeniden ateşleyebileceği bir git commit'inde dedupe ederken, D2'nin tetikleyicisi gerçek bir advisor çağrısı yapan tek bir `forge engine run` CLI çağrısı — korunacak bir yeniden-ateşleme yok, yani her yakalama kendi satırı olarak ekleniyor, `Key()` ya da idempotency kontrolü yok."* **B-024 kapandı** (2026-08-21): `D2Tag` artık `"d2"` — eskiden `"d2_advisor"` idi ve paketlenmiş config'in `"d2"` girdisiyle asla eşleşmediği için D2 shipped config altında sessizce inert kalıyordu. |
-| `d4.go` | Karantina/taslak çiftleri. `D4Tag` paketlenmiş `dataset.capture` listesiyle birebir eşleşiyor (`"d4"`) — B-024'ün kapanmasıyla `D2Tag` de öyle. |
-| `capture_gate_test.go` | **B-024'ün regression bekçisi ve bu bug'ın yeşil ship etmesinin sebebi:** hiçbir test config ile kodun uyuştuğunu iddia etmiyordu. `TestPackagedCaptureListGates` paketlenmiş katmanı tek başına yükleyip hem `Enabled` hem `D4Enabled`'ın `true` döndüğünü doğruluyor. Bilerek yalnızca D2 ve D4'ü kapsıyor — `d1`/`d3`/`d5` için kapı yok (**B-030**). `pkg/config`'e konamıyor: `dataset → vault → config` gerçek bir kenar, tersi cycle olurdu. |
+| `d2.go` | *"ADDENDUM §D.1'in advisor-distilasyon dataset'i: (taslak, kritik) çiftleri. D3 bir hook'un meşru olarak yeniden ateşleyebileceği bir git commit'inde dedupe ederken, D2'nin tetikleyicisi gerçek bir advisor çağrısı yapan tek bir `forge engine run` CLI çağrısı — korunacak bir yeniden-ateşleme yok, yani her yakalama kendi satırı olarak ekleniyor, `Key()` ya da idempotency kontrolü yok."* `D2Tag` paketlenmiş config'in `"d2"` girdisiyle eşleşir. |
+| `d4.go` | Karantina/taslak çiftleri. `D4Tag` paketlenmiş `dataset.capture` listesiyle birebir eşleşiyor (`"d4"`). |
+| `capture_gate_test.go` | Config ile kodun uyuştuğunu iddia eden regression bekçisi: `TestPackagedCaptureListGates` paketlenmiş katmanı tek başına yükleyip hem `Enabled` hem `D4Enabled`'ın `true` döndüğünü doğruluyor. `pkg/config`'e konamıyor: `dataset → vault → config` gerçek bir kenar, tersi cycle olurdu. |
 | `d4_drafts.go` | *"…yazma başarısızlığı — tek dürüst join anahtarını tutar: kendisine geri verilen tam dosya."* |
 | `git.go` | *"Tek bir repository'ye scope'lu, minimal salt-okunur git CLI kabuğu. D3 yakalaması bir git hook'unun içinde çalışıyor, yani git zaten path'te ve zaten bizi uyandıran process; altı plumbing okuması için go-git'i içeri çekmek getirisinden fazlaya mal olurdu. Kütüphane bağımlılığı `pkg/gitsig`'e ait (Phase 2b), ki onun blame ve churn'e ihtiyacı var."* |
 | `jsonl.go` | *"`Append` dosyanın zaten tutmadığı çiftleri yazar ve kaç tane eklediğini döner. Dataset `.forge/` altında yaşıyor, ki türetilmiş ve vault'ta gitignore'lu, yani yerel kalıyor — ADDENDUM §D'nin dataset'leri hiçbir yere iletilmiyor."* |
-| `d2_test.go`, `d3_test.go`, `d4_test.go`, `d3_forge_write_test.go` | Testler. Sonuncusu `Forge-Write: true` korumasını iki yönde de pinler (**B-007**). |
+| `d2_test.go`, `d3_test.go`, `d4_test.go`, `d3_forge_write_test.go` | Testler. Sonuncusu `Forge-Write: true` korumasını iki yönde de pinler. |
 
 ### 12.17 `pkg/telemetry/` (5)
 
@@ -534,7 +533,7 @@ Hepsi POSIX `sh`. Shim'lerin tek işi forge binary'sini bulmak ve stdout/stderr'
 | Dosya | Açıklama |
 |---|---|
 | `schema.yaml` | **Not sözleşmesi.** `pkg/vault/schema.go` bunu okur; `forge validate`, `pkg/qualitygate/schema.go` ve `pkg/scrub`'ın fails-closed yeniden doğrulaması hep buna karşı çalışır. `check_render.go`'nun `values`'ı stack enum'unu buradan alır — *"rapor onsuz bir yokluğu isimlendiremez."* |
-| `recall-spec.md` | **Phase 2'nin iki kararı burada argümanlanıyor ve sonraki fazlar bunu okumadan geri almamalı:** skor aktif kanallar üzerinden ağırlıklı **ortalama**, DESIGN §8'in literal ağırlıklı toplamı değil (§2.5); başlık ölçüsü **F₂, Dice değil** (§2.2). İkisi de ölçülmüş vault davranışından argümanlı. §3.1 kalibrasyon sweep'i ve tek açık defekti **B-008**. |
+| `recall-spec.md` | **Phase 2'nin iki kararı burada argümanlanıyor ve sonraki fazlar bunu okumadan geri almamalı:** skor aktif kanallar üzerinden ağırlıklı **ortalama**, DESIGN §8'in literal ağırlıklı toplamı değil (§2.5); başlık ölçüsü **F₂, Dice değil** (§2.2). İkisi de ölçülmüş vault davranışından argümanlı. §3.1 kalibrasyon sweep'i ölçülerek üretilir, elle transkript edilmez. |
 | `duplicate-spec.md` | Duplicate tespiti ve write-time-gate deseni. |
 | `writing-rules.md` | Yazım kuralları. Structural requirements bölümü, `antislop.go`'nun neden yalnızca howto/api için gösterim zorunlu kıldığını ve diğer beş tipin neden muaf olduğunu açıklar. |
 | `taxonomy.md` | Konu/stack taksonomisi. |
@@ -572,9 +571,9 @@ edilebilir mantık Go'da kalsın.
 Yedi not tipinin her biri için bir şablon: `concept.md`, `howto.md`, `api.md`,
 `pattern.md`, `pitfall.md`, `incident.md`, `decision.md`.
 
-Yedi tip, DESIGN §7'nin beş-dizinli ağacına karşı **B-005**'in kararıdır. Vault'ta yedi
-`notes/<type>/` alt dizininin hepsi var, üçü boş `.gitkeep` kabuğu. **§7'ye uydurmak için
-budama.**
+Yedi tip, DESIGN §7'nin beş-dizinli ağacına karşı bilinçli bir tasarım kararıdır. Vault'ta
+yedi `notes/<type>/` alt dizininin hepsi var, üçü boş `.gitkeep` kabuğu. **§7'ye uydurmak
+için budama.**
 
 Şablonlar `freshness_days`'in tip başına farklılığını da somutlaştırır: `api` 90 gün,
 `howto` 180, `concept`/`pattern`/`pitfall` 365, `incident`/`decision` **0** (asla

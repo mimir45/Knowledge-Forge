@@ -164,7 +164,7 @@ func TestUnresolvedPathFallback(t *testing.T) {
 	// (a) regression test for the gate-ordering bug: a partial run (changed != nil, and
 	// its Deleted set does not name p2) must produce no finding at all, not SKIPPED —
 	// SKIPPED would let Apply's restore path flip the note back up on an unrelated later
-	// commit, which is exactly what B-028's own fix must not reintroduce.
+	// commit, which is exactly the regression the hook-path deletion fix must not reintroduce.
 	t.Run("partial run produces no finding outside its own deletion evidence", func(t *testing.T) {
 		got := Check([]Note{n}, registry(), deleted,
 			&Changed{Touched: map[string]bool{"other/File.java": true}}, Opts{Deep: true})
@@ -200,7 +200,7 @@ func TestUnresolvedPathFallback(t *testing.T) {
 	})
 }
 
-// TestUnresolvedPathSameCommitDeletion covers B-028: the hook path (changed != nil,
+// TestUnresolvedPathSameCommitDeletion covers same-commit deletion detection: the hook path (changed != nil,
 // Deep == false) now gets same-commit deletion evidence straight from the gate, with no
 // historical registry scan and no wait for the next full sweep.
 func TestUnresolvedPathSameCommitDeletion(t *testing.T) {
@@ -226,7 +226,7 @@ func TestUnresolvedPathSameCommitDeletion(t *testing.T) {
 			t.Fatalf("findings = %+v, want none: touched is not deleted", got)
 		}
 	})
-	// The whole point of B-028: no --deep, no verified date, still BROKEN immediately.
+	// The whole point of this detection path: no --deep, no verified date, still BROKEN immediately.
 	t.Run("shallow, no verified date, still catches it", func(t *testing.T) {
 		gate := &Changed{Deleted: map[string]string{p2: "app"}}
 		got := Check([]Note{n}, registry(), shallow, gate, Opts{Deep: false})

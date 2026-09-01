@@ -41,7 +41,7 @@ func aiPassDraftRefresh(d *checkData) {
 func aiPassDuplicateMerge(d *checkData) {
 	p, ok := report.TopDuplicatePair(d.pairs)
 	if !ok {
-		fmt.Println("  duplicate-merge: no pair clears the 0.85 spec threshold (BACKLOG B-019)")
+		fmt.Println("  duplicate-merge: no pair clears the 0.85 similarity threshold")
 		return
 	}
 	req := engine.Request{

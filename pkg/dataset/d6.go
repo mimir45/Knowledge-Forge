@@ -11,11 +11,11 @@ import (
 )
 
 // D6 is ADDENDUM §D.1's sixth dataset: (repo symbol or module → the note explaining it).
-// BACKLOG B-034 is the record of why it shipped a phase late and as a derivation rather
+// It is a derivation rather
 // than a capture tier — D1-D5 each have a write path and accumulate forward; D6 has
-// none and needs none, because `forge logback` (Phase 5b) already resolves the same
+// none and needs none, because `forge logback` already resolves the same
 // (symbol → note) mapping every time it runs. There is deliberately no AppendD6: adding
-// a sixth capture path is the one thing this item's plan rules out.
+// a sixth capture path would defeat the point of deriving it instead.
 //
 // Volume is "= note count" per ADDENDUM, but that describes distinct notes, not distinct
 // pairs — a note citing five symbols yields five records, one per citation that
@@ -56,7 +56,7 @@ func loadD6(root string) ([]any, error) {
 }
 
 // loadIndexes reads every .forge/code-index-<repo>.json this machine currently holds, in
-// sorted (repo name) order — the same ordering discipline BACKLOG B-020 requires
+// sorted (repo name) order — the same determinism discipline this codebase applies
 // elsewhere, so a symbol declared in two repos resolves to the same one on every run. An
 // absent cache is a repo nobody has run `forge logback`/`check`/`drift` against yet and
 // is not an error; a present-but-unreadable one is.

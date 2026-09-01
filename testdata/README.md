@@ -2,8 +2,8 @@
 
 `testdata/vault/` is a deliberately small, deliberately **broken** fixture vault. It
 exists so vault-touching work — above all Phase 1's topology migration, the one
-irreversible step in the plan — can be rehearsed without going anywhere near the real
-vault at `/Users/mimir45/Documents/Base` (108 notes, personal, no backups).
+irreversible step in the plan — can be rehearsed without going anywhere near a real,
+personal vault (108 notes, no backups) with no fixture in between.
 
 `testdata/` is ignored by the Go toolchain, so these files never enter a build.
 

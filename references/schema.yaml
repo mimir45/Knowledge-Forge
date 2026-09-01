@@ -4,7 +4,7 @@
 # plus the rev-2 fields (engine_trail, drift_checked_at).
 #
 # The `stack` and `tags` vocabularies below are NOT invented: they are the measured
-# vocabulary of /Users/mimir45/Documents/Base as of 2026-08-09 (128 distinct tags over
+# vocabulary of a real personal vault as of 2026-08-09 (128 distinct tags over
 # 434 assignments), normalized. See references/taxonomy.md for the derivation and for
 # every alias mapping.
 #
@@ -248,7 +248,7 @@ fields:
     item_pattern: '^(intake|recall|plan|research|synthesize|verify|write|link|index)=(none|host|api|advisor)$'
     notes: >
       Which engine tier served each pipeline stage for this note, one entry per
-      cfg.Pipeline key (nine stages — B-022 widened this from the original five-stage,
+      cfg.Pipeline key (nine stages, widened from an original five-stage,
       critique-including pattern; `critique` was never a real stage, only the advisor
       engine's operating mode, see config's engines.advisor.mode). `recall`, `write` and
       `index` may only ever record `none` — the T0 static core makes zero model calls.

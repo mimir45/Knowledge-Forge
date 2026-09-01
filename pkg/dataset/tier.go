@@ -13,9 +13,10 @@ import (
 // this package shipped through Phase 6 — Enabled() hardcoded D2Tag despite its general
 // name, and D4Enabled() existed only because of that (d4.go's own comment said so).
 // Anyone adding a tier by reaching for the general-sounding one would silently have
-// taken D2's gate; BACKLOG B-030 is the same defect seen from the config side.
+// taken D2's gate — the same defect this package also closed from the config side:
+// `dataset.capture` accepting five tiers while only some of them gated anything.
 //
-// Derived marks D6 (BACKLOG B-034): it has no Path, no capture gate worth checking (D3
+// Derived marks D6: it has no Path, no capture gate worth checking (D3
 // Enabled call sites, above, are the only real callers of Enabled and none names D6),
 // and no per-record timestamp. loadTier's D6 case ignores Path entirely; the field stays
 // on the struct, empty, rather than splitting into a second type, because Tiers() must

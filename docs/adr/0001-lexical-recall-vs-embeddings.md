@@ -1,8 +1,7 @@
 # 0001 — Lexical recall over embeddings
 
 - **Status:** Accepted
-- **Source:** `docs/KNOWLEDGE-FORGE-DESIGN.md` §8 ("Retrieval-before-research"), per
-  `docs/AUDIT.md` §8.4 D-3.
+- **Source:** `docs/KNOWLEDGE-FORGE-DESIGN.md` §8 ("Retrieval-before-research").
 
 ## Context
 
@@ -47,7 +46,9 @@ Three reasons, in order of weight:
   not a literal weighted sum; **F₂**, not Dice, for the title measure) — see
   `references/recall-spec.md`. This ADR records *why lexical*, not the exact scoring
   formula; the spec is the source of truth for that.
-- Recall quality is capped by lexical overlap. BACKLOG **B-008** tracks one open
-  calibration gap this causes (a query whose meaning-bearing terms get filtered out of
-  the denominator when no note carries them) — a known, accepted cost of this
-  trade-off, not a defect in the decision itself.
+- Recall quality is capped by lexical overlap. One calibration gap this causes — a query
+  whose meaning-bearing terms get filtered out of the denominator when no note carries
+  them — was found and fixed by re-deriving the IDF weighting against measured vault
+  behavior (§2.3.1 of `references/recall-spec.md`); the residual ceiling from lexical-only
+  matching is a known, accepted cost of this trade-off, not a defect in the decision
+  itself.

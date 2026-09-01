@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// seeded is the fixture AUDIT §8.4 D-6 is really about: one record carrying every shape
+// seeded is the anonymization regression fixture: one record carrying every shape
 // the scrubber is supposed to catch, plus the structural fields anonymize.go rewrites.
 var seeded = D5Pair{
 	Kind:  D5Kind,
@@ -282,7 +282,7 @@ func appendRaw(t *testing.T, path, line string) {
 	}
 }
 
-// TestD1ExportJoinsOutcomeByRunID is BACKLOG B-035's export-side regression guard: a pair
+// TestD1ExportJoinsOutcomeByRunID is the export-side regression guard for outcome joining: a pair
 // whose run_id matches an outcome record renders that outcome; one that doesn't stays
 // unjoined, and the strict reader must not choke on either shape.
 func TestD1ExportJoinsOutcomeByRunID(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// TestOpenQuestionsOneBulletPerFailInGateOrder pins the B-020 determinism guarantee at
+// TestOpenQuestionsOneBulletPerFailInGateOrder pins the determinism guarantee at
 // its source: OpenQuestions must walk rep.Outcomes in Run's fixed gate order, not re-sort
 // or filter differently, so two runs on unchanged state produce byte-identical bullets.
 func TestOpenQuestionsOneBulletPerFailInGateOrder(t *testing.T) {

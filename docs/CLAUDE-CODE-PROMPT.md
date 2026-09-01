@@ -66,7 +66,7 @@ I want a factual audit of what exists today, before we change anything.
    exist and how many are currently BROKEN against the current git HEAD — that's
    the Phase 2b drift baseline.
 
-Write all of this to docs/AUDIT.md. Include a "Baseline metrics" table at the top
+Write all of this to a baseline audit doc. Include a "Baseline metrics" table at the top
 with the numbers from steps 2 and 7 — we re-measure against it after every phase.
 
 Do not write any other file. Do not modify the vault or the skill yet.
@@ -77,7 +77,7 @@ Do not write any other file. Do not modify the vault or the skill yet.
 ## Phase 1 — Note contract & vault migration
 
 ```
-Read KNOWLEDGE-FORGE-DESIGN.md sections 6, 7 and 12, docs/AUDIT.md, and
+Read KNOWLEDGE-FORGE-DESIGN.md sections 6, 7 and 12, the Phase 0 baseline audit, and
 KNOWLEDGE-FORGE-STACK.md section 2 (library choices).
 
 Implement the note contract. Validation and indexing are GO subcommands of a
@@ -206,7 +206,7 @@ Layout:
   pkg/codeindex/        go-tree-sitter for java/kotlin (start there; add py/ts on
                         demand); pom.xml / build.gradle / package.json -> dep +
                         version map. Output .forge/code-index-<repo>.json,
-                        one per --repo (B-027).
+                        one per --repo.
   pkg/gitsig/           go-git: churn, blame ownership, co-change coupling
   pkg/drift/            THE KEY PACKAGE — addendum B.6. AST comparison, not line
                         diffs. BROKEN / SUSPECT / auto-repair-line-numbers.
@@ -564,7 +564,7 @@ Python is fine here — this is offline tooling and never ships to a user machin
 ## Phase 7 — After a month of real use
 
 ```
-Read .forge/log.jsonl, .forge/datasets/, and docs/AUDIT.md.
+Read .forge/log.jsonl, .forge/datasets/, and the Phase 0 baseline audit.
 
 I've been using this daily for a month. Produce docs/RESULTS.md:
 
@@ -597,5 +597,6 @@ with a feature list. Structure: the problem in 4 lines, the one insight
 - Drift discipline: git-anchored, commit-triggered, rollback-symmetric. If any
   phase output suggests running drift on file saves or uncommitted changes,
   reject it — that's addendum B.6 being violated.
-- If Claude Code proposes changes beyond a phase's scope, tell it to write them
-  to `docs/BACKLOG.md` instead. Phase discipline is what gets this finished.
+- If Claude Code proposes changes beyond a phase's scope, tell it to record them
+  in a backlog file instead of building them now. Phase discipline is what gets
+  this finished.

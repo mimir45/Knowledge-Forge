@@ -29,11 +29,11 @@ Intent gate: 0.50. Corpus ../../examples/vault, 50 prompts.
 | 0.352 | QUIET | false | event sourcing snapshotting strategy for CQRS aggregates |
 | 0.326 | QUIET | false | Liquibase rollback strategy for a failed migration |
 | 0.326 | QUIET | false | Keycloak custom login theme customization |
-| 0.323 | QUIET | false | Storybook accessibility addon for component checks |
+| 0.324 | QUIET | false | Storybook accessibility addon for component checks |
 | 0.308 | QUIET | false | Binding a nested YAML list into a Spring Boot configuration record |
 | 0.308 | QUIET | false | Spring Boot Actuator health check endpoint customization |
 | 0.292 | QUIET | false | React hook for detecting clicks outside a dropdown |
-| 0.292 | QUIET | false | Spring Security custom AccessDecisionVoter for role hierarchies |
+| 0.291 | QUIET | false | Spring Security custom AccessDecisionVoter for role hierarchies |
 | 0.289 | QUIET | false | how do I rename a file in bash |
 | 0.270 | QUIET | false | Maven multi module build with a shared parent pom |
 | 0.250 | QUIET | false | how do I configure nginx as a reverse proxy |
@@ -47,11 +47,11 @@ Intent gate: 0.50. Corpus ../../examples/vault, 50 prompts.
 | 0.170 | QUIET | false | Docker multi-stage build caching strategies |
 | 0.158 | QUIET | false | how do I set up a Kubernetes ingress with cert-manager |
 | 0.080 | QUIET | false | write a regex that matches an email address |
-| 0.067 | QUIET | false | what is the time complexity of quicksort |
 | 0.050 | QUIET | false | how do I center a div with CSS flexbox |
-| 0.033 | QUIET | false | what is the CAP theorem in distributed systems |
+| 0.044 | QUIET | false | what is the time complexity of quicksort |
 | 0.022 | QUIET | false | what is the difference between a mutex and a semaphore |
 | 0.022 | QUIET | false | what's the difference between TCP and UDP |
+| 0.000 | QUIET | false | what is the CAP theorem in distributed systems |
 
 Lowest FIRE 0.407, highest QUIET 0.443, margin -0.036 — every value from the top of
 QUIET to the old 0.7 is false-positive-free here, so this measurement rules out

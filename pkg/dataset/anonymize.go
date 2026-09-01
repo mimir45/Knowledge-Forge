@@ -14,7 +14,7 @@ import (
 // cites http://localhost:8080 in a worked example, and turning that into [REDACTED-URL] in
 // examples/vault/ would corrupt a howto for no gain. A training corpus meant to leave the
 // machine is the opposite trade — an intranet hostname is exactly the employer-identifying
-// content AUDIT §8.4 D-6 is about, and losing a localhost example costs nothing.
+// content a training export must not leak, and losing a localhost example costs nothing.
 //
 // The TLD list is the set that cannot resolve publicly: RFC 6762's .local, RFC 6761's
 // .test and .localhost, and the four conventional private suffixes. Private-range IPv4

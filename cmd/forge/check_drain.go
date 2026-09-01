@@ -11,10 +11,10 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
-// drainAdvisorQueue is ADDENDUM §A.4's "budget queue drain": pending_advisor:true notes
+// drainAdvisorQueue is the budget queue drain: pending_advisor:true notes
 // get their deferred T3 pass batched into this one scheduled run instead of blocking an
-// interactive session. Gated on both the config flag and on_exhausted:queue, per the
-// plan — draining notes queued under any other policy would spend budget the config
+// interactive session. Gated on both the config flag and on_exhausted:queue —
+// draining notes queued under any other policy would spend budget the config
 // never asked this run to spend. --offline skips it the same way deadlinks.md skips its
 // own network probes: this is a real HTTP call to the advisor tier, not a local check.
 func drainAdvisorQueue(d *checkData) {
@@ -76,9 +76,8 @@ func advisorExhausted(cfg *config.Config, st *store.Store) bool {
 // than reusing the in-memory copy, sends its body to the real advisor tier, books the
 // spend, and clears the flag only once both the call and the spend succeed — a note
 // must never come off the queue with nothing recorded for it. The critique is captured
-// via D2 — live under the shipped config since B-024 fixed the D2Tag mismatch that made
-// it inert — and printed for approval, matching aiPass's own no-auto-apply posture —
-// a T3 pass whose output is silently dropped is not the pass ADDENDUM §A.4 describes.
+// via D2 and printed for approval, matching aiPass's own no-auto-apply posture —
+// a T3 pass whose output is silently dropped is not a queue drain worth having.
 func drainOne(root, rel string, cfg *config.Config, st *store.Store) error {
 	n, s, err := loadNoteAndSchema(root, rel)
 	if err != nil {

@@ -17,9 +17,8 @@ const (
 	D3Kind = "d3-human-edit"
 	D3Path = ".forge/datasets/d3.jsonl"
 
-	// D3Tag is the cfg.Dataset.Capture entry that gates this tier. It gated nothing
-	// through Phase 6 — forge capture never read the list, so removing "d3" from a config
-	// did not stop capture. That was BACKLOG B-030; cmd/forge/capture.go now checks it.
+	// D3Tag is the cfg.Dataset.Capture entry that gates this tier.
+	// cmd/forge/capture.go checks it before every capture.
 	D3Tag = "d3"
 
 	D3Window  = 7 * 24 * time.Hour

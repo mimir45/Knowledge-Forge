@@ -22,7 +22,8 @@ answer the question asked.
 
 - Search the repo you were spawned in.
 - When the question is about notes, TILs, or the knowledge base, also search the Obsidian
-  vault at `/Users/mimir45/Documents/Base` (it is outside the repo and not a git repo).
+  vault at `<vault>` (it is outside the repo and not a git repo; the path is whatever
+  `--vault`/the project's config chain resolves it to on this machine).
 - Use `Bash` only for read-only commands (`ls`, `rg`, `git log`, `git show`, `wc`).
   Never run a command that writes, deletes, installs, or commits.
 

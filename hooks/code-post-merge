@@ -1,5 +1,5 @@
 #!/bin/sh
-# Knowledge Forge — git-anchored drift, code repo's post-merge (STACK/AUDIT §8.2).
+# Knowledge Forge — git-anchored drift, code repo's post-merge.
 #
 # Installed into a CODE repository's .git/hooks/post-merge by
 # scripts/install_drift_hook.sh. `ORIG_HEAD` is the ref git itself sets to the pre-merge

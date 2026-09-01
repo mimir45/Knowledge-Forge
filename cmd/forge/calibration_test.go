@@ -15,16 +15,16 @@ import (
 
 // calibrationVault is the corpus recall-spec.md §3.1 is measured against.
 //
-// It is examples/vault, not the live vault at ~/Documents/Base, for a reason B-008's
-// sizing pass found the hard way: §3.1's original numbers were measured on a 91-note
-// corpus that has drifted since, so the "before" column could never be re-derived and an
-// "after" compared against it would prove nothing. A git-tracked corpus makes both
-// columns products of the same run, and makes the table reproducible by anyone.
+// It is examples/vault, not a live personal vault, for a reason found the hard way
+// during an earlier recalibration: numbers measured against a live vault drift as the
+// vault itself changes, so a "before" column can never be re-derived and an "after"
+// compared against it would prove nothing. A git-tracked corpus makes both columns
+// products of the same run, and makes the table reproducible by anyone.
 const calibrationVault = "../../examples/vault"
 
 // calibrationDocs pins the corpus size. A vault edit that changes it must fail here
 // rather than silently re-base the golden.
-const calibrationDocs = 92
+const calibrationDocs = 91
 
 // calibrationNow fixes the clock. Decide branches on Candidate.Stale above the answer
 // threshold (ANSWER_FROM_VAULT vs UPDATE(refresh)), so a wall-clock run would flip a
@@ -51,9 +51,9 @@ var updateGolden = flag.Bool("update", false,
 
 const goldenPath = "testdata/calibration.golden"
 
-// TestCalibration is the harness §3.1 never had: until B-008's 2026-08-21 sizing pass,
-// the nine queries existed only as prose and the table was hand-transcribed, which is
-// why it went stale unnoticed. Run with -update to re-record.
+// TestCalibration is the harness that makes the recall-spec.md calibration table
+// generated rather than hand-transcribed: the nine queries used to exist only as prose,
+// which is why the table went stale unnoticed. Run with -update to re-record.
 func TestCalibration(t *testing.T) {
 	got := calibrationTable(t)
 	if *updateGolden {
@@ -91,9 +91,10 @@ func calibrationTable(t *testing.T) string {
 // lacked: it recorded what the winner scored but never which note won, so a fix that
 // changed the winner while holding the score would have read as a no-op.
 //
-// The Neighbours column is B-033's. The verdict says a note gets created; this column
-// says whether it gets created linked or orphaned, which is the whole of what the
-// neighbour floor controls. A floor change must move this column and nothing else —
+// The Neighbours column tracks the neighbour floor's effect. The verdict says a note
+// gets created; this column says whether it gets created linked or orphaned, which is
+// the whole of what the neighbour floor controls. A floor change must move this column
+// and nothing else —
 // score and verdict are functions of Rank and Decide, which the floor does not enter.
 func calibrationRow(docs []recall.Doc, question string) string {
 	q := recall.Query{Question: question}
@@ -140,7 +141,8 @@ func calibrationCorpus(t *testing.T) []recall.Doc {
 
 // stageVault copies a vault tree into a temp dir. It is fixtureCopy generalised over its
 // source; fixtureCopy stays as it is because e2e_test.go's callers name testdata/vault
-// through it and the B-002 warning in its doc comment is about that fixture specifically.
+// through it and its doc comment's warning about mutating that fixture in place is
+// specific to it.
 func stageVault(t *testing.T, src string) string {
 	t.Helper()
 	dst := filepath.Join(t.TempDir(), "vault")

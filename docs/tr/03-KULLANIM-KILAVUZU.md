@@ -9,7 +9,7 @@
 
 ```bash
 # 1. Derle (saf Go lane — dağıtılan lane budur)
-cd /Users/mimir45/knowledge-forge
+cd knowledge-forge
 CGO_ENABLED=0 go build ./...
 make build                       # → ./dist/forge
 
@@ -506,9 +506,11 @@ Hepsi **fail-silent** ve **her zaman exit 0**.
 Ölçülen: `session-context` bütçenin (200 ms) çok altında; `intent` bütçenin (50 ms)
 çok altında — sıcak SQLite cache'in yeniden kullanımı sayesinde.
 
-> **B-025:** `cache-source`'un `PostToolUse`/WebFetch `tool_response` JSON şekli resmi
-> dokümandan doğrulanmadı, bu yüzden `cacheBody` bir alan adı tahmin etmek yerine **ham
-> baytları** cache'liyor.
+> **Not:** `cache-source`'un `PostToolUse`/WebFetch `tool_response` JSON şekli resmi
+> dokümandan doğrulanmadığı için canlı bir hook payload'ı yakalanarak doğrulandı:
+> `{result, url, code, codeText, bytes, durationMs}` şeklinde bir obje, metin `result`
+> alanında. `cacheBody` bunu bir map decode ile alan adına göre okur; başka bir şekle
+> düşerse ham baytları cache'liyor.
 
 ---
 
@@ -738,8 +740,8 @@ Bunlar config'e çıkarılmadı çünkü kullanıcı kararı değil, spesifikasy
 └── .forge/                  türetilmiş state, cache, log
 ```
 
-Yedi not tipi, DESIGN §7'nin beş-dizinli ağacına karşı **B-005**'in kararıdır. Üçü boş
-`.gitkeep` kabuğu. **§7'ye uydurmak için budama.**
+Yedi not tipi bilinçli bir tasarım kararıdır, DESIGN §7'nin beş-dizinli ağacına karşı.
+Üçü boş `.gitkeep` kabuğu. **§7'ye uydurmak için budama.**
 
 ---
 
@@ -749,16 +751,16 @@ Yedi not tipi, DESIGN §7'nin beş-dizinli ağacına karşı **B-005**'in karar�
 |---|---|---|
 | `forge: unknown command "logback"` / `"scrub"` | Kök `./forge` binary'si bayat (Phase 5b/6 öncesi). | `make build`, `./dist/forge` kullan. |
 | D3 çiftleri artık görünmüyor | `~/.forge/bin/forge` bayat kopya. Hook tasarım gereği sessiz. | `<vault>/.forge/capture.log`'a bak; `CGO_ENABLED=0 go build -o ~/.forge/bin/forge ./cmd/forge`. |
-| `forge drift` her şeyi `Skipped` diyor | Silinmiş dosya atıfı, hook yolu değil full sweep. | `--deep` ile çalıştır (B-026), ya da hook yolunda `--apply` (B-028). |
+| `forge drift` her şeyi `Skipped` diyor | Silinmiş dosya atıfı, hook yolu değil full sweep. | `--deep` ile çalıştır, ya da hook yolunda `--apply`. |
 | Config'de yaptığım değişiklik etkisiz | Yanlış katman ya da list-replace semantiği. | `forge config --layers`, sonra `forge config --json`. |
 | `engine: pipeline.X: "api" is not allowed` | Kilitli stage'e (`recall`/`write`/`index`) model atanmış. Bu **kasıtlı**. | Config'i düzelt. Override etme yolu **yok**. |
 | `forge gate` exit 1 döndü, CI kırmızı | Exit 1 = karantina, **hata değil**. | CI'da 0 ve 1'i başarı say; 2 ve 3'ü hata. |
 | `forge check` yavaş / ağ bekliyor | `deadlinks.md` HTTP HEAD atıyor. | `--offline`. |
 | Kod indeksleme çalışmıyor, sembol bulunamıyor | Saf-Go lane'de derlenmiş (tree-sitter yok). | `make full` (`CGO_ENABLED=1 -tags codeindex`). |
-| `forge recall` iyi bir notu bulmuyor | Bilinen açık defekt **B-008**. | **Eşikleri oynatma.** §3.1 kalibrasyonu yeniden türetilmeli — kendi oturumunu hak ediyor. |
-| D2 yakalama hiç çift üretmiyor | **B-024 kapandı** (2026-08-21): `D2Tag` artık `"d2"`, paketlenmiş config'le eşleşiyor. Hâlâ çift yoksa sebep başka: D2 yalnızca gerçek bir advisor çağrısından sonra yazar. | `engines`'te advisor tier'ının yapılandırıldığını ve bütçenin tükenmediğini doğrula. |
-| `dataset.capture`'dan `d3`'ü sildim ama yakalama devam ediyor | **B-030**: `d3` için kapı yok — post-commit hook listeye hiç bakmıyor. `d1`/`d5` de okunmuyor; yalnızca `d2` ve `d4` gerçek kapı. | Açık backlog kaydı. Durdurmak için hook'u kaldır: `rm <vault>/.git/hooks/post-commit`. |
-| `.forge/code-index-<repo>.json` bekliyordum ama doküman `code-index.json` diyor | **B-027** (kapandı 2026-08-23): davranış doğru (tek isim repolar arası çakışırdı). Kod yorumları ve `forge-codebase-scout` 2026-08-21'de, tasarım dokümanlarındaki sekiz satır 2026-08-23'te düzeltildi. | Kodu esas al: ad her zaman `-<repo>` ekli. |
+| `forge recall` iyi bir notu bulmuyor | Kalibrasyon eşikleri lexical örtüşmeyle sınırlı. | **Eşikleri elle oynatma.** `TestCalibration -update` ile §3.1 tablosunu ölçerek yeniden türet. |
+| D2 yakalama hiç çift üretmiyor | D2 yalnızca gerçek bir advisor çağrısından sonra yazar. | `engines`'te advisor tier'ının yapılandırıldığını ve bütçenin tükenmediğini doğrula. |
+| `dataset.capture`'dan `d3`'ü sildim ama yakalama devam ediyor | `dataset.enabled: false` ayarını da kontrol et — tier listesi ile birlikte gerekir. | `<vault>/.forge/capture.log`'a bak; hook'u tamamen kaldırmak için `rm <vault>/.git/hooks/post-commit`. |
+| `.forge/code-index-<repo>.json` bekliyordum ama bir doküman tekil `code-index.json` diyor | Kasıtlı: `--repo` tekrarlanabilir olduğu için tek bir paylaşılan isim repolar arası çakışırdı. | Kodu esas al: ad her zaman `-<repo>` ekli. |
 
 ---
 
@@ -773,19 +775,16 @@ Yedi not tipi, DESIGN §7'nin beş-dizinli ağacına karşı **B-005**'in karar�
 - **Oturum başına bir faz.**
 - Faz N merge edilmeden N+1 başlama.
 - **2b asla kesilmez.** Zaman biterse kesim sırası: `6b → 5b → advisor tier`.
-- Mevcut fazın kapsamı dışında iş çıkarsa → `docs/BACKLOG.md`'ye yaz, inşa etme.
+- Mevcut fazın kapsamı dışında iş çıkarsa → bir backlog kaydına yaz, inşa etme.
 
 ### 9.2 Doküman okuma sırası
 
-0. **`docs/AUDIT.md` §8.4** — bağlayıcı karar kaydı (D-1…D-8). **Önce bunu oku**, çünkü
-   tasarım dokümanları bilerek düzenlenmedi: §8.4 bir satırı bayat işaretlediğinde
-   doküman hâlâ eskisini söyler ve **takip edilecek olan §8.4'tür.**
 1. `docs/ROADMAP.md` — her şeyin üstünde yoğunlaştırılmış index. Hep buradan başla.
 2. `docs/KNOWLEDGE-FORGE-STACK.md` (ADR-001) — **her stack sorusunu kazanır.**
 3. `docs/KNOWLEDGE-FORGE-DESIGN.md` — master spec.
 4. `docs/KNOWLEDGE-FORGE-ADDENDUM.md` — engine tier'ları, dokuz rapor, drift, dataset, config.
 5. `docs/CLAUDE-CODE-PROMPT.md` — faz başına yapıştırılmaya hazır prompt.
-6. `docs/KNOWLEDGE-FORGE-B2B.md` — **ayrı bir proje**, bu projenin fazı değil (B-021).
+6. `docs/KNOWLEDGE-FORGE-B2B.md` — **ayrı bir proje**, bu projenin fazı değil.
 
 ### 9.3 Test etme
 
@@ -818,10 +817,8 @@ geri alınamazdı ve gerçek vault'un yedeği yoktu.
 - Vault hook'u binary'nin bir **kopyasını** çağırır — `pkg/dataset` veya
   `cmd/forge/capture.go` değişince yeniden kur.
 - `pkg/report`, `pkg/codeindex`'i import **etmemeli** — cgo saf lane'i kırar.
-- Modül `knowledge-forge`, dizin artık `/Users/mimir45/knowledge-forge` (2026-09-01'de
-  kullanıcı tarafından yeniden adlandırıldı — **B-003 kapandı**). `go.mod` artık
-  `module github.com/mimir45/Knowledge-Forge` (2026-09-01'de düzeltildi — **B-004
-  kapandı**); import satırları (`"knowledge-forge/pkg/..."` → `"github.com/mimir45/
-  Knowledge-Forge/pkg/..."`) 102 dosyada mekanik olarak güncellendi.
+- `go.mod`'un modül adı GitHub remote'un tam yazımıyla eşleşir
+  (`module github.com/<owner>/Knowledge-Forge`); dizin adı, modül adı ve remote üçü de
+  aynı adı taşır.
 - `docs/CLAUDE-CODE-PROMPT.md` dokümanların kökte olmasını söyler; `docs/`'talar.
   Prompt metnine uydurmak için dosya taşıma.

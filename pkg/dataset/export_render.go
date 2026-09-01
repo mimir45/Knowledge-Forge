@@ -18,7 +18,7 @@ type (
 		ID         string `json:"id,omitempty"`
 		Prompt     string `json:"prompt"`
 		Completion string `json:"completion"`
-		// Outcome is D1-only (BACKLOG B-035): nil for every other tier, omitted from
+		// Outcome is D1-only: nil for every other tier, omitted from
 		// their JSON, and nil for a D1 pair whose run_id never joined a gate outcome —
 		// see D1Pair.Outcome's doc comment for why nil and false both meaning
 		// something different has to stay observable.

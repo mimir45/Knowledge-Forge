@@ -24,7 +24,8 @@ type Graph struct {
 const hubFraction = 0.10
 
 // Build computes the graph. Roots are classified here, not by the caller, because
-// getting it wrong is the specific failure docs/AUDIT.md §11 warns about.
+// getting it wrong — treating a legitimate root like index.md as an orphan just because
+// it has zero inbound links — is a specific, easy-to-reintroduce failure.
 func Build(nodes []Node) *Graph {
 	g := &Graph{
 		Inbound:  make(map[string]int, len(nodes)),

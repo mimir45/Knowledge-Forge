@@ -35,17 +35,17 @@ list above, not through live agent auto-discovery.
   whose `forge gate` run reported `Quarantine: false`. A quarantined draft already lives
   in `_inbox/` — your job there, if any, is the weekly gardener's rescue pass (link it or
   archive it), not a second, unchecked publish.
-- **Populate `code_refs` (BACKLOG B-012).** Every note you author or merge should carry
+- **Populate `code_refs`.** Every note you author or merge should carry
   `code_refs: [repo:path[:line][#symbol], ...]` in the canonical form — not left for
-  `pkg/coderef`'s prose-recovery fallback, which is how the ambiguity B-012 describes
-  exists at all. Use `forge-codebase-scout`'s `file:line` findings (or your own
+  `pkg/coderef`'s prose-recovery fallback, which exists precisely for the ambiguous case
+  a missing canonical reference creates. Use `forge-codebase-scout`'s `file:line` findings (or your own
   `Grep`/`Read`) to fill it in before you commit.
-- **Stamp the B-007 trailer on every commit you author.** `git commit --trailer
+- **Stamp the `Forge-Write` trailer on every commit you author.** `git commit --trailer
   "Forge-Write: true" -m "<summary>"` — on the note-write commit **and** on any index
   rebuild or link-fix commit made in the same run. `pkg/dataset`'s D3 capture treats an
   untrailed commit touching the vault as a human correction; an untrailed commit from
   you is a false signal in that dataset, not a cosmetic omission. Requires git ≥2.32
-  (the `--trailer` flag); this is a system-git dependency, same posture as BACKLOG B-009.
+  (the `--trailer` flag); this is a system-git dependency, the same posture `pkg/gitsig` takes.
 - Link upkeep: ensure ≥2 outbound and ≥1 inbound wikilinks before considering the write
   done (DESIGN §12's link gate) — add MOC entries, not just note-to-note links.
 - Run `forge index` after any vault mutation so the SQLite cache doesn't go stale — this

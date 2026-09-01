@@ -5,7 +5,7 @@ project_name: forge
 # Only the portable lane is released. CGO_ENABLED=0 cross-compiles to all four targets from
 # one runner and gives a binary with no libc requirement; go-tree-sitter would need a C
 # toolchain per target and would tie every release to four runners for one optional feature.
-# Windows is not a released target for now (user decision, 2026-08-27) — see BACKLOG.md.
+# Windows is not a released target for now (deliberate decision, not an oversight).
 #
 # What a released binary therefore cannot do: build the code index. `forge check` renders
 # nine of its ten files and reports moc/codebase.md as skipped with codeindex.ErrUnavailable

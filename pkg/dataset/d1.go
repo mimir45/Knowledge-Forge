@@ -12,7 +12,7 @@ import "time"
 // passive prompt hint is not a question anyone asked. intent.go builds its own
 // recall.Query and never reaches this path, so the limit is structural, not a convention.
 //
-// The outcome is partial, not absent (BACKLOG B-035, closed 2026-08-25). Each pair now
+// The outcome is partial, not absent. Each pair
 // carries RunID, minted by telemetry.NewRunID in runRecall and emitted in forge recall's
 // JSON envelope. A `forge gate --run-id <id>` call that threads it back appends a
 // separate D1Outcome record (d1_outcome.go) keyed by the same RunID — a second file, not
