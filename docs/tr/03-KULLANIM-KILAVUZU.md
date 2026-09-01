@@ -9,7 +9,7 @@
 
 ```bash
 # 1. Derle (saf Go lane — dağıtılan lane budur)
-cd /Users/mimir45/TIL
+cd /Users/mimir45/knowledge-forge
 CGO_ENABLED=0 go build ./...
 make build                       # → ./dist/forge
 
@@ -818,7 +818,8 @@ geri alınamazdı ve gerçek vault'un yedeği yoktu.
 - Vault hook'u binary'nin bir **kopyasını** çağırır — `pkg/dataset` veya
   `cmd/forge/capture.go` değişince yeniden kur.
 - `pkg/report`, `pkg/codeindex`'i import **etmemeli** — cgo saf lane'i kırar.
-- Modül `knowledge-forge`, dizin `/Users/mimir45/TIL`. Kozmetik uyumsuzluk (B-003/B-004).
-  **İstenmeden yeniden adlandırma.**
+- Modül `knowledge-forge`, dizin artık `/Users/mimir45/knowledge-forge` (2026-09-01'de
+  kullanıcı tarafından yeniden adlandırıldı — **B-003 kapandı**). `go.mod`'un VCS host
+  prefix'i olmaması ayrı, açık kalan konu: **B-004**.
 - `docs/CLAUDE-CODE-PROMPT.md` dokümanların kökte olmasını söyler; `docs/`'talar.
   Prompt metnine uydurmak için dosya taşıma.

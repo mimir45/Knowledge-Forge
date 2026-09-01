@@ -103,7 +103,8 @@ outside what this session does — it's yours to review and merge.
   flagging it back to you rather than working around the denial.
 - **Two worktrees look safe to remove** — their branches are fully merged (PR #1 and
   #14) and this session's sandbox can't reach outside its own worktree to remove them.
-  From the main checkout (`/Users/mimir45/TIL`):
+  From the main checkout (`/Users/mimir45/knowledge-forge` — the directory was
+  `/Users/mimir45/TIL` when this snapshot was written; renamed 2026-09-01, BACKLOG B-003):
   ```
   git worktree remove .claude/worktrees/b-008-recall-recalibration
   git branch -d worktree-b-008-recall-recalibration

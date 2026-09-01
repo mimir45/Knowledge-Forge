@@ -630,6 +630,16 @@ Turkish doc — that's parsing robustness for any editor, not shipped platform s
 `bin/forge` is POSIX `sh` and never had a Windows branch. See BACKLOG.md's B-039 for the
 full record and the revert steps.
 
+**B-003 closed 2026-09-01, outside any session — the user renamed the local directory
+themselves,** from `/Users/mimir45/TIL` to `/Users/mimir45/knowledge-forge`, reversing
+the 2026-08-24 "leave it as TIL" decision recorded in BACKLOG.md. This closes the
+three-way mismatch between the directory, `go.mod`'s module path (`knowledge-forge`,
+since 2026-08-08), and the GitHub remote (`Knowledge-Forge`) — the "Known discrepancies"
+bullet below no longer applies and was removed rather than left stale. A repo-wide grep
+for the old absolute path found nothing hardcoded in code, build config, or installed
+hooks — only prose (`docs/RELEASE-READINESS.md`, three `docs/tr/` files, BACKLOG.md's own
+entry), updated in the same pass. See BACKLOG.md's B-003 closure note.
+
 **B-022 closed in Phase 4**
 (the schema pattern now covers all nine `cfg.Pipeline` stages minus `critique`); **B-007
 closed in Phase 4** (`agents/forge-librarian.md`'s prompt stamps `Forge-Write: true` on
@@ -917,10 +927,10 @@ pure Go and cross-compiles; the codeindex lane needs cgo and a host toolchain. P
 ## Known discrepancies (record, don't fix)
 
 - The Go module was renamed `TIL` → `knowledge-forge` on 2026-08-08 (bare path, no VCS
-  host prefix — deliberately deferred, see BACKLOG B-004). Imports will read
-  `knowledge-forge/pkg/vault`. The **directory is still `/Users/mimir45/TIL`** and the
-  docs still call the artifact `knowledge-forge/`; that mismatch is cosmetic and stays
-  (B-003). Don't rename the directory unasked.
+  host prefix — deliberately deferred, see BACKLOG B-004). Imports read
+  `knowledge-forge/pkg/vault`. The directory-name mismatch this used to note (B-003) is
+  closed — the user renamed the local directory to `/Users/mimir45/knowledge-forge` on
+  2026-09-01, matching both the module path and the GitHub remote.
 - `docs/CLAUDE-CODE-PROMPT.md` says to put the docs in the repo root; they live in
   `docs/`. Don't shuffle files to match the prompt text.
 - BACKLOG **B-005** decided seven note types against DESIGN §7's five-directory tree; all

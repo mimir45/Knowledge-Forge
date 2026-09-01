@@ -46,7 +46,7 @@ niteliğindedir.
 | `CHANGELOG.md` | Sürüm geçmişi. Phase 6'da eklendi. |
 | `CONTRIBUTING.md` | Katkı kuralları: iki build lane, `make test`'in ikisini de çalıştırması, faz disiplini. |
 | `Makefile` | Altı hedefli cross-compile matrisi + `build full test bench vet fmt lint dist checksums install-hook clean help`. `install-hook` binary'yi `$HOME/.forge/bin`'e kopyalar — bu yol config'e değil Makefile'a bilerek gömülü. |
-| `go.mod` | Modül adı **`knowledge-forge`** (bare path, VCS host prefix'i yok — bilerek ertelendi, **B-004**). Dizin hâlâ `/Users/mimir45/TIL`; kozmetik uyumsuzluk, **B-003**, düzeltme. |
+| `go.mod` | Modül adı **`knowledge-forge`** (bare path, VCS host prefix'i yok — bilerek ertelendi, **B-004**, açık). Dizin artık `/Users/mimir45/knowledge-forge` (2026-09-01'de kullanıcı tarafından yeniden adlandırıldı, **B-003 kapandı**). |
 | `go.sum` | Bağımlılık checksum'ları. |
 | `.gitignore` | `dist/`, `.forge/`, build artefaktları. |
 | `.golangci.yml` | Lint config. **`errcheck` repo genelinde kapalı** — bilinçli, **B-029** olarak kayıtlı. 2026-08-21'de yeniden ölçüldü: ham **95** bulgu (girdinin "~20" iddiası eksikti), golangci-lint'in varsayılan istisnaları elle uygulanınca ~37 — bunun 10'u üretim kodu. |
