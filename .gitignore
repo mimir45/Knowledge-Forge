@@ -6,7 +6,7 @@ __pycache__/
 # Not release surface, never committed. `.claude/agents/*.md` stays tracked — that's
 # the deliberate workflow "Agent crew" CLAUDE.md documents, not clutter.
 /.claude/worktrees/
-
+.claude
 # Build output. Both paths are root-anchored: `bin/forge` is the committed shim, not a
 # binary, and an unanchored `forge` would swallow it.
 /forge
