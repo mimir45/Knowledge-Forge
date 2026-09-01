@@ -65,20 +65,33 @@ and do not "clean up" the fixture's defects — they are the test surface.
 
 ## B-003 — Repo directory is still named `TIL`
 
-**Owner: whenever, low cost. Status: open — user confirmed keep-as-is, 2026-08-24.**
+**Owner: whenever, low cost. Status: closed 2026-09-01 — user renamed the directory.**
 
-The Go module was renamed to `knowledge-forge` on 2026-08-08, but the directory is still
-`/Users/mimir45/TIL`, and the docs call the artifact `knowledge-forge/`. Purely cosmetic
-now; it becomes mildly annoying once tooling, README paths, and the goreleaser config in
-Phase 6 assume the artifact name. Renaming the directory is a user decision (it breaks
-any shell aliases, IDE projects, and `.idea/` state pointing at the old path).
+The Go module was renamed to `knowledge-forge` on 2026-08-08, but the directory stayed
+`/Users/mimir45/TIL` for a while, and the docs called the artifact `knowledge-forge/`.
+Purely cosmetic, but it became mildly annoying once tooling, README paths, and the
+goreleaser config in Phase 6 assumed the artifact name. Renaming the directory was
+always a user decision (it breaks any shell aliases, IDE projects, and `.idea/` state
+pointing at the old path) — see the 2026-08-24 note below for the earlier "leave it as
+TIL" answer this entry reaffirmed at the time.
 
 **Asked directly, 2026-08-24.** The user asked to "change repository name from TIL"; on
 finding both the GitHub remote (`Knowledge-Forge`) and `go.mod`'s module path
 (`knowledge-forge`) already renamed, and the local directory being the only thing left
 answering to `TIL`, they were asked whether to rename the directory too and chose not to
-— "leave this as TIL" — as long as it stays cosmetic. Reaffirms this entry's existing
-"do not rename unasked" answer rather than changing it; nothing renamed.
+— "leave this as TIL" — as long as it stays cosmetic. Reaffirmed this entry's existing
+"do not rename unasked" answer rather than changing it at the time; nothing renamed.
+
+**Closed 2026-09-01.** The user renamed the directory themselves, outside any session —
+the working tree now opens at `/Users/mimir45/knowledge-forge`, matching the module path
+and the GitHub remote. Nothing in this repo hardcoded the old absolute path (checked via
+a full-repo grep for `mimir45/TIL`): the only hits were prose in `CLAUDE.md`,
+`docs/RELEASE-READINESS.md`, this entry, and three `docs/tr/` translations, all updated
+in this same closure pass. `hooks/hooks.json`'s comment about *not* hardcoding the old
+path was already correct and needed no change. No code, build config, or installed hook
+referenced the directory by absolute path, so the rename carried zero functional risk —
+the three-way mismatch (module `knowledge-forge`, remote `Knowledge-Forge`, directory
+`TIL`) is gone.
 
 ---
 
