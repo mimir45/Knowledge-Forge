@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"knowledge-forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
 )
 
 // LockedStages re-exports pkg/config's list so this package can refuse a tampered config

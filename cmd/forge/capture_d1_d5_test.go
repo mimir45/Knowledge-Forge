@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"knowledge-forge/pkg/config"
-	"knowledge-forge/pkg/dataset"
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/dataset"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 // theQuestion is deliberately a phrase no slug or hash could reproduce by accident, so

@@ -9,9 +9,9 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"knowledge-forge/pkg/linkcheck"
-	"knowledge-forge/pkg/report"
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/linkcheck"
+	"github.com/mimir45/Knowledge-Forge/pkg/report"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 // links gathers every cited URL and the notes citing it, then checks each once.

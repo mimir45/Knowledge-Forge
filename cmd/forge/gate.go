@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"knowledge-forge/pkg/config"
-	"knowledge-forge/pkg/dataset"
-	"knowledge-forge/pkg/qualitygate"
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/dataset"
+	"github.com/mimir45/Knowledge-Forge/pkg/qualitygate"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 const gateUsage = `usage: forge gate --file PATH --rel VAULT/RELATIVE/PATH.md [--vault DIR]

@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"knowledge-forge/pkg/graph"
-	"knowledge-forge/pkg/report"
-	"knowledge-forge/pkg/store"
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/graph"
+	"github.com/mimir45/Knowledge-Forge/pkg/report"
+	"github.com/mimir45/Knowledge-Forge/pkg/store"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 func cmdIndex(args []string) int {

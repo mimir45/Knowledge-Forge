@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"knowledge-forge/pkg/codeindex"
+	"github.com/mimir45/Knowledge-Forge/pkg/codeindex"
 )
 
 // dependsOn folds codeindex.File.Imports into the directory-level dependency graph

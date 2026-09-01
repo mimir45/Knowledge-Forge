@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"knowledge-forge/pkg/qualitygate"
+	"github.com/mimir45/Knowledge-Forge/pkg/qualitygate"
 )
 
 const verifyCodeUsage = `usage: forge verify-code --lang <java|ts|bash|auto> [--file PATH|--stdin] [--timeout 15s]

@@ -3,7 +3,7 @@ package qualitygate
 import (
 	"strings"
 
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 // schemaGate is a thin wrapper around vault.Validate — the same check `forge validate`

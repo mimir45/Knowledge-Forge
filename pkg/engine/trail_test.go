@@ -3,8 +3,8 @@ package engine
 import (
 	"testing"
 
-	"knowledge-forge/pkg/config"
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 // loadPreset mirrors pkg/config/chain_test.go's idiom (Preset → layer → Load), pointed at

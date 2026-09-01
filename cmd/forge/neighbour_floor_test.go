@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"knowledge-forge/pkg/recall"
+	"github.com/mimir45/Knowledge-Forge/pkg/recall"
 )
 
 // This is B-033's derivation harness. It exists as a test rather than as numbers in a

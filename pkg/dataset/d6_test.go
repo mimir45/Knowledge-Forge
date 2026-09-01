@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"knowledge-forge/pkg/codeindex"
+	"github.com/mimir45/Knowledge-Forge/pkg/codeindex"
 )
 
 // seedD6Vault writes one repo's code index cache plus one note citing it — a path-shaped

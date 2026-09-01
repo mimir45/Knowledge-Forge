@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"knowledge-forge/pkg/coderef"
-	"knowledge-forge/pkg/drift"
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/coderef"
+	"github.com/mimir45/Knowledge-Forge/pkg/drift"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 type repoList []drift.Repo

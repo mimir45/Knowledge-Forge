@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 func cmdSlug(args []string) int {

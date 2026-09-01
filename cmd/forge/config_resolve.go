@@ -5,7 +5,7 @@ import (
 	"os"
 	"sync"
 
-	"knowledge-forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
 )
 
 // The chain is read once per process. Every subcommand needs it and none of them may

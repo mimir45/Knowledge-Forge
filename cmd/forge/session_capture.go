@@ -15,7 +15,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 // maxStubs caps how many stub notes one SessionEnd firing can write — the plan's own

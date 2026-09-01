@@ -3,8 +3,8 @@ package drift
 import (
 	"testing"
 
-	"knowledge-forge/pkg/codeindex"
-	"knowledge-forge/pkg/coderef"
+	"github.com/mimir45/Knowledge-Forge/pkg/codeindex"
+	"github.com/mimir45/Knowledge-Forge/pkg/coderef"
 )
 
 // fakeSource stands in for git so the ladder can be tested one rung at a time. Every

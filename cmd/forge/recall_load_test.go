@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"knowledge-forge/pkg/store"
+	"github.com/mimir45/Knowledge-Forge/pkg/store"
 )
 
 // closedStore is a Store whose handle is gone — the cheapest stand-in for the conditions

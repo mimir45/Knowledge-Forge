@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"knowledge-forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
 )
 
 // fakeLedger is a minimal in-memory Ledger, so select_test.go never needs pkg/store —

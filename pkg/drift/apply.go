@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 // Result is one note's confidence movement, for the CLI's output and for drift.md.

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"knowledge-forge/pkg/config"
-	"knowledge-forge/pkg/engine"
-	"knowledge-forge/pkg/store"
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/engine"
+	"github.com/mimir45/Knowledge-Forge/pkg/store"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 // drainAdvisorQueue is ADDENDUM §A.4's "budget queue drain": pending_advisor:true notes

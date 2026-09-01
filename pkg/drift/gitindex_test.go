@@ -8,8 +8,8 @@ import (
 	"sort"
 	"testing"
 
-	"knowledge-forge/pkg/codeindex"
-	"knowledge-forge/pkg/coderef"
+	"github.com/mimir45/Knowledge-Forge/pkg/codeindex"
+	"github.com/mimir45/Knowledge-Forge/pkg/coderef"
 )
 
 // TestNameMapOrdersDeclarationsWithinOneFile is the bug drift.md showed on the real vault:

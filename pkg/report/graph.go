@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"knowledge-forge/pkg/graph"
+	"github.com/mimir45/Knowledge-Forge/pkg/graph"
 )
 
 // OrphansInput is what orphans.md renders from.

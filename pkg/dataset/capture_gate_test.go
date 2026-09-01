@@ -3,7 +3,7 @@ package dataset
 import (
 	"testing"
 
-	"knowledge-forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
 )
 
 // TestPackagedCaptureListGates is B-024's regression guard, and it exists because the

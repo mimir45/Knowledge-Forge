@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"knowledge-forge/pkg/config"
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 // goodNote mirrors pkg/vault/validate_test.go's fixture (not importable across

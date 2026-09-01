@@ -1,4 +1,4 @@
-module knowledge-forge
+module github.com/mimir45/Knowledge-Forge
 
 go 1.26
 

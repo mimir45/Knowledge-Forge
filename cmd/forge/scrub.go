@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"knowledge-forge/pkg/scrub"
+	"github.com/mimir45/Knowledge-Forge/pkg/scrub"
 )
 
 const scrubUsage = `usage: forge scrub --src DIR --dst DIR

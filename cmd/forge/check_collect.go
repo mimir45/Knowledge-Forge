@@ -5,15 +5,15 @@ import (
 	"strings"
 	"time"
 
-	"knowledge-forge/pkg/config"
-	"knowledge-forge/pkg/drift"
-	"knowledge-forge/pkg/engine"
-	"knowledge-forge/pkg/gitsig"
-	"knowledge-forge/pkg/graph"
-	"knowledge-forge/pkg/report"
-	"knowledge-forge/pkg/similarity"
-	"knowledge-forge/pkg/store"
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/drift"
+	"github.com/mimir45/Knowledge-Forge/pkg/engine"
+	"github.com/mimir45/Knowledge-Forge/pkg/gitsig"
+	"github.com/mimir45/Knowledge-Forge/pkg/graph"
+	"github.com/mimir45/Knowledge-Forge/pkg/report"
+	"github.com/mimir45/Knowledge-Forge/pkg/similarity"
+	"github.com/mimir45/Knowledge-Forge/pkg/store"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 // checkData is the vault collected once, in the two shapes the reports need.

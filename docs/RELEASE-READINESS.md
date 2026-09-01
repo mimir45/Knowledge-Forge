@@ -44,16 +44,16 @@ machine, per `CLAUDE.md`'s Phase 6/6b status notes:
   in this environment; `TestCompileTSSkippedWhenToolchainAbsent` covers the
   absent-toolchain path instead, not the real one.
 
-## Open backlog (from `docs/BACKLOG.md`'s index — 15 items)
+## Open backlog (from `docs/BACKLOG.md`'s index — 13 items)
 
 Not release-blocking on their own; recorded so nothing gets lost. `docs/TODO.md` has a
-six-field execution plan for each workable one.
+six-field execution plan for each workable one. B-003 and B-004 closed 2026-09-01 (user
+renamed the directory, then asked to fix the bare module path) and are dropped from this
+table — see BACKLOG.md's closure notes for both.
 
 | Item | One line |
 |---|---|
 | B-002 | Fixture vault exists at `testdata/vault/`; it is not `examples/vault/` |
-| B-003 | Repo directory is still named `TIL` — **user confirmed keep-as-is, 2026-08-24** |
-| B-004 | Module path has no VCS host prefix |
 | B-010 | `AUDIT.md` §7 says `food-ordering-system` has no git history; it does |
 | B-011 | `reports/` and `moc/` are graph nodes but not contract notes |
 | B-012 | `code_refs` is in the schema and nothing writes it yet |

@@ -3,7 +3,7 @@ package qualitygate
 import (
 	"fmt"
 
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 // linkGate checks a draft's own [[wikilinks]] resolve against the rest of the vault. It

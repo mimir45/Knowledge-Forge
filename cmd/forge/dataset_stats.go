@@ -8,7 +8,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"knowledge-forge/pkg/dataset"
+	"github.com/mimir45/Knowledge-Forge/pkg/dataset"
 )
 
 const datasetStatsUsage = `usage: forge dataset-stats [--vault DIR]

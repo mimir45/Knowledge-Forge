@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"knowledge-forge/pkg/recall"
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/recall"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 // freshnessGate reuses recall.IsStale rather than reimplementing the Verified-then-

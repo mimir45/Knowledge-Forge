@@ -11,7 +11,7 @@ import (
 	"sort"
 	"text/tabwriter"
 
-	"knowledge-forge/pkg/report"
+	"github.com/mimir45/Knowledge-Forge/pkg/report"
 )
 
 // estimatedMinutesSavedPerHit is deliberately rough: there is no measurement anywhere in

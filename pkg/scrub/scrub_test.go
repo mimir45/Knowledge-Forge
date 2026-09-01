@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 // A small in-repo fixture, deliberately separate from testdata/vault/ (that fixture's

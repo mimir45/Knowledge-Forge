@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"sort"
 
-	"knowledge-forge/pkg/codeindex"
-	"knowledge-forge/pkg/coderef"
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/codeindex"
+	"github.com/mimir45/Knowledge-Forge/pkg/coderef"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 // D6 is ADDENDUM §D.1's sixth dataset: (repo symbol or module → the note explaining it).

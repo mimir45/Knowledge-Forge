@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"knowledge-forge/pkg/gitsig"
+	"github.com/mimir45/Knowledge-Forge/pkg/gitsig"
 )
 
 // ChurnInput is what churn.md renders from. The stats are over the *vault's* history, not

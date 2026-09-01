@@ -8,8 +8,8 @@ import (
 	"sort"
 	"strings"
 
-	"knowledge-forge/pkg/engine"
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/engine"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 func cmdEngineRecord(args []string) int {

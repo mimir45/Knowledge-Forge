@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"knowledge-forge/pkg/report"
+	"github.com/mimir45/Knowledge-Forge/pkg/report"
 )
 
 // cmdSessionContext is Phase 5's SessionStart hook: print the vault index and the

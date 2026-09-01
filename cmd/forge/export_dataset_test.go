@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"knowledge-forge/pkg/config"
-	"knowledge-forge/pkg/dataset"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/dataset"
 )
 
 func seedD1(t *testing.T, lines ...string) string {

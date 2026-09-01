@@ -831,7 +831,6 @@ sonrasını gösteriyor; kapanan girdiler tarihçe için aşağıda ayrı listed
 | **B-027** | **Yarısı açık** | Kod yorumları ve `agents/forge-codebase-scout.md` düzeltildi — sonuncusu bir agent'a diskte var olmayan bir yol söylüyordu, tek operasyonel sonuç. Tasarım dokümanları (ADDENDUM §B.6, DESIGN §15) bilerek tekil adı söylemeye devam ediyor: "record, don't fix". |
 | **B-025** | **Bloke** | `forge cache-source`'un `PostToolUse`/WebFetch `tool_response` şekli resmi dokümandan doğrulanamadı (üç deneme). **WebFetch tekrar denenmez.** Kilidi açan şey gözlemsel: canlı bir hook ateşlemesinin payload'ı. Kod bugünkü hâliyle "bilmemenin" doğru karşılığı, geçici çözüm değil. |
 | **B-030** | Açık (yeni) | `dataset.capture` beş girdi kabul ediyor, yalnızca `d2` ve `d4` bir kapıyı besliyor. `d3` sinsi olanı: implementasyonu **var** ama listeye hiç bakmıyor — yani `d3`'ü silmek yakalamayı durdurmuyor, sessizce. |
-| B-004 | Kozmetik | Modül adı `knowledge-forge` bare path — VCS host prefix'i yok, bilerek ertelendi. Açık. |
 
 **2026-08-21'de kapananlar:**
 
@@ -842,9 +841,11 @@ sonrasını gösteriyor; kapanan girdiler tarihçe için aşağıda ayrı listed
 
 **Not:** Bu tablo 2026-08-21 temizliğinden sonrasını gösteriyor ve daha sonraki
 kapanışlarla (B-008, B-029, B-023, B-027, B-030, ...) senkron değil — `CLAUDE.md`'nin
-Status bölümü güncel referans. **B-003, 2026-09-01'de kapandı**: kullanıcı dizini
-`/Users/mimir45/TIL`'den `/Users/mimir45/knowledge-forge`'a yeniden adlandırdı, modül
-adı ve GitHub remote'uyla artık eşleşiyor.
+Status bölümü güncel referans. **B-003 ve B-004, ikisi de 2026-09-01'de kapandı**:
+kullanıcı önce dizini `/Users/mimir45/TIL`'den `/Users/mimir45/knowledge-forge`'a
+yeniden adlandırdı, ardından `go.mod`'un bare modül adını düzeltmesini istedi —
+`module github.com/mimir45/Knowledge-Forge`, GitHub remote'un tam yazımıyla eşleşiyor.
+Artık dizin, modül adı ve remote üçü de aynı adı taşıyor.
 
 Doğrulanmamış ve **iddia edilmeyen** iki şey: `bin/forge` shim'inin gerçek
 indir-ve-checksum yolu, ve tertemiz bir makinede

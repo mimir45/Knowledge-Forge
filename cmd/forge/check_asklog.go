@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"os"
 
-	"knowledge-forge/pkg/report"
+	"github.com/mimir45/Knowledge-Forge/pkg/report"
 )
 
 // loadAskLog reads .forge/log.jsonl and returns the same ask counts in the two shapes

@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"knowledge-forge/pkg/codeindex"
-	"knowledge-forge/pkg/coderef"
-	"knowledge-forge/pkg/drift"
-	"knowledge-forge/pkg/sentinel"
+	"github.com/mimir45/Knowledge-Forge/pkg/codeindex"
+	"github.com/mimir45/Knowledge-Forge/pkg/coderef"
+	"github.com/mimir45/Knowledge-Forge/pkg/drift"
+	"github.com/mimir45/Knowledge-Forge/pkg/sentinel"
 )
 
 // markerStyles is deliberately narrower than sentinel's Style set: codeindex.Lang only

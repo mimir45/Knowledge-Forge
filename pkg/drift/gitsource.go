@@ -4,8 +4,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"knowledge-forge/pkg/codeindex"
-	"knowledge-forge/pkg/coderef"
+	"github.com/mimir45/Knowledge-Forge/pkg/codeindex"
+	"github.com/mimir45/Knowledge-Forge/pkg/coderef"
 )
 
 // Repo names a code repository drift is allowed to look at.

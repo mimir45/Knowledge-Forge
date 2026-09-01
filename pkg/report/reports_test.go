@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"knowledge-forge/pkg/drift"
-	"knowledge-forge/pkg/gitsig"
-	"knowledge-forge/pkg/graph"
-	"knowledge-forge/pkg/linkcheck"
-	"knowledge-forge/pkg/similarity"
+	"github.com/mimir45/Knowledge-Forge/pkg/drift"
+	"github.com/mimir45/Knowledge-Forge/pkg/gitsig"
+	"github.com/mimir45/Knowledge-Forge/pkg/graph"
+	"github.com/mimir45/Knowledge-Forge/pkg/linkcheck"
+	"github.com/mimir45/Knowledge-Forge/pkg/similarity"
 )
 
 var at = time.Date(2026, 8, 9, 14, 30, 0, 0, time.UTC)

@@ -8,12 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"knowledge-forge/pkg/codeindex"
-	"knowledge-forge/pkg/coderef"
-	"knowledge-forge/pkg/gitsig"
-	"knowledge-forge/pkg/linkcheck"
-	"knowledge-forge/pkg/report"
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/codeindex"
+	"github.com/mimir45/Knowledge-Forge/pkg/coderef"
+	"github.com/mimir45/Knowledge-Forge/pkg/gitsig"
+	"github.com/mimir45/Knowledge-Forge/pkg/linkcheck"
+	"github.com/mimir45/Knowledge-Forge/pkg/report"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 // gitVault stages the fixture and commits it, because two of the reports read history:

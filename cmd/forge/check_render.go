@@ -3,8 +3,8 @@ package main
 import (
 	"path/filepath"
 
-	"knowledge-forge/pkg/drift"
-	"knowledge-forge/pkg/report"
+	"github.com/mimir45/Knowledge-Forge/pkg/drift"
+	"github.com/mimir45/Knowledge-Forge/pkg/report"
 )
 
 func (d *checkData) coverage() ([]byte, error) {

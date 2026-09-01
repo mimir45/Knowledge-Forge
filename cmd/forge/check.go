@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"knowledge-forge/pkg/config"
-	"knowledge-forge/pkg/report"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/report"
 )
 
 // checkCfg is the weekly pass's inputs. The destination is fixed rather than a flag:

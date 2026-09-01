@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"knowledge-forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
 )
 
 // Tier is one of ADDENDUM §D.1's six datasets, described in one place so a seventh

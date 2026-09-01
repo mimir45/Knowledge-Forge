@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"knowledge-forge/pkg/config"
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 // queueNote is on_exhausted:queue's whole job: stamp pending_advisor:true and nothing

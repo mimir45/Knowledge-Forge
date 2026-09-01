@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"knowledge-forge/pkg/drift"
-	"knowledge-forge/pkg/report"
-	"knowledge-forge/pkg/sentinel"
+	"github.com/mimir45/Knowledge-Forge/pkg/drift"
+	"github.com/mimir45/Knowledge-Forge/pkg/report"
+	"github.com/mimir45/Knowledge-Forge/pkg/sentinel"
 )
 
 // logbackSentinelID names the managed block every logback-written fragment and inline
