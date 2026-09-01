@@ -22,19 +22,20 @@ This pulls in the `forge` skills, agents, and hook bindings (`hooks/hooks.json`)
 Claude Code discovers all of them from this repo's default component paths, no manual
 `settings.json` edits needed.
 
-## Requirements
+**Requirements:** `git` on `PATH` (`pkg/gitsig` shells out to the `git` CLI for churn,
+ownership, and co-change coupling — see `docs/adr/0002-go-for-static-core.md` for why).
+Nothing else for the portable build; see "Build lanes" below for what the optional
+code-index feature adds.
 
-- `git` on `PATH`. `pkg/gitsig` (churn, ownership, co-change coupling) shells out to the
-  `git` CLI rather than a Go library — a deliberate, documented trade-off, not an
-  oversight (see `docs/adr/0002-go-for-static-core.md`).
-- Nothing else, for the portable build. See "Build lanes" below for what the optional
-  code-index feature adds.
+## How to use it
 
-## What it does
+Once the plugin is installed, Knowledge Forge mostly works in the background: as you
+work with Claude Code, it recalls existing notes before letting a question turn into a
+fresh research run, and captures new explanations into your vault as they happen. The
+`forge` CLI is there for everything else, manual or scheduled:
 
 - `forge recall` — deterministic, lexical scoring of a new question against every
-  existing note, before any research runs. See `docs/adr/0001-lexical-recall-vs-embeddings.md`
-  for why this is lexical, not embeddings.
+  existing note, before any research runs.
 - `forge drift` — git-anchored: checks note code citations against a code repo's
   history on `post-commit` / `post-merge` / `post-checkout`, never against the
   uncommitted working tree.
@@ -94,3 +95,15 @@ Start at [`docs/ROADMAP.md`](docs/ROADMAP.md) — a condensed index over the ful
 ## License
 
 MIT — see [`LICENSE`](LICENSE).
+
+---
+
+## Still in beta
+
+Knowledge Forge is still early. Things will change, edges are still rough, and I'm
+actively working through them. If you hit a bug, have an idea for a feature, or just
+think something could work better — please open an issue. Bug reports, feature ideas,
+and blunt feedback are all genuinely welcome and useful right now.
+
+If it's useful to you, a star on the repo and sharing it with someone who might find it
+useful too would mean a lot. Thanks for trying it out. 🙏
