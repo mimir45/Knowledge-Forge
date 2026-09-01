@@ -819,7 +819,9 @@ geri alınamazdı ve gerçek vault'un yedeği yoktu.
   `cmd/forge/capture.go` değişince yeniden kur.
 - `pkg/report`, `pkg/codeindex`'i import **etmemeli** — cgo saf lane'i kırar.
 - Modül `knowledge-forge`, dizin artık `/Users/mimir45/knowledge-forge` (2026-09-01'de
-  kullanıcı tarafından yeniden adlandırıldı — **B-003 kapandı**). `go.mod`'un VCS host
-  prefix'i olmaması ayrı, açık kalan konu: **B-004**.
+  kullanıcı tarafından yeniden adlandırıldı — **B-003 kapandı**). `go.mod` artık
+  `module github.com/mimir45/Knowledge-Forge` (2026-09-01'de düzeltildi — **B-004
+  kapandı**); import satırları (`"knowledge-forge/pkg/..."` → `"github.com/mimir45/
+  Knowledge-Forge/pkg/..."`) 102 dosyada mekanik olarak güncellendi.
 - `docs/CLAUDE-CODE-PROMPT.md` dokümanların kökte olmasını söyler; `docs/`'talar.
   Prompt metnine uydurmak için dosya taşıma.

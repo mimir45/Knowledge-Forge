@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"knowledge-forge/pkg/config"
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 // codeGate extracts every fenced code block from the draft body and runs CompileCheck

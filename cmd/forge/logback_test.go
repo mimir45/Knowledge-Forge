@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"knowledge-forge/pkg/codeindex"
-	"knowledge-forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/codeindex"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
 )
 
 const orderJava = `package com.food.order;

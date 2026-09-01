@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"knowledge-forge/pkg/recall"
+	"github.com/mimir45/Knowledge-Forge/pkg/recall"
 )
 
 // This is B-038's measurement harness: its own "shape when picked up" text asks whether

@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"knowledge-forge/pkg/drift"
-	"knowledge-forge/pkg/linkcheck"
-	"knowledge-forge/pkg/similarity"
+	"github.com/mimir45/Knowledge-Forge/pkg/drift"
+	"github.com/mimir45/Knowledge-Forge/pkg/linkcheck"
+	"github.com/mimir45/Knowledge-Forge/pkg/similarity"
 )
 
 // VaultStats is one week's headline numbers, snapshotted so the next run can show a delta.

@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"knowledge-forge/pkg/codeindex"
-	"knowledge-forge/pkg/coderef"
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/codeindex"
+	"github.com/mimir45/Knowledge-Forge/pkg/coderef"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 const orderV1 = `package com.food.order;

@@ -6,7 +6,7 @@ import (
 	"text/template"
 	"time"
 
-	"knowledge-forge/profiles"
+	"github.com/mimir45/Knowledge-Forge/profiles"
 )
 
 // profileData is what profiles/me.template.md is rendered against. Five of these come

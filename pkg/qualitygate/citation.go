@@ -3,8 +3,8 @@ package qualitygate
 import (
 	"fmt"
 
-	"knowledge-forge/pkg/config"
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 // citationGate is deliberately narrower than DESIGN §12's prose ("every claim tagged

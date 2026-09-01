@@ -3,8 +3,8 @@ package qualitygate
 import (
 	"fmt"
 
-	"knowledge-forge/pkg/config"
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 // Remedy is what a failing gate recommends. It is advisory — Run never acts on it,

@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"knowledge-forge/pkg/dataset"
+	"github.com/mimir45/Knowledge-Forge/pkg/dataset"
 )
 
 func cmdCapture(args []string) int {

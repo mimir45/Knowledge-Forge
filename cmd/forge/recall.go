@@ -9,11 +9,11 @@ import (
 	"strings"
 	"time"
 
-	"knowledge-forge/pkg/config"
-	"knowledge-forge/pkg/dataset"
-	"knowledge-forge/pkg/recall"
-	"knowledge-forge/pkg/telemetry"
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/dataset"
+	"github.com/mimir45/Knowledge-Forge/pkg/recall"
+	"github.com/mimir45/Knowledge-Forge/pkg/telemetry"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 func cmdRecall(args []string) int {

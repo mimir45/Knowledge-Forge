@@ -3,8 +3,8 @@ package scrub
 import (
 	"regexp"
 
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 	"gopkg.in/yaml.v3"
-	"knowledge-forge/pkg/vault"
 )
 
 // Patterns are applied in this order deliberately: email before the generic long-token

@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	packaged "knowledge-forge/config"
+	packaged "github.com/mimir45/Knowledge-Forge/config"
 )
 
 // EnginePresets and StackPresets are two independent axes. Engine presets decide what

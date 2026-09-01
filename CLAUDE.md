@@ -632,13 +632,26 @@ full record and the revert steps.
 
 **B-003 closed 2026-09-01, outside any session — the user renamed the local directory
 themselves,** from `/Users/mimir45/TIL` to `/Users/mimir45/knowledge-forge`, reversing
-the 2026-08-24 "leave it as TIL" decision recorded in BACKLOG.md. This closes the
-three-way mismatch between the directory, `go.mod`'s module path (`knowledge-forge`,
-since 2026-08-08), and the GitHub remote (`Knowledge-Forge`) — the "Known discrepancies"
-bullet below no longer applies and was removed rather than left stale. A repo-wide grep
-for the old absolute path found nothing hardcoded in code, build config, or installed
-hooks — only prose (`docs/RELEASE-READINESS.md`, three `docs/tr/` files, BACKLOG.md's own
-entry), updated in the same pass. See BACKLOG.md's B-003 closure note.
+the 2026-08-24 "leave it as TIL" decision recorded in BACKLOG.md. Two of the three legs
+of the old mismatch (directory, `go.mod`'s module path, GitHub remote) now agree; the
+"Known discrepancies" bullet below was updated rather than removed, since B-004 (below)
+closed the third leg the same day. A repo-wide grep for the old absolute path found
+nothing hardcoded in code, build config, or installed hooks — only prose
+(`docs/RELEASE-READINESS.md`, three `docs/tr/` files, BACKLOG.md's own entry), updated in
+the same pass. See BACKLOG.md's B-003 closure note.
+
+**B-004 closed 2026-09-01, same session, user asked directly to fix it.** `go.mod` now
+reads `module github.com/mimir45/Knowledge-Forge` — matching the GitHub remote's exact
+casing rather than an all-lowercase spelling, for consistency with the name
+`.claude-plugin/plugin.json`/`marketplace.json` already use everywhere, and because
+nothing consumes this module via `go get` today. All 102 files under
+`import "knowledge-forge/..."` were mechanically rewritten to the new prefix — pure
+string substitution, no import graph change. Verified: both build lanes
+(`CGO_ENABLED=0`/`=1`) build clean, `go test ./...` green on all 18 tested packages under
+both, `go vet` clean; `go.sum` untouched (it records dependency checksums, not this
+module's own name) and no build config or installed hook embeds the module path.
+`~/.forge/bin/forge` was deliberately **not** rebuilt — this change has no runtime
+behavior to pick up. See BACKLOG.md's B-004 closure note.
 
 **B-022 closed in Phase 4**
 (the schema pattern now covers all nine `cfg.Pipeline` stages minus `critique`); **B-007
@@ -757,7 +770,7 @@ project, not a phase gated inside this one; see BACKLOG B-021. One phase per ses
 time runs out the cut order is `6b → 5b → advisor tier`. If work comes up outside the
 current phase's scope, write it to `docs/BACKLOG.md` rather than building it.
 
-**Read `docs/BACKLOG.md` at the start of a phase** — B-002…B-004, **B-037**, **B-038** and
+**Read `docs/BACKLOG.md` at the start of a phase** — B-002, **B-037**, **B-038** and
 most of the twelve findings 2b recorded are open; **B-025 is blocked**, not open. B-001 (doc coherence), B-005 (seven note types) and
 B-006 (link rewrite) closed on 2026-08-09; B-007 and B-022 in Phase 4; B-009 and B-024 on
 2026-08-21, when B-023 and B-027 were also half-closed (docs synced, the behavior/design-doc
@@ -926,11 +939,11 @@ pure Go and cross-compiles; the codeindex lane needs cgo and a host toolchain. P
 
 ## Known discrepancies (record, don't fix)
 
-- The Go module was renamed `TIL` → `knowledge-forge` on 2026-08-08 (bare path, no VCS
-  host prefix — deliberately deferred, see BACKLOG B-004). Imports read
-  `knowledge-forge/pkg/vault`. The directory-name mismatch this used to note (B-003) is
-  closed — the user renamed the local directory to `/Users/mimir45/knowledge-forge` on
-  2026-09-01, matching both the module path and the GitHub remote.
+- **Closed, not current:** the Go module was renamed `TIL` → `knowledge-forge` on
+  2026-08-08, leaving the directory name (B-003) and the bare module path (B-004)
+  mismatched for a while. Both are resolved now — see the Status note above — so this
+  entry no longer describes a live discrepancy; kept as a pointer in case a stale mental
+  model of either surfaces again.
 - `docs/CLAUDE-CODE-PROMPT.md` says to put the docs in the repo root; they live in
   `docs/`. Don't shuffle files to match the prompt text.
 - BACKLOG **B-005** decided seven note types against DESIGN §7's five-directory tree; all

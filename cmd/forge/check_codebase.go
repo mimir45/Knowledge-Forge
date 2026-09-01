@@ -8,11 +8,11 @@ import (
 	"slices"
 	"sort"
 
-	"knowledge-forge/pkg/codeindex"
-	"knowledge-forge/pkg/coderef"
-	"knowledge-forge/pkg/drift"
-	"knowledge-forge/pkg/gitsig"
-	"knowledge-forge/pkg/report"
+	"github.com/mimir45/Knowledge-Forge/pkg/codeindex"
+	"github.com/mimir45/Knowledge-Forge/pkg/coderef"
+	"github.com/mimir45/Knowledge-Forge/pkg/drift"
+	"github.com/mimir45/Knowledge-Forge/pkg/gitsig"
+	"github.com/mimir45/Knowledge-Forge/pkg/report"
 )
 
 // These make ADDENDUM section B.5's "high churn, real size" concrete. A file touched once

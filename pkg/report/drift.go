@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"knowledge-forge/pkg/drift"
+	"github.com/mimir45/Knowledge-Forge/pkg/drift"
 )
 
 // DriftInput is what drift.md renders from: one finding per code reference, as

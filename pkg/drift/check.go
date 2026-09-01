@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strings"
 
-	"knowledge-forge/pkg/codeindex"
-	"knowledge-forge/pkg/coderef"
+	"github.com/mimir45/Knowledge-Forge/pkg/codeindex"
+	"github.com/mimir45/Knowledge-Forge/pkg/coderef"
 )
 
 // checkPath walks ADDENDUM §B.6's ladder for a citation that named a file, in the order

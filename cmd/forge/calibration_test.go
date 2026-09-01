@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"knowledge-forge/pkg/recall"
+	"github.com/mimir45/Knowledge-Forge/pkg/recall"
 )
 
 // calibrationVault is the corpus recall-spec.md §3.1 is measured against.

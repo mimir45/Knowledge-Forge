@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 func cmdValidate(args []string) int {

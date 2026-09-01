@@ -9,7 +9,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"knowledge-forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
 )
 
 // Issue is one validation failure. Code is stable and machine-greppable; Msg is the

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"knowledge-forge/pkg/config"
-	"knowledge-forge/pkg/vault"
-	"knowledge-forge/references"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/references"
 )
 
 // antislopGate parses references/writing-rules.md at run time rather than hardcoding the

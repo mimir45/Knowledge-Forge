@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"knowledge-forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
 )
 
 // available reports whether candidate name can run right now, and why (or why not) — the

@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"knowledge-forge/pkg/config"
-	"knowledge-forge/pkg/similarity"
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/similarity"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 // duplicateGate scores the draft's body against every existing note in the same

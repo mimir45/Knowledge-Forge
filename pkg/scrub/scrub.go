@@ -8,7 +8,7 @@ package scrub
 import (
 	"fmt"
 
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 // Report summarizes one Scrub run.

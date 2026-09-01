@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"knowledge-forge/pkg/report"
+	"github.com/mimir45/Knowledge-Forge/pkg/report"
 )
 
 // TestLoadAskLogMissingFileIsEmpty pins the tolerant-of-absence contract loadAskLog's

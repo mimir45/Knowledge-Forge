@@ -9,7 +9,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	packaged "knowledge-forge/config"
+	packaged "github.com/mimir45/Knowledge-Forge/config"
 )
 
 // PackagedName is what the embedded base layer is called in errors and in Layers. It is

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"knowledge-forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
 )
 
 // TestRecallLogsAskWhenTelemetryEnabled and its disabled counterpart pin the gate that

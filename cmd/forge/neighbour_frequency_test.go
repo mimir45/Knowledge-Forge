@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"knowledge-forge/pkg/recall"
+	"github.com/mimir45/Knowledge-Forge/pkg/recall"
 )
 
 // This is B-036's own unblock-condition harness — docs/TODO.md names it explicitly: "a

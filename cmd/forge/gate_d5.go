@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"knowledge-forge/pkg/config"
-	"knowledge-forge/pkg/dataset"
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/dataset"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 // d5ProfileKeys are the profiles/me.md fields D5 carries. Every one has a fixed shape the

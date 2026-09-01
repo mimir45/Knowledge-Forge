@@ -6,7 +6,7 @@ import (
 	"path"
 	"regexp"
 
-	"knowledge-forge/pkg/scrub"
+	"github.com/mimir45/Knowledge-Forge/pkg/scrub"
 )
 
 // reInternalURL is the one pattern export adds on top of pkg/scrub's vault-tuned set.

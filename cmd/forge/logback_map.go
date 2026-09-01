@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"knowledge-forge/pkg/coderef"
-	"knowledge-forge/pkg/drift"
-	"knowledge-forge/pkg/gitsig"
-	"knowledge-forge/pkg/report"
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/coderef"
+	"github.com/mimir45/Knowledge-Forge/pkg/drift"
+	"github.com/mimir45/Knowledge-Forge/pkg/gitsig"
+	"github.com/mimir45/Knowledge-Forge/pkg/report"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 // buildGroups is check_codebase.go's codebases/oneCodebase pipeline minus churn and

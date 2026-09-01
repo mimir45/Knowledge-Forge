@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"knowledge-forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
 )
 
 func TestEnabledRequiresTheD2Tag(t *testing.T) {

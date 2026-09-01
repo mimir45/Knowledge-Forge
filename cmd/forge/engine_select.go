@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"knowledge-forge/pkg/config"
-	"knowledge-forge/pkg/engine"
-	"knowledge-forge/pkg/store"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/engine"
+	"github.com/mimir45/Knowledge-Forge/pkg/store"
 )
 
 func cmdEngineSelect(args []string) int {

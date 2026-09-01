@@ -97,13 +97,35 @@ the three-way mismatch (module `knowledge-forge`, remote `Knowledge-Forge`, dire
 
 ## B-004 — Module path has no VCS host prefix
 
-**Owner: Phase 6 (Package & release). Status: deferred by decision.**
+**Owner: whenever, low cost. Status: closed 2026-09-01 — user asked to fix it.**
 
-`go.mod` reads `module knowledge-forge` — a bare path, chosen deliberately on
-2026-08-08 ("no need github for now"). This is legal and fine for a project distributed
-as a goreleaser binary rather than `go get`. If the module ever needs to be importable
-by others, it must become `github.com/<user>/knowledge-forge`, which rewrites every
-import line. Cheapest to decide before `pkg/` has many files; effectively free today.
+`go.mod` read `module knowledge-forge` — a bare path, chosen deliberately on
+2026-08-08 ("no need github for now"). This was legal and fine for a project distributed
+as a goreleaser binary rather than `go get`. Deferred rather than fixed at the time on
+the reasoning that it was cheapest to decide before `pkg/` had many files — that
+reasoning did not survive to this closure: it landed at 102 files.
+
+**Closed 2026-09-01.** `go.mod` now reads `module github.com/mimir45/Knowledge-Forge`,
+matching the GitHub remote's exact casing (`git@github.com:mimir45/Knowledge-Forge.git`,
+also `.claude-plugin/plugin.json`'s and `marketplace.json`'s `repository` field) rather
+than an all-lowercase convention some Go style guides prefer — chosen for internal
+consistency with the name this repo already uses everywhere else, and because the
+module isn't `go get`-installed by outside consumers today (distributed as a goreleaser
+binary, unchanged by this fix), so the case-sensitivity footgun that convention guards
+against doesn't apply yet. All 102 files under `import "knowledge-forge/..."` were
+mechanically rewritten to `import "github.com/mimir45/Knowledge-Forge/..."` — a pure
+string substitution, no import graph or package boundary changed. No build config
+(`Makefile`, `.goreleaser.yml`) or installed hook embeds the module path (both `ldflags`
+stamp only `main.version`/`main.commit`, checked before editing), and `go.sum` is
+untouched, since it records dependency checksums, not this module's own name. One real
+fixup the mechanical rewrite caused: `pkg/scrub/redact.go`'s import block now sorts
+`github.com/...` before `gopkg.in/...`, so `gofmt -l` flagged one file after the sed pass
+— fixed with `gofmt -w`, not by hand. Verified: both build lanes (`CGO_ENABLED=0` and
+`=1`) build and `go test ./...` clean — all 18 tested packages green under both, matching
+the pre-change baseline — `go vet` clean, and `gofmt -l .` reports nothing. The installed vault hook binary at `~/.forge/bin/forge` was **not** rebuilt: this
+change is a no-op at runtime (identical binary behavior, only the internal import
+graph's naming changed), unlike the `pkg/dataset`/`capture.go` changes CLAUDE.md's
+"things that live outside this repo" section warns need a rebuild.
 
 ---
 

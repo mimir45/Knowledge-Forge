@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"knowledge-forge/pkg/config"
-	"knowledge-forge/pkg/store"
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/store"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 // TestDrainAdvisorQueueClearsFlagAndBooksSpend is drain's happy path: a real (httptest)

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 // scrubOne redacts one note. A note with no frontmatter block at all (the pre-migration

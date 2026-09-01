@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 const fixtureSrc = "../../testdata/vault"

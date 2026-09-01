@@ -8,8 +8,8 @@ import (
 	"os"
 	"time"
 
-	"knowledge-forge/pkg/config"
-	"knowledge-forge/pkg/dataset"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/dataset"
 )
 
 const exportDatasetUsage = `usage: forge export-dataset --set d1|d2|d3|d4|d5|d6 --out DIR

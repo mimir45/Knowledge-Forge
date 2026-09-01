@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 // D3 is ADDENDUM §D.1's human-correction dataset: (model note, your edited note) pairs,

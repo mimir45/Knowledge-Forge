@@ -6,9 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"knowledge-forge/pkg/coderef"
-	"knowledge-forge/pkg/config"
-	"knowledge-forge/pkg/drift"
+	"github.com/mimir45/Knowledge-Forge/pkg/coderef"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/drift"
 )
 
 // logbackCfg is forge logback's inputs — the same --vault/--repo shape drift and check

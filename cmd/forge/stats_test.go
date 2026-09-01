@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"knowledge-forge/pkg/report"
+	"github.com/mimir45/Knowledge-Forge/pkg/report"
 )
 
 // writeStatsAskLog writes .forge/log.jsonl with one "ask" line per (topic, count) pair —

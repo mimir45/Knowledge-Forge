@@ -9,11 +9,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"knowledge-forge/pkg/config"
-	"knowledge-forge/pkg/dataset"
-	"knowledge-forge/pkg/engine"
-	"knowledge-forge/pkg/store"
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/config"
+	"github.com/mimir45/Knowledge-Forge/pkg/dataset"
+	"github.com/mimir45/Knowledge-Forge/pkg/engine"
+	"github.com/mimir45/Knowledge-Forge/pkg/store"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 func cmdEngineRun(args []string) int {

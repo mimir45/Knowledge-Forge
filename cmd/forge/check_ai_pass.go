@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 
-	"knowledge-forge/pkg/drift"
-	"knowledge-forge/pkg/engine"
-	"knowledge-forge/pkg/report"
+	"github.com/mimir45/Knowledge-Forge/pkg/drift"
+	"github.com/mimir45/Knowledge-Forge/pkg/engine"
+	"github.com/mimir45/Knowledge-Forge/pkg/report"
 )
 
 // aiPass runs check.ai_pass's three sub-tasks when enabled: each builds an engine.Request

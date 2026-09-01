@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"knowledge-forge/pkg/similarity"
+	"github.com/mimir45/Knowledge-Forge/pkg/similarity"
 )
 
 // DuplicatesInput is what duplicates.md renders from.

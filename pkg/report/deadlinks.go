@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"knowledge-forge/pkg/linkcheck"
+	"github.com/mimir45/Knowledge-Forge/pkg/linkcheck"
 )
 
 // Citation ties a checked URL back to the notes that cite it. One URL is often cited by

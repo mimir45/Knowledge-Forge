@@ -61,12 +61,14 @@ closing note, not restated here.
 
 ---
 
-## Index — 5 open items (34 closed/recorded IDs live in BACKLOG only)
+## Index — 3 open items (36 closed/recorded IDs live in BACKLOG only)
+
+B-003 and B-004 closed 2026-09-01 (user renamed the directory, then asked to fix the
+module path) — dropped from this index per this file's own rule; see BACKLOG.md's
+closure notes for both.
 
 | ID | Subject | Class | Section |
 |---|---|---|---|
-| B-003 | Repo directory still named `TIL` | NO STEPS — user decision | [below](#no-steps) |
-| B-004 | Module path has no VCS host prefix | NO STEPS — deferred by decision | [below](#no-steps) |
 | B-012 | `code_refs` has no live producer | NO STEPS — blocked on packaging | [below](#no-steps) |
 | B-037 | Intent gate FIRE/QUIET margin now negative | NO STEPS — measure further (targeted band) | [below](#no-steps) |
 | B-038 | `bodyPass` window allocated by path, not relevance | NO STEPS — (a) measured 2026-08-30; (b) still undesigned | [below](#b-038--bodypasss-top-20-window-is-allocated-by-path-not-by-relevance) |
@@ -142,19 +144,6 @@ reason one is needed.
 measurement: the cost (a file open per window slot) is real and still unmeasured at
 production scale, and the fix this entry argues for is a better tie-break, not a bigger
 window — see BACKLOG's "why this is a defect and not just a cap that's too small."
-
-## B-003 — repo directory still named `TIL`
-
-**User decision.** Renaming breaks shell aliases, IDE projects, and `.idea/` state pointing
-at the old path. Cosmetic today; mildly annoying as tooling and README paths assume the
-artifact name `knowledge-forge`. Do not rename unasked — CLAUDE.md says so explicitly.
-
-## B-004 — module path has no VCS host prefix
-
-**Deferred by decision** (2026-08-08, "no need github for now"). `module knowledge-forge`
-is legal and fine for a goreleaser-distributed binary. If the module ever needs to be
-importable by others it becomes `github.com/<user>/knowledge-forge`, which rewrites every
-import line. Effectively free today; the cost grows with the file count.
 
 ---
 

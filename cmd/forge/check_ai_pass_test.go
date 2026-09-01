@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"knowledge-forge/pkg/drift"
+	"github.com/mimir45/Knowledge-Forge/pkg/drift"
 )
 
 // TestTopBrokenIgnoresSuspectAndTiesBreakOnRef: a SUSPECT finding must never win over a

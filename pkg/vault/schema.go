@@ -7,7 +7,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"knowledge-forge/references"
+	"github.com/mimir45/Knowledge-Forge/references"
 )
 
 // Field is one entry under `fields:` in references/schema.yaml. Every constraint the

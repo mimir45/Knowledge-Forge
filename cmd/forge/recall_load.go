@@ -4,9 +4,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"knowledge-forge/pkg/recall"
-	"knowledge-forge/pkg/store"
-	"knowledge-forge/pkg/vault"
+	"github.com/mimir45/Knowledge-Forge/pkg/recall"
+	"github.com/mimir45/Knowledge-Forge/pkg/store"
+	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
 // loadDocs builds recall's view of the vault, preferring the SQLite cache. A row is
