@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.png" alt="Knowledge Forge" width="200">
+</p>
+
 # Knowledge Forge
 
 **Turn "explain X" moments into a verified, linked Obsidian vault — zero model calls required.**
