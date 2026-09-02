@@ -52,9 +52,16 @@ before relying on it.
 
 ### 1.2 As a Claude Code plugin
 
+Two steps — add the marketplace, then install the plugin from it:
+
 ```
 claude plugin marketplace add mimir45/Knowledge-Forge
+claude plugin install forge@knowledge-forge
 ```
+
+`forge` is the plugin name and `knowledge-forge` the marketplace name, both from
+`.claude-plugin/marketplace.json` — inside an already-running session,
+`/plugin install forge@knowledge-forge` does the same thing.
 
 **Caveat:** the release/checksum flow hasn't been exercised end-to-end on a clean
 machine yet — treat it as unverified until someone confirms a fresh install works.
