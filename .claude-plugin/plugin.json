@@ -1,7 +1,7 @@
 {
   "name": "forge",
   "displayName": "Knowledge Forge",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Turns \"explain X\" moments into permanent, linked, verified markdown notes in an Obsidian vault. A zero-model-call Go static-analysis core (recall, drift, quality gates) with an optional four-tier LLM layer on top.",
   "author": {
     "name": "Samir"
