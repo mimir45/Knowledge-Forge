@@ -92,6 +92,35 @@ would diverge silently while still producing plausible-looking decisions.
 
 ---
 
+## Stage 1.5 — Check `trigger.mode` before writing
+
+`forge config --json` reports `Trigger.Mode` (`ask | auto | manual`, set by `forge
+init`'s third onboarding question, default `ask`). It governs whether `CREATE` and
+`UPDATE(extend)` below — the two branches that produce a new or changed note — run
+straight through Stage 3 or stop and wait for the user first. `ANSWER_FROM_VAULT` never
+writes, so this check doesn't apply to it; `UPDATE(refresh)`'s own explicit
+diff-and-approval step (Stage 2) already satisfies every mode, so nothing extra runs
+there.
+
+- **`ask`** (default) — stop right after reporting the verdict. Tell the user what
+  Stage 1 found (`CREATE` a new note on this topic, or `UPDATE(extend)` note `<slug>`)
+  and what running the pipeline would do next (dispatch research, write a draft, gate
+  it, publish on a pass). Proceed to Stage 3 only once they say to.
+- **`auto`** — proceed straight to Stage 3 without asking. This is the one mode that
+  matches running the full pipeline unprompted.
+- **`manual`** — pause the same way `ask` does. The config's own intent for `manual` is
+  narrower still ("only on an explicit `/forge`", i.e. this skill should not have
+  auto-fired from a natural-language match at all) — a distinction this file cannot
+  enforce from inside an already-running invocation. Until that's wired at the
+  invocation layer, treat it as `ask`'s stricter sibling rather than silently
+  downgrading it to `auto`.
+
+Do not skip this check because the question looked routine, and do not infer consent
+from the user having asked the original question — asking "how does X work" is a
+request for an answer, not a standing authorization to publish to the vault.
+
+---
+
 ## Stage 2 — Branch on the verdict
 
 ### `ANSWER_FROM_VAULT` — the note exists and is fresh
@@ -107,7 +136,7 @@ out to be wrong or thin, say so and offer `UPDATE(refresh)`; do not silently rep
 
 ### `UPDATE(extend)` — a related note exists and this is new material for it
 
-Target is `candidates[0].path`.
+Target is `candidates[0].path`. Cleared by Stage 1.5 before step 1 runs.
 
 1. Research the question (stage 3), then read the target note in full.
 2. **Insert a new section.** Never rewrite, reorder, condense, or "improve" existing
@@ -134,6 +163,8 @@ Same target, different job: the claims are old, not missing.
    touches text the user already trusted; it does not run unattended.
 
 ### `CREATE` — genuinely new
+
+Cleared by Stage 1.5 before step 1 runs.
 
 1. Research (stage 3).
 2. `forge slug "<title>"` for the filename. Never hand-write a slug.
@@ -306,6 +337,9 @@ of fixing the note.
 ## Invariants
 
 - Recall runs first. Always. No exceptions for "obvious" questions.
+- `trigger.mode` gates `CREATE` and `UPDATE(extend)`: under `ask` or `manual`, Stage 1.5
+  stops and waits for the user before Stage 3 runs; only `auto` proceeds unattended.
+  Asking the original question is not consent to publish.
 - The profile is read before any note is written, and its effects are visible in the
   output. Two notes on the same question at different `seniority` must not read alike.
 - `ANSWER_FROM_VAULT` creates zero files.
