@@ -31,15 +31,18 @@ no network call.
 
 ## Install
 
-As a Claude Code plugin:
+As a Claude Code plugin, two steps — add the marketplace, then install the plugin from
+it:
 
 ```
 claude plugin marketplace add mimir45/Knowledge-Forge
+claude plugin install forge@knowledge-forge
 ```
 
-This pulls in the `forge` skills, agents, and hook bindings (`hooks/hooks.json`) —
-Claude Code discovers all of them from this repo's default component paths, no manual
-`settings.json` edits needed.
+(Inside an already-running Claude Code session, `/plugin install forge@knowledge-forge`
+does the same thing.) This pulls in the `forge` skills, agents, and hook bindings
+(`hooks/hooks.json`) — Claude Code discovers all of them from this repo's default
+component paths, no manual `settings.json` edits needed.
 
 **Requirements:** `git` on `PATH` (`pkg/gitsig` shells out to the `git` CLI for churn,
 ownership, and co-change coupling analysis). Nothing else for the portable build; see
@@ -53,7 +56,27 @@ forge init --vault ~/Documents/Base --language java \
            --frameworks spring-boot,hibernate --seniority senior
 ```
 
-Swap the flags for your own stack (`--vault` is the only required one). See the
+Swap the flags for your own stack (`--vault` is the only required one). It writes two
+files and prints what it wrote, nothing more:
+
+```
+wrote /Users/you/.forge/forge.config.md
+wrote /Users/you/Documents/Base/profiles/me.md
+
+vault      /Users/you/Documents/Base
+engine     claude-only
+stack      java, spring-boot, hibernate
+trigger    ask
+profile    senior, depth 4
+
+next: forge index --vault "/Users/you/Documents/Base", then ask a question.
+```
+
+Both files are yours to edit by hand afterwards — `forge init` won't touch them again
+without `--force`. Inside a Claude Code session you can also just ask ("set up
+knowledge forge here"); the `forge-init` skill asks the same handful of questions
+conversationally (stack, seniority, auto-create or ask-first, a stack preset, a model
+budget) and runs this same command for you. See the
 [usage guide](docs/USAGE.md#2-forge-init--the-setup-wizard) for the full flag
 reference.
 
