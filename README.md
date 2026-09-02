@@ -9,6 +9,7 @@
 </p>
 
 <p>
+  <a href="MANIFESTO.md">Manifesto</a> ·
   <a href="#install">Install</a> ·
   <a href="#how-to-use-it">Usage</a> ·
   <a href="#architecture">Architecture</a> ·
@@ -28,6 +29,18 @@ drift detection, report generation) that runs with **zero model calls**. An opti
 four-tier LLM layer (`none` / `host` / `api` / `advisor`-critique) sits on top,
 configurable per pipeline stage — the static core works standalone with no API key and
 no network call.
+
+## Why it's built this way
+
+Most of the design here is a set of refusals, and they're deliberate rather than
+incidental: no model call where a deterministic answer exists, no embeddings, markdown as
+the only source of truth, a model that critiques but never returns a rewrite, no silent
+publish, drift anchored to git rather than to your editor, no question text in any log,
+and no upload path anywhere in the tree.
+
+All ten, with the reasoning behind each, are in **[the manifesto](MANIFESTO.md)**. It's
+the short read if you want to know what this project won't do before you read what it
+does.
 
 ## Install
 
@@ -178,6 +191,8 @@ This is the current, complete set of docs — nothing else is missing, older des
 documents were retired as the project moved from an internal build log to a public
 plugin:
 
+- [`MANIFESTO.md`](MANIFESTO.md) — the ten positions the project takes, and why. Start
+  here if you want the reasoning rather than the reference.
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — architecture, package map, import
   graph.
 - [`docs/USAGE.md`](docs/USAGE.md) — full usage guide: install, configuration, every
