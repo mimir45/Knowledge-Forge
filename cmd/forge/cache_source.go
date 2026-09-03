@@ -47,22 +47,15 @@ func cmdCacheSource(args []string) int {
 	fs.SetOutput(io.Discard)
 	// flag's own error path must stay silent (fail-silent contract), so Usage is stubbed
 	// and an explicit -h/--help is handled below instead — in any flag position.
-	fs.Usage = func() {
-		{
-		}
-	}
+	fs.Usage = func() {}
 	if err := fs.Parse(args); err != nil {
-		{
-			if errors.Is(err, flag.ErrHelp) {
-				{
-					// stderr, not stdout: stdout is this hook's JSON output channel.
-					fmt.Fprint(os.Stderr, cacheSourceUsage)
-					fs.SetOutput(os.Stderr)
-					fs.PrintDefaults()
-				}
-			}
-			return 0
+		if errors.Is(err, flag.ErrHelp) {
+			// stderr, not stdout: stdout is this hook's JSON output channel.
+			fmt.Fprint(os.Stderr, cacheSourceUsage)
+			fs.SetOutput(os.Stderr)
+			fs.PrintDefaults()
 		}
+		return 0
 	}
 	payload, err := readPostToolUse(os.Stdin)
 	if err != nil || payload.ToolName != "WebFetch" {
