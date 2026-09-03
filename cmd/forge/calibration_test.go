@@ -13,7 +13,8 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/recall"
 )
 
-// calibrationVault is the corpus recall-spec.md §3.1 is measured against.
+// calibrationVault is the corpus recall-spec.md §3.1 is measured against. It is
+// examples/vault, not a live vault: a moving corpus makes the golden non-reproducible.
 const calibrationVault = "../../examples/vault"
 
 // calibrationDocs pins the corpus size. A vault edit that changes it must fail here

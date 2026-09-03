@@ -197,9 +197,8 @@ scoring change that doesn't update `cmd/forge/testdata/calibration.golden` is un
 
 One or two lines, and only where a reader needs them. A doc comment is its first
 sentence: two lines at most for an exported identifier, one for an unexported one, and
-comment blocks longer than two lines do not belong inside a function body at all. This
-was applied across the tree in `refactor/trim-comments`, cutting 4298 comment lines to
-1877; do not re-inflate them.
+comment blocks longer than two lines do not belong inside a function body at all. The
+tree was swept to this rule in one pass; do not re-inflate it.
 
 Argument goes in `references/` and `docs/`, not in a comment block — that is where the
 recall scoring channels, the duplicate threshold and the intent gate's 0.50 are already
