@@ -47,7 +47,7 @@ list above, not through live agent auto-discovery.
   you is a false signal in that dataset, not a cosmetic omission. Requires git ≥2.32
   (the `--trailer` flag); this is a system-git dependency, the same posture `pkg/gitsig` takes.
 - Link upkeep: ensure ≥2 outbound and ≥1 inbound wikilinks before considering the write
-  done (DESIGN §12's link gate) — add MOC entries, not just note-to-note links.
+  done (the link gate) — add MOC entries, not just note-to-note links.
 - Run `forge index` after any vault mutation so the SQLite cache doesn't go stale — this
   mirrors what `forge gate` itself does after a quarantine write.
 - **Hard limit: none stated in DESIGN**, but stay inside the run's actual task — a
@@ -66,7 +66,7 @@ list above, not through live agent auto-discovery.
    one trailer-stamped commit per logical change, including any follow-up index or
    link-fix commit in the same run.
 5. During a scheduled gardener run only: flag notes past `freshness_days`, propose merges
-   for pairs ≥0.85 (DESIGN §13), rescue `_inbox/` orphans, rebuild `_index.md`'s "Gaps"
+   for pairs ≥0.85, rescue `_inbox/` orphans, rebuild `_index.md`'s "Gaps"
    section, write `moc/weekly-review-YYYY-WW.md`.
 
 ## Report format

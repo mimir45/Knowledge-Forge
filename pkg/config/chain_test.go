@@ -7,7 +7,7 @@ import (
 )
 
 // writeLayer drops a frontmatter-only config at path, creating its directory. The format
-// is the one DESIGN §10 fixes, so the tests exercise the same parser production does
+// is frontmatter-only markdown, so the tests exercise the same parser production does
 // rather than a YAML shortcut.
 func writeLayer(t *testing.T, path, body string) {
 	t.Helper()

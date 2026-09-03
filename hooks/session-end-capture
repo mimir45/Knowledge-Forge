@@ -1,5 +1,5 @@
 #!/bin/sh
-# Knowledge Forge — SessionEnd hook (DESIGN §13, ADDENDUM §C).
+# Knowledge Forge — SessionEnd hook.
 #
 # Runs `forge session-capture`, which reads the hook's stdin JSON (session_id,
 # transcript_path, reason), regex-scans the transcript's assistant-role text for

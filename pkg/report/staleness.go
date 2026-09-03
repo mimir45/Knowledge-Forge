@@ -24,11 +24,10 @@ type Overdue struct {
 
 // RenderStaleness produces staleness.md, ranked so the top line is the one note to fix today.
 //
-// ADDENDUM §B.4's ranking is ask frequency x days overdue, and that product is what this
-// implements. It is not what this vault can currently rank by: every note carries
-// `origin: import`, so no note has ever been asked for, every ask count is 0, and the
-// product is 0 for all of them. Ranking then falls back to days overdue alone and the
-// header says so.
+// The ranking is ask frequency x days overdue, and that product is what this implements.
+// It is not what this vault can currently rank by: every note carries `origin: import`, so
+// no note has ever been asked for, every ask count is 0, and the product is 0 for all of
+// them. Ranking then falls back to days overdue alone and the header says so.
 //
 // The fallback is conditional on the ask counts actually being empty rather than hardcoded.
 // Phase 4 starts recording asks; if this were wired to days-overdue permanently, that data

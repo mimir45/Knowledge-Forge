@@ -2,7 +2,7 @@ package dataset
 
 import "time"
 
-// D5 is ADDENDUM §D.1's style dataset: (question, profile, sources) → the note that was
+// D5 is the style dataset: (question, profile, sources) → the note that was
 // accepted. The acceptance signal is `forge gate`'s non-quarantine branch, which is the
 // only place in the tree that decides a draft may be published.
 //

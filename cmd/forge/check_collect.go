@@ -151,9 +151,9 @@ func (c checkCfg) duplicateThreshold() float64 {
 	return similarity.DuplicateThreshold
 }
 
-// vaultHistory reads the *vault's* commits, not a code repository's. ADDENDUM section
-// B.4's churn.md asks which notes keep being rewritten; code churn is moc/codebase.md's
-// subject and the two must not be conflated.
+// vaultHistory reads the *vault's* commits, not a code repository's. The vault churn
+// report asks which notes keep being rewritten; code churn is moc/codebase.md's subject
+// and the two must not be conflated.
 func vaultHistory(root string, months int, now time.Time) (*gitsig.Stats, error) {
 	var since time.Time
 	if months > 0 {

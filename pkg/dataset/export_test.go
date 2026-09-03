@@ -154,7 +154,7 @@ func TestExportSinceFiltersByRecordTime(t *testing.T) {
 	}
 }
 
-// TestExportIsLoggedBeforeItIsWritten pins ADDENDUM §D.4's "every export is logged".
+// TestExportIsLoggedBeforeItIsWritten verifies that every export is logged.
 func TestExportIsLoggedBeforeItIsWritten(t *testing.T) {
 	root := seedVault(t, D5, seeded)
 	out := filepath.Join(t.TempDir(), "export")

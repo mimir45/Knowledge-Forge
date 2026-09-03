@@ -23,7 +23,7 @@ type Demotion struct {
 	At         string `json:"at"` // YYYY-MM-DD
 }
 
-// Store persists demotions under .forge/. It is keyed by slug — ADDENDUM §B.6 says
+// Store persists demotions under .forge/. It is keyed by slug — the original spec says
 // "slug+sha keyed", and the sha rides in the record rather than the key so a restore is
 // one lookup instead of a scan: at restore time the demoting sha is precisely what the
 // caller does not know.

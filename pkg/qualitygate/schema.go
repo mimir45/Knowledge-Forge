@@ -8,8 +8,8 @@ import (
 
 // schemaGate is a thin wrapper around vault.Validate — the same check `forge validate`
 // runs, so a draft that would fail `forge validate --all` fails here too, before it
-// ever reaches disk. Any issue fails the gate: DESIGN §12 draws no distinction between
-// a missing key and an unknown one, both block the write.
+// ever reaches disk. Any issue fails the gate: both missing and unknown keys block the
+// write, with no distinction drawn between them.
 func schemaGate(draft *vault.Note, s *vault.Schema) Outcome {
 	issues := vault.Validate(draft, s)
 	if len(issues) == 0 {

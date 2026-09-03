@@ -24,7 +24,7 @@ type IndexInput struct {
 	Entries []Entry
 	Gaps    []string // topics asked but never written; empty until the ask log exists
 	Now     time.Time
-	MaxSize int // byte budget; 0 means the DESIGN §7.1 default of 4096
+	MaxSize int // byte budget; 0 means the default of 4096
 }
 
 const defaultBudget = 4096

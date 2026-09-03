@@ -22,12 +22,32 @@ import (
 // wording ("a small max, e.g. 3"), so a chatty session can't flood _inbox/.
 const maxStubs = 3
 
+const sessionCaptureUsage = `usage: forge session-capture [--vault DIR]
+
+SessionEnd hook. Regex-scans the session transcript for conclusion sentences and writes
+up to three low-confidence stub notes to _inbox/, deduped by session id + content hash.
+
+stdin: a SessionEnd JSON payload. This command reads three fields:
+
+    session_id        string   dedupe key, also stamped on each stub
+    transcript_path   string   path to the transcript to scan; required
+    reason            string   why the session ended
+
+Writes nothing when transcript_path is absent or unreadable.
+Fail-silent: the exit code is always 0.
+`
+
 // cmdSessionCapture is Phase 5's SessionEnd hook: a cheap, model-free scan of the
 // session's transcript for "we established/decided/concluded that..." moments, written
 // as capped, low-confidence stub notes via the same _inbox/ convention forge gate uses.
 // Like every other hook subcommand here, it must never fail the session: any error just
 // means no stubs get written, never a nonzero exit.
 func cmdSessionCapture(args []string) int {
+	if len(args) > 0 && (args[0] == "-h" || args[0] == "--help") {
+		// stderr, not stdout: stdout is this hook's JSON output channel.
+		fmt.Fprint(os.Stderr, sessionCaptureUsage)
+		return 0
+	}
 	fs := flag.NewFlagSet("forge session-capture", flag.ContinueOnError)
 	vaultDir := fs.String("vault", "", "vault root; defaults to config vault_path, then .")
 	fs.SetOutput(io.Discard)

@@ -61,7 +61,7 @@ technologies; they stay in `tags`. `local-ai` (7) — the *name of a stack combi
 not a technology; the individual components (`llama-cpp`, `litellm`, `continue-dev`) are
 what a recall query should filter on, so `local-ai` stays a tag. `leprecoin` (8) and
 `gitnexus` (1) — project names, which belong in `profiles/projects/<project>.md`
-(DESIGN §7), not in a technology vocabulary.
+(the vault topology), not in a technology vocabulary.
 
 ---
 
@@ -94,9 +94,9 @@ not synonyms.
 
 `concept | howto | pattern | pitfall | decision | api | incident`
 
-The `type` enum in DESIGN §6.1 has seven values, but two other places imply fewer:
-`docs/CLAUDE-CODE-PROMPT.md` item 2 lists six templates (no `incident`), and DESIGN §7's
-topology sketch shows five `notes/` subdirs. Phase 1 treats the **enum as authoritative**
+The `type` enum has seven values, but two other places in the original spec (since
+removed) implied fewer: its phase-prompt document listed six templates (no `incident`),
+and its topology sketch showed five `notes/` subdirs. Phase 1 treats the **enum as authoritative**
 and builds seven templates and seven subdirs, because the alternative is a schema-valid
 `type` with no template and nowhere to live.
 

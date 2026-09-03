@@ -136,9 +136,8 @@ func d1Prompt(p D1Pair) string {
 }
 
 // d6Prompt renders the code side of the pair as a retrieval query; Completion is the
-// note's vault-relative path — a retrieval target, not generated text, matching
-// ADDENDUM §D.1's stated intended use for D6 ("retrieval / RAG eval") rather than the
-// drafting shape D1-D5's prompts share.
+// note's vault-relative path — a retrieval target, not generated text, suited for
+// retrieval or RAG evaluation rather than the drafting shape D1-D5's prompts share.
 func d6Prompt(p D6Pair) string {
 	return fields("repo", p.Repo, "path", p.Path, "symbol", p.Symbol)
 }

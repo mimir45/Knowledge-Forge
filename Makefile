@@ -12,7 +12,7 @@ PKG      := ./cmd/forge
 DIST     := dist
 VERSION  ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 COMMIT   ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo none)
-LDFLAGS  := -s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT)
+LDFLAGS  := -s -w -X main.version=$(VERSION) -X main.buildSHA=$(COMMIT)
 PLATFORMS := darwin/amd64 darwin/arm64 linux/amd64 linux/arm64
 
 .PHONY: all build full test bench vet fmt lint dist checksums install-hook clean help
@@ -32,7 +32,8 @@ test:
 	CGO_ENABLED=1 go test ./...
 	CGO_ENABLED=0 go build ./...
 
-## bench: parse, similarity and drift — the three the phase brief names
+## bench: the six packages with library micro-benchmarks. Note these do NOT measure
+##        any command's end-to-end latency, and pkg/qualitygate has no benchmark at all.
 bench:
 	go test ./pkg/vault ./pkg/similarity ./pkg/drift ./pkg/codeindex ./pkg/gitsig \
 		./pkg/linkcheck -run '^$$' -bench . -benchmem

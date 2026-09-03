@@ -26,7 +26,7 @@ builds:
     flags:
       - -trimpath
     ldflags:
-      - -s -w -X main.version={{.Version}} -X main.commit={{.ShortCommit}}
+      - -s -w -X main.version={{.Version}} -X main.buildSHA={{.ShortCommit}}
     goos: [darwin, linux]
     goarch: [amd64, arm64]
 

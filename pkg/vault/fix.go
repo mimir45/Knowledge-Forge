@@ -101,9 +101,9 @@ func backfillDates(n *Note, fm *Frontmatter) []string {
 
 // carryLegacySource converts the v1 `source:` key into one `sources` entry before render
 // drops it. 63 of the real vault's 93 notes carry it, and it is the only provenance those
-// notes have: dropping it would silently destroy their citation and fail every one of
-// them on the DESIGN §12 gate. The value is copied verbatim — schema.yaml's `url` accepts
-// both an http(s) URL and a vault-relative path precisely because this key holds both.
+// notes have: dropping it would silently destroy their citation. The value is copied verbatim
+// — schema.yaml's `url` accepts both an http(s) URL and a vault-relative path precisely
+// because this key holds both.
 func carryLegacySource(fm *Frontmatter) []string {
 	src := strings.Trim(fm.Str("source"), `"' `)
 	if src == "" || len(fm.List("sources")) > 0 {

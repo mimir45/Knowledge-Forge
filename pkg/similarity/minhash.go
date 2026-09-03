@@ -1,7 +1,7 @@
 // Package similarity finds near-duplicate notes by MinHash over word shingles, with LSH
 // banding so the vault is not compared pair-by-pair.
 //
-// It is hand-rolled per STACK §4 and deliberately holds **no embeddings**: the whole T0
+// It is hand-rolled and deliberately holds **no embeddings**: the whole T0
 // core makes zero model calls, and a duplicate report that needed an embedding service
 // would be the first thing to break that. Jaccard over shingles is also the honest measure
 // here — two notes are duplicates when they say the same words, not when they are about
@@ -34,7 +34,7 @@ const ShingleWords = 1
 
 // DuplicateThreshold is the score at or above which a pair is worth a human's attention.
 //
-// It replaces ADDENDUM §B.4's ">0.85 similar", which is a copy-paste detector: at 0.85 the
+// It replaces the original spec's ">0.85 similar", which is a copy-paste detector: at 0.85 the
 // real 91-note vault yields zero rows and the fixture's deliberate near-duplicate is never
 // nominated at any shingle width. 0.40 sits four standard errors below F7's 0.575 (the
 // sketch's standard error is ~1/sqrt(128) ≈ 0.09, and 0.044 at this score), so sampling

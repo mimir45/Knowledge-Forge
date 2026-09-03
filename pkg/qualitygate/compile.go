@@ -1,5 +1,5 @@
-// Package qualitygate implements DESIGN §12's seven pre-write gates and the compile
-// check ADDENDUM §B.2 calls forge verify-code.
+// Package qualitygate implements seven pre-write gates and the compile check from
+// docs/ARCHITECTURE.md §8 (Quality gates and quarantine).
 //
 // forge verify-code is a syntax/compile check, never a dependency resolver: it never
 // runs `npm install`, never resolves Maven/Gradle coordinates, and never touches the
@@ -17,10 +17,10 @@ import (
 	"time"
 )
 
-// Verdict is forge verify-code's three-valued outcome. ADDENDUM §B.2's honest
-// capability boundary is the reason there are three, not two: T0 can prove "this does
-// not parse" but can never prove "this is semantically correct against a classpath it
-// was never given," so that case is Skipped, not Pass and not Fail.
+// Verdict is forge verify-code's three-valued outcome. The honest capability boundary
+// is the reason there are three, not two: T0 can prove "this does not parse" but can
+// never prove "this is semantically correct against a classpath it was never given," so
+// that case is Skipped, not Pass and not Fail.
 type Verdict int
 
 const (

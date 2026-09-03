@@ -2,11 +2,11 @@ package dataset
 
 import "time"
 
-// D1 is ADDENDUM §D.1's routing dataset: (question features → recall decision) pairs,
+// D1 is the routing dataset: (question features → recall decision) pairs,
 // captured by `forge recall`. Two scope limits are deliberate and both are restated in
 // every export's datasheet rather than left for a reader to infer.
 //
-// It captures recall calls, not the hook path's ranking. ADDENDUM says "every run", but
+// It captures recall calls, not the hook path's ranking. The original spec (since removed) said "every run", but
 // `forge intent` also ranks the vault on every UserPromptSubmit and it is the wrong
 // producer: it carries a 50ms budget and a contract never to disturb the session, and a
 // passive prompt hint is not a question anyone asked. intent.go builds its own
@@ -28,8 +28,8 @@ const (
 )
 
 // D1Pair is one JSONL record. The raw question never appears: QHash is the caller's
-// telemetry.QHash and Topic is the slug, the same two-field shape DESIGN §14's ask event
-// uses — "never store raw question text, hash + extracted topic only" (ADDENDUM §D).
+// telemetry.QHash and Topic is the slug, the same two-field shape as the ask event
+// uses — "never store raw question text, hash + extracted topic only".
 type D1Pair struct {
 	Kind           string    `json:"kind"`
 	RunID          string    `json:"run_id,omitempty"`

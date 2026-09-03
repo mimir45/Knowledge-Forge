@@ -41,8 +41,8 @@ func weeklyFixture() WeeklyInput {
 	}
 }
 
-// The title line is ADDENDUM §C's literal format, not the generic "Title — date" every
-// other renderer uses — a week is keyed by ISOWeek's own year, not the header helper.
+// The title line is a literal format per the original spec, not the generic "Title — date"
+// every other renderer uses — a week is keyed by ISOWeek's own year, not the header helper.
 func TestWeeklyTitleLineIsTheSpecFormat(t *testing.T) {
 	got := string(RenderWeekly(weeklyFixture()))
 	if !strings.HasPrefix(got, "# Week 32, 2026\n") {

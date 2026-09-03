@@ -11,12 +11,31 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/report"
 )
 
+const sessionContextUsage = `usage: forge session-context [--vault DIR] [--max-bytes N]
+
+SessionStart hook. Prints the vault index and the developer profile to stdout so they
+land in the session's context, each capped separately at --max-bytes (default 4096).
+
+stdin: a SessionStart JSON payload. No field is required — this command reads none of
+them and resolves the vault from --vault, then the config chain, then the working
+directory.
+
+stdout: markdown, injected into the session context.
+Fail-silent: every error goes to <vault>/.forge/session-context.log and the exit code
+is always 0. A hook must never be able to break a session.
+`
+
 // cmdSessionContext is Phase 5's SessionStart hook: print the vault index and the
 // developer profile into the session's context, budget-capped, and never fail the
 // session — every problem goes to .forge/session-context.log, exit is always 0. Claude
 // Code replays a saved transcript on --continue/--resume rather than re-running hooks
 // mid-session, so nothing here needs to be time-sensitive.
 func cmdSessionContext(args []string) int {
+	if len(args) > 0 && (args[0] == "-h" || args[0] == "--help") {
+		// stderr, not stdout: stdout is this hook's JSON output channel.
+		fmt.Fprint(os.Stderr, sessionContextUsage)
+		return 0
+	}
 	fs := flag.NewFlagSet("forge session-context", flag.ContinueOnError)
 	vaultDir := fs.String("vault", "", "vault root; defaults to config vault_path, then .")
 	budget := fs.Int("max-bytes", 4096, "byte budget applied to the index and, separately, the profile")

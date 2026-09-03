@@ -1,12 +1,14 @@
 .idea/
-.claude/settings.local.json
 __pycache__/
 
-# Per-session worktrees (this repo uses `.claude/worktrees/` for isolated sessions).
-# Not release surface, never committed. `.claude/agents/*.md` stays tracked — that's
-# the deliberate workflow "Agent crew" CLAUDE.md documents, not clutter.
+# Per-session worktrees (this repo uses `.claude/worktrees/` for isolated sessions)
+# and machine-local settings. Neither is release surface. Anything else under
+# `.claude/` is deliberately NOT ignored: a bare `.claude` entry used to sit here and
+# swallowed the whole directory, which is why the six workflow agents CLAUDE.md once
+# documented never existed in any clone.
 /.claude/worktrees/
-.claude
+/.claude/settings.local.json
+/.claude/.DS_Store
 # Build output. Both paths are root-anchored: `bin/forge` is the committed shim, not a
 # binary, and an unanchored `forge` would swallow it.
 /forge

@@ -7,9 +7,9 @@
 # history is the evidence, since this file lands in the same commit as the "before"
 # golden and one commit ahead of the sweep that reads it.
 #
-# A label answers DESIGN §5.3's question — "what should a NEW note on this topic link
-# to" — not "what does the scorer rank highly". Queries are deliberately adjacent-topic:
-# a note that would be created, near notes that already exist.
+# A label answers "what should a NEW note on this topic link to", not "what does the
+# scorer rank highly". Queries are deliberately adjacent-topic: a note that would be
+# created, near notes that already exist.
 #
 # Format: a Q: line, then one "- <slug>" per expected neighbour. Slug is the note's
 # filename without .md, matching recall.Candidate.Slug. Blank lines and # are ignored.

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Knowledge Forge — D3 human-correction capture (ADDENDUM §D.1).
+# Knowledge Forge — D3 human-correction capture.
 #
 # Installed into a VAULT repository's .git/hooks/post-commit. After every commit it asks
 # `forge capture` whether that commit edited a note forge itself generated within the last

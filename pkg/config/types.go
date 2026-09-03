@@ -1,7 +1,6 @@
 // Package config loads the four-layer configuration chain and exposes it
-// as one typed value. The schema is a union: ADDENDUM §E's blocks plus the DESIGN
-// §10 keys §E never restates. Where the two overlap §E wins; where §E is merely silent,
-// §10 survives.
+// as one typed value. The schema is the union of the engine/config blocks and
+// the pipeline keys the config section never restated — see docs/ARCHITECTURE.md §4.
 //
 // This package is a leaf on purpose. It does not import pkg/vault, even though the
 // config file is frontmatter-only markdown and pkg/vault has a frontmatter parser: the
@@ -37,7 +36,7 @@ type Config struct {
 	Layers []string `yaml:"-"`
 }
 
-// Paths is DESIGN §10's vault topology, relative to VaultPath.
+// Paths is the vault topology, relative to VaultPath.
 type Paths struct {
 	Notes   string `yaml:"notes"`
 	MOC     string `yaml:"moc"`
@@ -46,15 +45,14 @@ type Paths struct {
 	Index   string `yaml:"index"`
 }
 
-// Trigger is DESIGN §10: ask | auto | manual.
+// Trigger is one of: ask | auto | manual.
 type Trigger struct {
 	Mode string `yaml:"mode"`
 }
 
-// Recall is DESIGN §5.3's decision tree, moved into the config chain from a compiled-in
-// var. Neighbour is not
-// in §10 — it is pkg/recall's third threshold, and leaving it compiled in while the
-// other two moved would be exactly the "threshold in two places" doc.go warns about.
+// Recall is the decision tree scoring model, moved into the config chain from
+// compiled-in constants. Neighbour is pkg/recall's third threshold, and keeping all
+// three in one place (rather than split between code and config) avoids duplication.
 type Recall struct {
 	Strategy          string  `yaml:"strategy"`
 	AnswerThreshold   float64 `yaml:"answer_threshold"`
@@ -62,7 +60,7 @@ type Recall struct {
 	NeighbourMinScore float64 `yaml:"neighbour_min_score"`
 }
 
-// Engines is ADDENDUM §E's engine block: the four tiers and what each costs.
+// Engines is the engine block: the four tiers and what each costs.
 type Engines struct {
 	Default string  `yaml:"default"`
 	API     API     `yaml:"api"`
@@ -92,9 +90,9 @@ type Local struct {
 	BaseURL string `yaml:"base_url"`
 }
 
-// Budget is §E's block. OnExhausted defaults to queue (D-5: §E beats §A.4's degrade).
-// The counters behind it live in SQLite and survive forge reindex (D-8) — the one
-// documented exception to "SQLite is purely derived". Phase 3b builds that.
+// Budget configures cost limits and behavior when exhausted. OnExhausted defaults to
+// queue (escalate to a lower tier). Budget counters live in SQLite and survive
+// forge reindex — the one exception to "SQLite is purely derived".
 type Budget struct {
 	AdvisorUSDPerDay float64 `yaml:"advisor_usd_per_day"`
 	APIUSDPerDay     float64 `yaml:"api_usd_per_day"`
@@ -105,9 +103,9 @@ type Routing struct {
 	AdvisorWhen AdvisorWhen `yaml:"advisor_when"`
 }
 
-// AdvisorWhen is the wider of the two shapes the docs give. §E drops §A.4's stack_in;
-// D-5's carry-over says the union keeps it, because dropping it silently narrows when
-// the expensive critique tier fires on security, auth and payments notes.
+// AdvisorWhen is the routing configuration for the advisor tier. It includes stack_in
+// to ensure the expensive critique tier fires for all relevant domains (security, auth,
+// payments) without requiring the router to infer them.
 type AdvisorWhen struct {
 	Type            []string `yaml:"type"`
 	ConfidenceBelow string   `yaml:"confidence_below"`
@@ -115,8 +113,8 @@ type AdvisorWhen struct {
 	UserFlag        string   `yaml:"user_flag"`
 }
 
-// Stage is one pipeline stage's engine assignment. Fallback and Then are §E's chain for
-// verify: try the advisor, fall back to local, then host.
+// Stage is one pipeline stage's engine assignment. Fallback and Then form a routing
+// chain for verify: try the advisor, fall back to local, then host.
 type Stage struct {
 	Engine   string `yaml:"engine"`
 	Fallback string `yaml:"fallback,omitempty"`
@@ -148,7 +146,7 @@ type Write struct {
 	Diagrams     string `yaml:"diagrams"`
 }
 
-// Static is ADDENDUM §E's T0 block — everything the zero-model-call core does.
+// Static is the T0 block — everything the zero-model-call core does.
 type Static struct {
 	CodeIndex  bool      `yaml:"code_index"`
 	Languages  []string  `yaml:"languages"`
@@ -164,8 +162,9 @@ type Static struct {
 	CacheTTLDays int `yaml:"cache_ttl_days"`
 }
 
-// Drift is §B.6. Trigger stays git — the invariant is that drift never runs on file save
-// and never reads the uncommitted tree, so this key exists to be read, not to be widened.
+// Drift configures the git-anchored drift detector. Trigger stays git — the invariant
+// is that drift never runs on file save and never reads the uncommitted tree, so this
+// key exists to be read, not to be widened.
 type Drift struct {
 	Enabled               bool   `yaml:"enabled"`
 	Trigger               string `yaml:"trigger"`
@@ -180,17 +179,17 @@ type LinkCheck struct {
 	TimeoutS int  `yaml:"timeout_s"`
 }
 
-// LogBack is §B.7. InlineMarkers is opt-in and defaults false: the invariant is that
-// log-back never modifies code semantics, comments and separate files only.
+// LogBack configures logging knowledge back into code. InlineMarkers is opt-in and
+// defaults false: the invariant is that log-back never modifies code semantics,
+// comments and separate files only.
 type LogBack struct {
 	KnowledgeMap     bool `yaml:"knowledge_map"`
 	ClaudeMDFragment bool `yaml:"claude_md_fragment"`
 	InlineMarkers    bool `yaml:"inline_markers"`
 }
 
-// Check is §C's weekly checker. ChurnDays and DuplicateThreshold are not in §E — they
-// are the two numbers cmd/forge/check.go and pkg/similarity compiled in, moved here by
-// this phase's step 1.
+// Check configures the weekly health check. ChurnDays and DuplicateThreshold were
+// moved from compiled-in constants to config to allow user tuning.
 type Check struct {
 	Enabled            bool     `yaml:"enabled"`
 	Schedule           string   `yaml:"schedule"`
@@ -201,8 +200,8 @@ type Check struct {
 	DuplicateThreshold float64  `yaml:"duplicate_threshold"`
 }
 
-// Garden is DESIGN §10. It overlaps Check.Schedule and is kept because §E is silent on
-// it; the two are reconciled in Phase 5, where the scheduler actually exists.
+// Garden comes from the original spec (since removed). It overlaps Check.Schedule and
+// is kept because that spec was silent on scheduling, so the union keeps both.
 type Garden struct {
 	Enabled  bool   `yaml:"enabled"`
 	Schedule string `yaml:"schedule"`
@@ -216,7 +215,7 @@ type Dataset struct {
 	AnonymizeOnExport bool     `yaml:"anonymize_on_export"`
 }
 
-// Telemetry is DESIGN §10. The invariant it configures: topic and hash only, never raw
+// Telemetry configures event logging. The invariant: topic and hash only, never raw
 // question text, code, or file contents — scope: team does not relax that.
 type Telemetry struct {
 	Enabled bool   `yaml:"enabled"`

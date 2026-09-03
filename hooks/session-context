@@ -1,5 +1,5 @@
 #!/bin/sh
-# Knowledge Forge — SessionStart hook (DESIGN §13, ADDENDUM §C).
+# Knowledge Forge — SessionStart hook.
 #
 # Runs `forge session-context`, which prints a trimmed _index.md + the developer profile
 # to stdout — that output is what lands in the fresh session's context. This shim's only

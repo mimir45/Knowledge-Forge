@@ -19,7 +19,7 @@ const gateUsage = `usage: forge gate --file PATH --rel VAULT/RELATIVE/PATH.md [-
                    [--mode create|update] [--target-slug SLUG] [--previous-draft FILE]
                    [--run-id ID]
 
-Runs the seven DESIGN §12 quality gates (pkg/qualitygate.Run) against one candidate
+Runs the seven quality gates (pkg/qualitygate.Run) against one candidate
 note and prints the JSON Report to stdout. --file is the rendered draft to check — it
 need not exist under --vault yet, since CREATE drafts never do. --rel is the note's
 intended vault-relative path; the link and duplicate gates need it to know which

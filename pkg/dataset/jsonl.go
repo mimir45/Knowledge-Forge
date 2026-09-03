@@ -9,7 +9,7 @@ import (
 
 // Append writes pairs the file does not already hold and returns how many it added.
 // The dataset lives under .forge/, which is derived and gitignored in the vault, so it
-// stays local — ADDENDUM §D's datasets are never transmitted anywhere.
+// stays local — the datasets (see docs/datasets.md) are never transmitted anywhere.
 func Append(path string, pairs []Pair) (int, error) {
 	seen, err := existingKeys(path)
 	if err != nil {

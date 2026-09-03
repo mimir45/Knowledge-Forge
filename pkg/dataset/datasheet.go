@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// renderDatasheet writes the document ADDENDUM §D.4 asks for beside every export: counts,
+// renderDatasheet writes the datasheet document beside every export: counts,
 // date range, engine-trail and stack distribution, and known biases. The section that
 // earns its place is the last one — a datasheet that lists only what a corpus contains,
 // and not what it systematically misses, is a marketing document.
@@ -142,7 +142,8 @@ func tierLimits(rep ExportReport) []string {
 				"later record. A repair that forgets `--run-id` leaves the pair labelled " +
 				"`quarantined` even though the note went on to publish — that pair is " +
 				"indistinguishable from a real quarantine in this export.",
-			"**Recall calls only, not every ranking.** ADDENDUM §D.1 says \"every run\", but " +
+			"**Recall calls only, not every ranking.** The original spec (since removed) said " +
+				"\"every run\", but " +
 				"`forge intent` also ranks the vault on every prompt submission and is " +
 				"deliberately excluded: it has a 50ms budget and a passive hint is not a " +
 				"question anyone asked.",
@@ -173,7 +174,8 @@ func tierLimits(rep ExportReport) []string {
 				"exact-name-then-trailing-member (`codeindex.File.Lookup`, the same rule " +
 				"`forge check`'s coverage numbers use); a citation with a typo or a renamed " +
 				"symbol drops out silently rather than appearing with a guessed target.",
-			"**Records ≠ notes.** ADDENDUM §D.1 gives volume as \"= note count\", but a note " +
+			"**Records ≠ notes.** The original spec (since removed) gave volume as " +
+				"\"= note count\", but a note " +
 				"citing five symbols yields five records here — read this tier's count as " +
 				"citation count, not note count.",
 		}

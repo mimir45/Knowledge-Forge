@@ -1,6 +1,6 @@
 # Writing rules
 
-DESIGN §12's anti-slop gate reads this file. `## Banned phrases` is parsed by
+The anti-slop gate reads this file. `## Banned phrases` is parsed by
 `pkg/qualitygate/antislop.go` at gate-run time — add a line here to reject a phrase
 without a recompile, the same way `references/schema.yaml` lets `forge validate` grow
 without one. `## Structural requirements` names the one rule antislop.go also checks
@@ -35,7 +35,7 @@ mechanically; `## Rationale` is human prose only, never parsed.
 
 - Notes of type `howto` or `api` must contain at least one fenced code block. A
   procedure or an API reference with zero code is a claim without a demonstration —
-  exactly the gap DESIGN §12 built this gate to catch. `concept`, `pattern`, `pitfall`,
+  exactly the gap this gate was built to catch. `concept`, `pattern`, `pitfall`,
   `decision`, and `incident` are not required to (a `decision` note may be pure prose).
 
 ## Rationale
@@ -47,7 +47,7 @@ better with the phrase deleted outright rather than replaced.
 
 The structural rule is deliberately narrow. It would be easy to also require a minimum
 word count, a "Why it matters" heading, or a references section, but `cfg.Write.MaxNoteWords`
-already owns the length axis and DESIGN §12 gives this gate exactly one job — catching
+already owns the length axis and this gate has exactly one job — catching
 prose that performs depth without demonstrating it. Anything else belongs in a template
 (`templates/`), not a gate that blocks a write.
 

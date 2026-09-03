@@ -20,7 +20,7 @@ import (
 //
 // SwitchToUpdate is a routing recommendation, not a vault mutation: it never sets
 // Quarantine's Fail path to something the CLI is forced to honour, because the skill may
-// have a stated reason (DESIGN §12) to publish two notes on the same topic anyway.
+// have a stated reason to publish two notes on the same topic anyway.
 func duplicateGate(cfg *config.Config, vaultRoot string, draft *vault.Note) Outcome {
 	rels, err := vault.Walk(vaultRoot)
 	if err != nil {

@@ -10,14 +10,14 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
-// D6 is ADDENDUM §D.1's sixth dataset: (repo symbol or module → the note explaining it).
+// D6 is the sixth dataset: (repo symbol or module → the note explaining it).
 // It is a derivation rather
 // than a capture tier — D1-D5 each have a write path and accumulate forward; D6 has
 // none and needs none, because `forge logback` already resolves the same
 // (symbol → note) mapping every time it runs. There is deliberately no AppendD6: adding
 // a sixth capture path would defeat the point of deriving it instead.
 //
-// Volume is "= note count" per ADDENDUM, but that describes distinct notes, not distinct
+// Volume is "= note count" per the original spec (since removed), but that describes distinct notes, not distinct
 // pairs — a note citing five symbols yields five records, one per citation that
 // resolves. Every export's datasheet says so.
 const (

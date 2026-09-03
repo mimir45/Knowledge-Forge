@@ -112,7 +112,7 @@ func oneOf(key, got string, allowed []string) error {
 	return fmt.Errorf("%s: %q is not one of %s", key, got, strings.Join(allowed, ", "))
 }
 
-// validateThresholds enforces the ordering DESIGN §5.3's decision tree assumes. It does
+// validateThresholds enforces the ordering that the decision tree assumes. It does
 // not enforce the *values* — 0.85 / 0.55 are the packaged defaults and a user may
 // move them for their own vault. Moving them to paper over a recall scoring defect is a
 // different matter: that argument belongs in a re-derivation of the calibration table,

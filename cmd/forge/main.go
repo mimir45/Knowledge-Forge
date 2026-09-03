@@ -31,6 +31,7 @@ var commands = map[string]func([]string) int{
 	"scrub":           cmdScrub,
 	"export-dataset":  cmdExportDataset,
 	"dataset-stats":   cmdDatasetStats,
+	"version":         cmdVersion,
 }
 
 const usage = `forge — Knowledge Forge static core (no model calls)
@@ -52,12 +53,12 @@ commands:
                to zero model calls — see forge engine --help)
   verify-code  compile-check a code snippet against the system toolchain — never a
                dependency resolver, see forge verify-code --help
-  gate         run the seven DESIGN §12 quality gates against one draft note and
+  gate         run the seven quality gates against one draft note and
                quarantine it to _inbox/ on a blocking failure — see forge gate --help
   session-context  SessionStart hook: print the vault index + developer profile into
                    context, budget-capped, fail-silent, exit 0 always
   intent           UserPromptSubmit hook: cheap regex-free recall check on stdin's
-                   prompt, emits the top vault hit as additionalContext above 0.7
+                   prompt, emits the top vault hit as additionalContext at or above 0.50
   session-capture  SessionEnd hook: regex-scans stdin's transcript for conclusion
                    sentences, writes up to 3 low-confidence stubs to _inbox/, deduped
                    by session-id+content hash, fail-silent, exit 0 always
@@ -74,6 +75,7 @@ commands:
                    anonymized by default, local-only — see forge export-dataset --help
   dataset-stats    how much training data each of the five tiers has accumulated, and
                    what that volume is honestly enough for
+  version          this binary's version, build commit, Go toolchain and platform
 
 run "forge <command> --help" for that command's flags.
 `

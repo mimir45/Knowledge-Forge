@@ -6,17 +6,17 @@ stay short.
 
 Recall is **T0**: pure Go, zero model calls, deterministic. The same question against
 the same tree always produces the same ranking. Nothing here may consult a model —
-DESIGN §5.2 locks stage 1 to engine `none`, and `forge recall` refuses to start
+stage 1 is locked to engine `none`, and `forge recall` refuses to start
 otherwise.
 
-Source of truth: DESIGN §5.3 (decision tree, thresholds) and §8 (the five-step
-pipeline, the scoring blend).
+Source of truth: this file, plus `docs/ARCHITECTURE.md` §6 (the recall engine) for the
+surrounding architecture. The original design spec it was derived from has been removed.
 
 ---
 
 ## 1. The pipeline
 
-DESIGN §8's five steps, as built:
+The five steps, as built:
 
 | # | Step | Where |
 |---|---|---|
@@ -50,7 +50,7 @@ vault makes the body pass measurable — the interface (`recall.Doc`) does not c
 
 ## 2. Scoring
 
-DESIGN §8's blend, unchanged:
+The original blend, unchanged:
 
 | Channel | Weight | Compares |
 |---|---|---|
@@ -299,7 +299,7 @@ vault answers perfectly: `"how do goroutines work"` against a note titled
 0.4·1.0 + 0.3·0 + 0.2·0 + 0.1·0.9 = 0.49
 ```
 
-DESIGN §5.3 routes that to **CREATE** — it would write a second note about
+The decision tree routes that to **CREATE** — it would write a second note about
 goroutines next to the one that already exists. The dedup engine's headline case fails
 under the literal arithmetic. Under renormalization the active set is `{title, body}`:
 
@@ -351,7 +351,7 @@ them.
 
 ## 3. Thresholds and the decision tree
 
-DESIGN §5.3, unchanged:
+The decision tree, unchanged:
 
 ```
 top_score
@@ -361,7 +361,7 @@ top_score
    └─ < 0.55                   → CREATE, then link the 0.125–0.55 neighbours
 ```
 
-`answer_threshold: 0.85` and `update_threshold: 0.55` are DESIGN §10's config keys.
+`answer_threshold: 0.85` and `update_threshold: 0.55` are the spec's config keys.
 `pkg/recall` hardcodes the defaults; the config chain
 (`DESIGN:516-518` joins the config union) can override them. Do not scatter literals:
 they live in `recall.DefaultThresholds`.
@@ -375,7 +375,7 @@ a typo bumps `updated` without anyone re-checking the claims against their sourc
 reading `updated` first would treat that as a re-verification, which is how a vault
 quietly starts lying. A note with neither date is **stale**: recall cannot vouch for it,
 so it must not answer from it. `freshness_days: 0` means never stale and outranks even
-the undatable case — that is how `decision` notes behave (DESIGN §10: *"decisions never
+the undatable case — that is how `decision` notes behave (the original spec: *"decisions never
 go stale, they get superseded"*).
 
 ### 3.1 Are 0.85 / 0.55 right for this vault?
@@ -468,7 +468,7 @@ them the Storybook family. §3.2 carries the derivation. Two further consequence
 recording separately: the Kafka/Testcontainers miss is a coverage defect, not a precision
 one, and §2.5's untagged-note asymmetry (addressed above).
 
-**The thresholds stay at DESIGN §5.3's 0.85 / 0.55.** Lowering `update_threshold` to 0.45
+**The thresholds stay at the spec's 0.85 / 0.55.** Lowering `update_threshold` to 0.45
 was the tempting move when this section was first written, and it remains wrong: on the
 "before" column it admitted `docker-compose-init-container-pattern…` at 0.429 for a
 question about build caching and did nothing about the 0.740 false positive. Fixing the
@@ -613,9 +613,11 @@ cover has nothing to attach to, and inventing links for it is worse than leaving
 
 ## 5. Caching and latency
 
-Budget: **< 200 ms warm** on a few-thousand-note vault (DESIGN §8). Measured on the
-real 91-note / 370 KB vault: **~5 ms warm, ~20 ms cold** (cache deleted, every note
-re-parsed). Two orders of magnitude of headroom, which is why §1's "no term-frequency
+Budget: **< 200 ms warm** on a few-thousand-note vault. Measured on the real 91-note /
+370 KB vault: **~5 ms warm, ~20 ms cold** (cache deleted, every note re-parsed) — this
+is the in-process ranking pass, not a `forge recall` CLI invocation, which additionally
+pays process start, config resolution and opening the cache (see
+`docs/ARCHITECTURE.md` §13). Two orders of magnitude of headroom, which is why §1's "no term-frequency
 table" holds — the table would buy nothing and cost a write on every `forge index`.
 
 Warm path per note: one `stat`, one lookup in the batch-loaded SQLite row set. A row is
@@ -630,7 +632,7 @@ markdown, and a deleted `index.db` costs one slow run, never data.
 
 ## 6. What recall does not do
 
-- **No embeddings.** DESIGN §8 gives three reasons; the short one is that a model
+- **No embeddings.** The spec gives three reasons; the short one is that a model
   already read the question, so lexical plus a model re-rank of the top 20 matches
   vectors at this scale. `recall.strategy: hybrid` is a v2.2 config value with no
   implementation behind it — the interface exists, the vectors do not.

@@ -25,7 +25,7 @@ Each lands in `<vault>/.forge/datasets/<set>.jsonl`, one JSON object per line, a
 `.forge/` is derived state and gitignored in the vault, so capture files are not
 committed by the vault's own history.
 
-D6 in `ADDENDUM §D.1`'s table — code↔knowledge retrieval pairs — is a **derived** set, not
+D6 — code↔knowledge retrieval pairs — is a **derived** set, not
 a captured one: it is recomputed from what `forge logback` already generates rather than
 read from an append-only capture file, so it has no `Path` of its own and cannot be
 anonymized or scoped with `--since` (both refused outright, since a derived set has no
@@ -46,14 +46,14 @@ dataset:
 effect immediately — there is no cached copy of the decision.
 
 Telemetry is a **separate** consent. `telemetry.enabled` governs `.forge/log.jsonl`,
-DESIGN §14's ask log, and turning it off does not stop `d1` capture, nor the reverse.
+the ask log, and turning it off does not stop `d1` capture, nor the reverse.
 They are different questions: one is a local log, the other is a corpus meant to be
 exportable.
 
 ## What is never captured
 
 - **Raw question text.** `d1` stores a sha256 hash and the extracted topic slug; `d5`
-  stores the slug alone. This is `ADDENDUM §D`'s rule and it is enforced at the point of
+  stores the slug alone. This rule is enforced at the point of
   capture, not at export.
 - **The four free-text profile fields.** `d5` carries `primary_language`, `frameworks`,
   `infra`, `seniority`, `default_depth`, `note_language` and `explain_style` from
@@ -98,7 +98,7 @@ sharing an export.
 
 ## What the data is worth
 
-`forge dataset-stats` answers this per tier, against `ADDENDUM §D.2`'s ladder. The
+`forge dataset-stats` answers this per tier, against the volume ladder below. The
 summary, which is deliberately unexciting:
 
 | volume | what is realistically achievable |

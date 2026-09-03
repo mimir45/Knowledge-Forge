@@ -1,6 +1,6 @@
 # Knowledge Forge — note frontmatter schema
 #
-# Source of truth for `forge validate`. Derived from KNOWLEDGE-FORGE-DESIGN.md §6.1
+# Source of truth for `forge validate`. Derived from the original design spec (since removed)
 # plus the rev-2 fields (engine_trail, drift_checked_at).
 #
 # The `stack` and `tags` vocabularies below are NOT invented: they are the measured
@@ -40,9 +40,10 @@ fields:
     required: true
     values: [concept, howto, pattern, pitfall, decision, api, incident]
     notes: >
-      Seven values, per DESIGN §6.1. Each has a template in templates/ and a home in
-      notes/<type>/. DESIGN §7 illustrates only five subdirs and CLAUDE-CODE-PROMPT
-      lists only six templates; both are non-exhaustive — the enum is authoritative.
+      Seven values. Each has a template in templates/ and a home in notes/<type>/.
+      The original spec (since removed) illustrated only five subdirs in one place and
+      listed only six templates in another; both were non-exhaustive — the enum is
+      authoritative.
 
   stack:
     type: list<string>
@@ -125,7 +126,7 @@ fields:
     values: [high, medium, low]
     default: medium
     notes: >
-      A note that fails any DESIGN §12 quality gate is written to _inbox/ with
+      A note that fails any quality gate is written to _inbox/ with
       confidence: low. Never silently published at a higher confidence.
 
   created:
@@ -168,7 +169,7 @@ fields:
     min_items: 0
     notes: >
       May be empty only for type=decision and type=incident, which are first-party
-      records. Every other type needs at least one source (DESIGN §12 citation gate).
+      records. Every other type needs at least one source (the citation gate).
     min_items_by_type:
       concept: 1
       howto: 1
@@ -202,7 +203,7 @@ fields:
     min_items: 0
     item_pattern: '^\[\[[^\]]+\]\]$'
     notes: >
-      Wikilinks. DESIGN §7.2 wants >= 2 outbound links per new note; that is a quality
+      Wikilinks. The spec wants >= 2 outbound links per new note; that is a quality
       gate, not a schema error, so the schema floor is 0 and the gate raises it to 2.
       Link resolution is extension-agnostic: [[log]] and [[log.md]] are the same target.
 
@@ -237,7 +238,7 @@ fields:
     values: [ask, session-capture, garden, import]
     notes: >
       `import` is what the Phase 1 migration stamps on every pre-existing note.
-      Makes DESIGN §14 telemetry possible without a second log format.
+      Makes telemetry possible without a second log format.
 
   # --- rev-2 fields ----------------------------------------------------------
 
@@ -268,7 +269,7 @@ fields:
     pattern: '^(true|false)$'
     notes: >
       Set true by `on_exhausted: queue` when a stage wanted advisor/api and today's
-      budget was already spent (ADDENDUM §A.4). The weekly checker (Phase 5) is the
+      budget was already spent. The weekly checker (Phase 5) is the
       drain; `forge check` only exposes the hook point (cfg.check.drain_advisor_queue).
 
 # Alias map. A note carrying a written form is an error; `forge validate --fix` rewrites

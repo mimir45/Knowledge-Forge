@@ -2,7 +2,7 @@ package dataset
 
 import "time"
 
-// D4 is ADDENDUM §D.1's gate-repair dataset: (failing draft, gate error, fixed draft)
+// D4 is the gate-repair dataset: (failing draft, gate error, fixed draft)
 // triples, captured when `forge gate --previous-draft` sees a retry that now passes.
 // Like D2, its trigger is one CLI call with no legitimate re-fire to guard against, so
 // every capture is appended as its own line — no Key(), no dedup. D4Tag matches the

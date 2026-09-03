@@ -1,6 +1,6 @@
 {
   "_notes": [
-    "Knowledge Forge — Claude Code hook bindings (DESIGN §13, ADDENDUM §C).",
+    "Knowledge Forge — Claude Code hook bindings. See docs/ARCHITECTURE.md §11.2.",
     "Phase 6 closed the packaging gap this note used to describe: this file is now",
     "auto-loaded by .claude-plugin/plugin.json's default hooks/hooks.json discovery",
     "once the plugin is installed via the marketplace — no manual copy into",

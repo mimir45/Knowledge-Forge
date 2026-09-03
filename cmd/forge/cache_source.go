@@ -14,6 +14,22 @@ import (
 // config field's own doc comment: zero means unset, not "expire immediately".
 const defaultCacheTTLDays = 30
 
+const cacheSourceUsage = `usage: forge cache-source [--vault DIR]
+
+PostToolUse hook, for WebFetch only. Caches the fetched source under
+<vault>/.forge/cache/<url-hash>.md with a TTL (static.cache_ttl_days, default 30).
+
+stdin: a PostToolUse JSON payload. This command reads three fields:
+
+    tool_name       string   must be "WebFetch"; anything else is ignored
+    tool_input      object   the tool call; its "url" field is the cache key
+    tool_response   object   the fetched content
+
+Note this writes into the *configured* vault regardless of which project the session is
+working in — pass --vault to scope it.
+Fail-silent: the exit code is always 0.
+`
+
 // cmdCacheSource is Phase 5's PostToolUse hook for WebFetch: caches the fetched result
 // under .forge/cache/<hash-of-url>.md so a repeated fetch of the same URL within the TTL
 // window can later be short-circuited (nothing reads/enforces the TTL yet in Phase 5 —
@@ -25,6 +41,11 @@ const defaultCacheTTLDays = 30
 // fetched/summarized text. cacheBody extracts result when present; see its doc comment
 // for the fallback chain that still applies to any other shape.
 func cmdCacheSource(args []string) int {
+	if len(args) > 0 && (args[0] == "-h" || args[0] == "--help") {
+		// stderr, not stdout: stdout is this hook's JSON output channel.
+		fmt.Fprint(os.Stderr, cacheSourceUsage)
+		return 0
+	}
 	fs := flag.NewFlagSet("forge cache-source", flag.ContinueOnError)
 	vaultDir := fs.String("vault", "", "vault root; defaults to config vault_path, then .")
 	fs.SetOutput(io.Discard)

@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// BodyPassSize is DESIGN §8 step 3's "top 20 files". The three frontmatter channels
+// BodyPassSize is the spec's "top 20 candidates". The three frontmatter channels
 // rank first and only the leaders are opened, which is what keeps the body pass cheap
 // on a vault that no longer fits in a few hundred kilobytes.
 const BodyPassSize = 20
@@ -22,7 +22,7 @@ const TopN = 10
 // on a broad query, all 10 truncated candidates can already clear the
 // neighbour floor, so no floor value can surface an 11th that Rank never computed.
 //
-// It equals BodyPassSize today because both cite DESIGN §8 step 3's "top 20 files" — a
+// It equals BodyPassSize today because both cite the spec's "top 20 candidates" — a
 // neighbour can only be as informed as a candidate that was actually body-scored. But the
 // two are kept as separate named constants on purpose: BodyPassSize is a scoring-cost
 // boundary (which candidates get opened and body-rescored) and NeighbourWindow is an
@@ -147,8 +147,8 @@ func sortByScore(c []Candidate) {
 	})
 }
 
-// Neighbours are the candidates a new note links to on a CREATE verdict (DESIGN §5.3:
-// "then link to the 0.3–0.55 neighbours").
+// Neighbours are the candidates a new note links to on a CREATE verdict (the original
+// spec: "then link to the 0.3–0.55 neighbours").
 func (t Thresholds) Neighbours(cands []Candidate) []Candidate {
 	var out []Candidate
 	for _, c := range cands {

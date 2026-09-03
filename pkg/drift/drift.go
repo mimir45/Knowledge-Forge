@@ -1,7 +1,7 @@
 // Package drift answers one question per note: does the code this note cites still say
 // what the note says it says?
 //
-// Two design rules from ADDENDUM §B.6 shape everything here.
+// Two design rules from the original spec shape everything here.
 //
 // Git-anchored. Drift runs from post-commit / post-merge / post-checkout hooks against
 // `--since-commit <sha>`, never on file save and never against the uncommitted working

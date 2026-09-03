@@ -151,8 +151,9 @@ final score.
 forge drift --repo <name>:<path> [--since-commit <sha>] [--apply] [--deep]
 ```
 
-Verdicts: `OK | Repaired | Suspect | Broken | Skipped`. Measured latency on the
-hook path: 60–70 ms (budget < 100 ms). See
+Verdicts: `OK | Repaired | Suspect | Broken | Skipped`. Budget on the hook path is
+**< 100 ms**; the current build measures 151 ms median and does not meet it — see
+[`ARCHITECTURE.md` §13](ARCHITECTURE.md#13-latency-budgets-and-measured-values). See
 [`ARCHITECTURE.md` §7](ARCHITECTURE.md#7-drift-git-anchored-decay-detection) for
 the full contract and the reasoning behind git-anchoring.
 
@@ -225,7 +226,7 @@ Prints five sections: hit rate, top topics, gaps, time saved, trend.
 | Command | Used from | Behavior |
 |---|---|---|
 | `forge session-context` | `SessionStart` | Prints vault index context. |
-| `forge intent` | `UserPromptSubmit` | Recall-scores the prompt, injects the best hit as context if score > 0.7. |
+| `forge intent` | `UserPromptSubmit` | Recall-scores the prompt, injects the best hit as context if score >= 0.50. |
 | `forge session-capture` | `SessionEnd` | Captures session-level training signal. |
 | `forge cache-source` | `PostToolUse` (WebFetch) | Caches fetched sources under `.forge/cache/`. |
 
@@ -362,8 +363,8 @@ constants, not user decisions, so they stay out of the config schema.
 └── .forge/
 ```
 
-Note: seven note types are in active use, one more than DESIGN §7's original
-five-directory tree — three of the extra directories are currently empty
+Note: seven note types are in active use, one more than the original spec's
+(since removed) five-directory tree — three of the extra directories are currently empty
 `.gitkeep` shells reserved for future use.
 
 ---

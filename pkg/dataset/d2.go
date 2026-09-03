@@ -2,7 +2,7 @@ package dataset
 
 import "time"
 
-// D2 is ADDENDUM §D.1's advisor-distillation dataset: (draft, critique) pairs. Where D3
+// D2 is the advisor-distillation dataset: (draft, critique) pairs. Where D3
 // dedupes on a git commit a hook can legitimately re-fire on, D2's trigger is one CLI call
 // to `forge engine run` that made a real advisor call — there is no re-fire to guard
 // against, so every capture is appended as its own line, no Key() or idempotency check.
@@ -13,7 +13,7 @@ const (
 )
 
 // D2Pair is one JSONL record: the draft sent to the advisor and its critique, verbatim.
-// ADDENDUM §B.4 step 4 and §14 both say the same thing: "log the critique verbatim — it's
+// Both the original specs stated the same requirement: "log the critique verbatim — it's
 // dataset D2." Nothing here judges or reshapes what the advisor said.
 type D2Pair struct {
 	Kind       string    `json:"kind"`
