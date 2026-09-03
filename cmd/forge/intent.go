@@ -67,7 +67,7 @@ func readPrompt(r io.Reader) (string, error) {
 }
 
 // intentGate is the score at or above which the top vault hit is worth interrupting a
-// prompt for.
+// prompt for. Derived in references/recall-spec.md, guarded by intent-gate.golden.
 const intentGate = 0.50
 
 // printIntent surfaces the top vault hit only at or above intentGate.

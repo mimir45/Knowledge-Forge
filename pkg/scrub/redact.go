@@ -7,7 +7,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Patterns are applied in this order deliberately.
+// Patterns are applied in this order deliberately, and reLongToken excludes '-' and '_'
+// on purpose: allowing them redacted slugs and dated filenames, corrupting a real vault.
 var (
 	reEmail       = regexp.MustCompile(`[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}`)
 	reHomePath    = regexp.MustCompile(`(?:/Users|/home)/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.\-]+)*`)

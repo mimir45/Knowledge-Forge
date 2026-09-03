@@ -92,8 +92,8 @@ func Walk(root string) ([]string, error) {
 	return out, err
 }
 
-// excludedPrefixes are regions of the vault the note contract deliberately does not
-// cover: symlinked ingest input and its compiled digests.
+// excludedPrefixes are regions the note contract does not cover: ingest input, plus this
+// tool's own output — a report that counted itself would be wrong on every run but the first.
 var excludedPrefixes = []string{
 	"raw/", "sources/", "_archive/", "archive/", "reports/", "moc/weekly/",
 }

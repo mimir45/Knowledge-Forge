@@ -31,8 +31,8 @@ type File struct {
 	Imports []string `json:"imports,omitempty"`
 }
 
-// Extractor doubles as this cache's format version: Load rejects any stamp but this,
-// treating a mismatch as a cache miss rather than a bad parse.
+// Extractor doubles as this cache's format version; Load treats any other stamp as a
+// miss. Bump it whenever declKinds, kindOf, or Symbol/File's serialized shape changes.
 const Extractor = 3
 
 // Index is the serialized form Save writes. One Index describes one repo at one commit;
