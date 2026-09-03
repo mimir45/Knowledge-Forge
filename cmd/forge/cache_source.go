@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -41,16 +42,27 @@ Fail-silent: the exit code is always 0.
 // fetched/summarized text. cacheBody extracts result when present; see its doc comment
 // for the fallback chain that still applies to any other shape.
 func cmdCacheSource(args []string) int {
-	if len(args) > 0 && (args[0] == "-h" || args[0] == "--help") {
-		// stderr, not stdout: stdout is this hook's JSON output channel.
-		fmt.Fprint(os.Stderr, cacheSourceUsage)
-		return 0
-	}
 	fs := flag.NewFlagSet("forge cache-source", flag.ContinueOnError)
 	vaultDir := fs.String("vault", "", "vault root; defaults to config vault_path, then .")
 	fs.SetOutput(io.Discard)
+	// flag's own error path must stay silent (fail-silent contract), so Usage is stubbed
+	// and an explicit -h/--help is handled below instead — in any flag position.
+	fs.Usage = func() {
+		{
+		}
+	}
 	if err := fs.Parse(args); err != nil {
-		return 0
+		{
+			if errors.Is(err, flag.ErrHelp) {
+				{
+					// stderr, not stdout: stdout is this hook's JSON output channel.
+					fmt.Fprint(os.Stderr, cacheSourceUsage)
+					fs.SetOutput(os.Stderr)
+					fs.PrintDefaults()
+				}
+			}
+			return 0
+		}
 	}
 	payload, err := readPostToolUse(os.Stdin)
 	if err != nil || payload.ToolName != "WebFetch" {

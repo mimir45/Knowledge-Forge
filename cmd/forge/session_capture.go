@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -43,16 +44,27 @@ Fail-silent: the exit code is always 0.
 // Like every other hook subcommand here, it must never fail the session: any error just
 // means no stubs get written, never a nonzero exit.
 func cmdSessionCapture(args []string) int {
-	if len(args) > 0 && (args[0] == "-h" || args[0] == "--help") {
-		// stderr, not stdout: stdout is this hook's JSON output channel.
-		fmt.Fprint(os.Stderr, sessionCaptureUsage)
-		return 0
-	}
 	fs := flag.NewFlagSet("forge session-capture", flag.ContinueOnError)
 	vaultDir := fs.String("vault", "", "vault root; defaults to config vault_path, then .")
 	fs.SetOutput(io.Discard)
+	// flag's own error path must stay silent (fail-silent contract), so Usage is stubbed
+	// and an explicit -h/--help is handled below instead — in any flag position.
+	fs.Usage = func() {
+		{
+		}
+	}
 	if err := fs.Parse(args); err != nil {
-		return 0
+		{
+			if errors.Is(err, flag.ErrHelp) {
+				{
+					// stderr, not stdout: stdout is this hook's JSON output channel.
+					fmt.Fprint(os.Stderr, sessionCaptureUsage)
+					fs.SetOutput(os.Stderr)
+					fs.PrintDefaults()
+				}
+			}
+			return 0
+		}
 	}
 	payload, err := readSessionEnd(os.Stdin)
 	if err != nil || payload.TranscriptPath == "" {

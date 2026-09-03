@@ -740,8 +740,11 @@ number is re-derivable with `bash docs/testing/campaign-2026-09-03/aggregate.sh`
 
 Two things this table says that the previous revision did not:
 
-- **`forge drift` misses its own budget.** It runs on the git-hook path, so this is the
-  one number that matters most. `--since-commit` is documented as the cheap gate, but it
+- **`forge drift` misses its own budget** — tracked as **B5** in
+  [`docs/testing/campaign-2026-09-03/report.md`](../testing/campaign-2026-09-03/report.md).
+  `MANIFESTO.md` §7 says missing this budget is a bug, and that reading stands: this is
+  an open defect, not an accepted cost. It runs on the git-hook path, so this is the one
+  number that matters most. `--since-commit` is documented as the cheap gate, but it
   measured 147–148 ms against the full run's 151 ms — so whatever dominates the cost is
   not the citation scan.
 - **`forge intent` meets 50 ms only warm.** A first invocation in a session costs 128 ms.

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -32,16 +33,27 @@ Fail-silent: the exit code is always 0.
 // — and, like session-context, must never break the session: any failure here just
 // means no hint is offered, never a blocked prompt or a nonzero exit.
 func cmdIntent(args []string) int {
-	if len(args) > 0 && (args[0] == "-h" || args[0] == "--help") {
-		// stderr, not stdout: stdout is this hook's JSON output channel.
-		fmt.Fprint(os.Stderr, intentUsage)
-		return 0
-	}
 	fs := flag.NewFlagSet("forge intent", flag.ContinueOnError)
 	vaultDir := fs.String("vault", "", "vault root; defaults to config vault_path, then .")
 	fs.SetOutput(io.Discard)
+	// flag's own error path must stay silent (fail-silent contract), so Usage is stubbed
+	// and an explicit -h/--help is handled below instead — in any flag position.
+	fs.Usage = func() {
+		{
+		}
+	}
 	if err := fs.Parse(args); err != nil {
-		return 0
+		{
+			if errors.Is(err, flag.ErrHelp) {
+				{
+					// stderr, not stdout: stdout is this hook's JSON output channel.
+					fmt.Fprint(os.Stderr, intentUsage)
+					fs.SetOutput(os.Stderr)
+					fs.PrintDefaults()
+				}
+			}
+			return 0
+		}
 	}
 	prompt, err := readPrompt(os.Stdin)
 	if err != nil || prompt == "" {
