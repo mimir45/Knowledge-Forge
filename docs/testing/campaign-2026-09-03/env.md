@@ -46,6 +46,6 @@ vault.
 | `aggregate.txt` | the aggregation output every number in `report.md` is derived from |
 | `runcase.sh`, `addnote.sh` | the recorders the agents were required to use |
 | `aggregate.sh` | rebuilds every total from the raw JSONL |
-| `verify.sh`, `verify2.sh`, `verify3.sh` | the orchestrator's own re-derivation of the agents' claims |
+| `verify.sh` … `verify6.sh` | the orchestrator's own re-derivation of the agents' claims and of hypotheses H1–H6. `verify4.sh` covers the documentation sweep (D3, D9–D12); `verify5.sh` and `verify6.sh` isolate H6/B13 |
 | `timing.sh` | the serial latency pass |
 | `BRIEFING.md` | the contract every agent was given |

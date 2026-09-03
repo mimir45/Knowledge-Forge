@@ -1,8 +1,10 @@
 # Knowledge Forge — external CLI test campaign, 2026-09-03
 
 **180 recorded command invocations across ten parallel agents, plus a serial latency
-pass and three orchestrator verification rounds. 273 raw records. No panics, no hangs,
-no injection. Twelve confirmed defects, four agent claims refuted on verification.**
+pass and four orchestrator verification rounds. 273 raw records. No panics, no hangs,
+no injection. Six source-derived hypotheses (H1–H6), all six confirmed. Thirteen
+confirmed defects (B1–B13), twelve documentation-drift findings (D1–D12), four agent
+claims refuted on verification.**
 
 Environment, binary hash and method: [`env.md`](env.md). Raw data: `runs/*.jsonl`.
 Every number below is re-derivable with `bash aggregate.sh`.
@@ -36,6 +38,29 @@ Latency was measured afterwards in a **serial** pass with nothing else running.
 
 Everything an agent reported was re-derived by the orchestrator before entering this
 report. Four claims did not survive that step and are listed under *Refuted*.
+
+---
+
+## Seeded hypotheses — H1 to H6
+
+The campaign was not blind fuzzing. Before any agent ran, reading the source produced six
+specific, falsifiable hypotheses, each anchored to a `file:line`. Each was handed to an
+agent as a designed repro whose job was to **pin it down or knock it out**. This table is
+the audit trail from hypothesis to verdict; the defect numbers link to the write-ups
+below.
+
+| ID | Hypothesis | Source evidence | Verdict |
+|---|---|---|---|
+| **H1** | Telemetry leaks the raw question: `topic` is the whole question through `vault.Slug`, not a topic label, so the question text is recoverable. | `cmd/forge/recall.go:108`, `pkg/vault/slug.go:11-38`; the claim it contradicts is stated at `pkg/telemetry/event.go:2-4` | **CONFIRMED** → **B1**. Reproduced three times with different payloads (an AWS key, an `sk-live-` token, a Turkish question). `q_hash` also turned out to be a sha256 truncated to 12 hex chars. |
+| **H2** | The intent gate is `0.50`, but two documents say `> 0.7` — wrong value *and* wrong operator. | code `cmd/forge/intent.go:84,94`; docs `cmd/forge/main.go:60`, `docs/USAGE.md:228` | **CONFIRMED at source, but SUPERSEDED in practice** → **D8**, and the reason is **B2**. The gate cannot be exercised end-to-end at all: `intent` decodes `user_prompt` while Claude Code sends `user_input`, so it is silent at *every* score. Chasing H2 is what uncovered B2 — the larger finding. |
+| **H3** | `validateLockedStages` inspects only `Stage.Engine`, never `fallback`/`then`, so a paid tier on a locked stage loads cleanly; a second guard in `pkg/engine/select.go` catches it later with different wording. | `pkg/config/validate.go:16,48` vs `pkg/engine/select.go:72-83` | **CONFIRMED** → **B4**. `forge config` exits 0 on `write: {engine: none, fallback: api}`; `forge engine select --stage write` exits 2 on the same file, with a differently-worded error. |
+| **H4** | Three telemetry fields are dead — `duration_ms` and `sources` always `0`, `project` never written — and `forge stats` builds a "time saved" estimate on them. | `cmd/forge/recall.go:95-97`, `pkg/telemetry/event.go:11-26` | **CONFIRMED** → **B10**. Constant across every recall the campaign made; `forge stats` correspondingly reports a 0% hit rate and ~0 minutes saved. |
+| **H5** | `telemetry.scope` is validated against `local\|team` and then never read anywhere in non-test Go source. | `pkg/config/validate.go:93` — the only reference | **CONFIRMED** → **B11**. `scope: team` and `scope: local` produce byte-identical output and no `scope` key ever appears in `log.jsonl`. |
+| **H6** | The remedy taxonomy's own comments describe `MarkUnverified` as "publish flagged" and `DropConfidence` as "publish, but confidence drops", but `blocksWrite` returns true for both, so neither publishes. | comments `pkg/qualitygate/gate.go:19-20` vs `gate.go:113-118` | **CONFIRMED** → **B13**. Isolated cleanly: a draft where six of seven gates pass and only `code` fails (remedy `drop_confidence`) is **not** published — it is quarantined to `_inbox/` with `confidence: low`. |
+
+Six hypotheses, six confirmed at source. What the empirical pass added beyond that was
+**B2**, which no amount of source reading had suggested and which only surfaced because
+H2's repro forced an end-to-end run of the hook.
 
 ---
 
@@ -197,6 +222,42 @@ $ forge check --vault V --offline        # no --repo
 Two files were skipped and the run says zero, so the promise that the run tells you what
 it skipped is not kept.
 
+### B13 — Two gate remedies are documented as publishing and do not publish ▬ medium
+
+`pkg/qualitygate/gate.go:19-20` defines the remedy taxonomy with these comments:
+
+```go
+MarkUnverified   // citation: publish flagged, never silently trusted
+DropConfidence   // code / freshness: publish, but confidence drops
+```
+
+`blocksWrite` (`gate.go:113-118`) returns false only for `None`,
+`DelegateToLibrarian` and `SwitchToUpdate` — so both of the above **block the write**.
+
+Isolated cleanly with a draft where six of the seven gates pass and only `code` fails:
+
+```
+schema     pass
+citation   pass
+code       fail   drop_confidence   block 0 (bash): bash -n reported a syntax error
+freshness  pass
+antislop   pass
+link       pass
+duplicate  pass
+quarantine: true          exit 1
+
+published to notes/howto/ ?  NO
+quarantined to _inbox/    ?  YES   (confidence: low)
+```
+
+The *behaviour* is the right one and matches the project's stated invariant — quality-gate
+failures go to `_inbox/` with `confidence: low`, never a silent publish. The problem is
+the contract surface: `remedy` is serialised into the JSON report that callers consume,
+and a caller reading `remedy: "drop_confidence"` against that comment would reasonably
+expect a published-but-downgraded note. Two of the seven remedy names promise an outcome
+the code never produces. (Numbered B13 because it was isolated in a later verification
+round; by severity it belongs here.)
+
 ### B9 — `engine select` accepts any stage name ▽ low
 
 `Pipeline` is a `map[string]Stage` with no enum, so a typo resolves to nothing and
@@ -319,12 +380,16 @@ Reported separately at the user's request; no fixes were applied.
 |---|---|
 | **D1** | There is no way to ask the binary its version: `--version`, `-v`, `-V` and `version` are all `unknown command`. `make build` stamps `-X main.version -X main.commit` and nothing ever prints them. Three different `forge` binaries were reachable on this machine and none could be told apart. `plugin.json` declares `0.1.2` while the build stamps `v0.1.1-13-g33b94b1`. |
 | **D2** | All eight paths in `CLAUDE.md`'s "Read the docs in this order" are gone — removed in `df5ccea refactor: cleaned old docs`, `CLAUDE.md` never updated. `docs/` holds only `ARCHITECTURE.md`, `USAGE.md`, `datasets.md`. |
-| **D3** | Live code and specs still cite those deleted documents: `references/recall-spec.md:12` ("Source of truth: DESIGN §5.3"), `forge gate --help` ("DESIGN §12"), `forge check --help` ("ADDENDUM section B.4"), `config/forge.config.example.md` ("DESIGN §5.3's decision tree"). None resolves. |
+| **D3** | Live code and specs still cite those deleted documents — **50 references across 19 files**, not a handful. Six are live Go source under `cmd/forge/` (`main.go`, `check.go`, `gate.go`, `check_codebase.go`, `check_collect.go`) plus `config/embed.go`, so the dangling citations are compiled into the binary and printed to users: `forge gate --help` says "the seven DESIGN §12 quality gates", `forge check --help` says "the nine ADDENDUM section B.4 reports". The rest are in `docs/`, all five files under `references/`, two `skills/*/SKILL.md`, `agents/forge-librarian.md` and `config/forge.config.example.md`. Reproduce with `grep -rln "DESIGN §\|ADDENDUM §\|KNOWLEDGE-FORGE-" docs references skills agents config cmd`. |
 | **D4** | `.claude/agents/` does not exist, but `CLAUDE.md` documents six workflow agents living there (`finder`, `executor`, `explainer`, `vault-analyst`, `doc-auditor`, `cross-checker`) and instructs the reader to prefer delegating to them. |
 | **D5** | Drift in the opposite direction: `skills/forge/SKILL.md:228-236` states that nothing loads agents from a root-level `agents/` directory and prescribes a manual Agent-tool dispatch. In fact the four product agents *are* discovered as `forge:forge-researcher`, `forge:forge-codebase-scout`, `forge:forge-verifier`, `forge:forge-librarian`. The skill therefore steers callers away from a working mechanism — a documentation defect with runtime consequences. |
 | **D6** | `CLAUDE.md` describes the cgo lane as `-tags codeindex`; the real constraint is `//go:build cgo` and `make full` passes no tag. |
 | **D7** | `CLAUDE.md` quotes `pkg/qualitygate.Run` at ~0.13ms. The package has no benchmark and is not in `make bench`'s list. `make bench`'s own comment says "the three the phase brief names" above a list of six packages. |
 | **D8** | `hooks/user-prompt-intent` and `docs/USAGE.md:228` both still describe the intent gate as `> 0.7`; the constant is `0.50` (`cmd/forge/intent.go:84`), deliberately re-derived from measurement. Moot in practice while **B2** stands. |
+| **D9** | **The four hook commands have no help at all.** `forge session-context --help`, `forge intent --help`, `forge session-capture --help` and `forge cache-source --help` each print **zero bytes**; every one of the other eighteen subcommands prints a detailed usage block. These are precisely the four commands whose contract is a *stdin JSON schema*, and there is no way to ask the binary what that schema is. This is how **B2** — `intent` decoding `user_prompt` when Claude Code sends `user_input` — stayed invisible: nothing the CLI prints ever names the field it expects. |
+| **D10** | `forge engine --help` is rejected: `forge engine: unknown subcommand "--help"`, exit 2. Every other command accepts `--help`; here you must already know to type `forge engine select --help`. The group listing does print, so the failure is cosmetic, but it breaks the one convention a user relies on to explore a CLI. |
+| **D11** | `docs/USAGE.md:155` states the drift hook path costs "60–70 ms (budget < 100 ms)". Measured serially on an idle M4 against the 94-note vault: **151 ms median, 208 ms p95** (see **B5**). The document asserts a measurement that the current build does not meet. |
+| **D12** | `README.md` is deleted in the main checkout's working tree (`git status` → ` D README.md`) while still present in `HEAD`. Not a repo defect — a local uncommitted state — but the project's entry point is currently missing for anyone working in that checkout. |
 
 ---
 
