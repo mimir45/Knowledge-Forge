@@ -10,19 +10,13 @@ import (
 	packaged "github.com/mimir45/Knowledge-Forge/config"
 )
 
-// EnginePresets and StackPresets are two independent axes. Engine presets decide what
-// may make a model call; stack presets decide what the static core indexes and how fast
-// each note type goes stale. Picking one of each is the normal case, and neither list is
-// closed — a file dropped into config/presets/ is found by Preset without a code change,
-// but only these are offered by name.
+// EnginePresets and StackPresets are two independent axes.
 var (
 	EnginePresets = []string{"offline", "claude-only", "byo-api", "max"}
 	StackPresets  = []string{"java-backend", "frontend", "devops", "minimal"}
 )
 
-// Preset returns one preset as a merge overlay. It is not a Config: a preset sets a
-// handful of keys and inherits everything else, so decoding it into the struct would
-// turn every unset field into a zero value that then overwrote the packaged layer.
+// Preset returns one preset as a merge overlay.
 func Preset(name string) (map[string]any, error) {
 	if name == "" {
 		return map[string]any{}, nil

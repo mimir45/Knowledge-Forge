@@ -9,10 +9,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// cmdConfig prints what the chain actually resolved to. It exists because a four-layer
-// merge is not something a user can evaluate in their head: the answer to "why is my
-// vault path wrong" is which layer set it, and without this command that answer requires
-// reading four files and knowing the merge rule.
+// cmdConfig prints what the chain actually resolved to.
 func cmdConfig(args []string) int {
 	fs := flag.NewFlagSet("forge config", flag.ContinueOnError)
 	asJSON := fs.Bool("json", false, "emit the merged config as JSON")

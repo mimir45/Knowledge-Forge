@@ -32,9 +32,8 @@ func each() map[string][]byte {
 	}
 }
 
-// The property that matters most for files committed to a git repo: identical input on the
-// same at must produce identical bytes. A clock in a header would make every weekly run a
-// nine-file diff of nothing, and a diff that is always noise is a diff nobody reads.
+// The property that matters most for files committed to a git repo: identical input on
+// the same at must produce identical bytes.
 func TestEveryReportIsByteIdenticalOnRerun(t *testing.T) {
 	first := each()
 	for i := 0; i < 10; i++ {
@@ -83,10 +82,8 @@ func driftFixture() DriftInput {
 	}
 }
 
-// The headline counts notes, not references: a note with nine broken citations is one note
-// to fix, and that is the question the user actually asked. The fixture's a.md carries one
-// broken and one suspect reference, so summing the two verdict lists would report two notes
-// where there is one — the real vault has a note in exactly that state.
+// The headline counts notes, not references: a note with nine broken citations is one
+// note to fix, and that is the question the user actually asked.
 func TestDriftCountsNotesNotReferences(t *testing.T) {
 	got := string(RenderDrift(driftFixture()))
 	if !strings.Contains(got, "**1 note reference") {
@@ -372,9 +369,7 @@ func TestCodebaseRendersDependsOn(t *testing.T) {
 }
 
 // TestUncoveredTiesBreakOnPath: a symbol name is not unique in a tree — the vault's own
-// `Builder` citation matches 44 declarations — so two entries can agree on churn, size and
-// name and still be different files. sort.Slice is not stable, so an unbroken tie would put
-// map iteration order into the rendered report.
+// `Builder` citation matches 44 declarations — so two entries can agree on churn.
 func TestUncoveredTiesBreakOnPath(t *testing.T) {
 	in := CodebaseInput{Repo: "food", Days: 90, Now: at, Uncovered: []Uncovered{
 		{Symbol: "Builder", Path: "z/Order.java", LOC: 40, Commits: 3},
@@ -410,8 +405,7 @@ func TestTopUncoveredMatchesTheReportsOwnRanking(t *testing.T) {
 }
 
 // TestTopDuplicatePairRequiresTheSpecThreshold: check.ai_pass's merge-proposal sub-task
-// must use the same 0.85 bar duplicates.md's header and weekly.go's Act now cite, not the
-// lower operating threshold pairs is otherwise filtered at — a bar few real pairs clear.
+// must use the same 0.85 bar duplicates.md's header and weekly.go's Act now cite.
 func TestTopDuplicatePairRequiresTheSpecThreshold(t *testing.T) {
 	pairs := []similarity.Pair{{A: "x", B: "y", Score: 0.60}, {A: "p", B: "q", Score: 0.40}}
 	if _, ok := TopDuplicatePair(pairs); ok {
@@ -484,8 +478,7 @@ func TestCostListsUnspentMeteredTiers(t *testing.T) {
 }
 
 // A cap of 0 makes pkg/engine's availableMetered report the tier exhausted (remaining =
-// cap - spent <= 0), so cost.md must call it unavailable — offline and claude-only both
-// ship cap 0 on tiers they never route to, and "$0.00 of $0.00" reads as merely maxed out.
+// cap - spent <= 0), so cost.md must call it unavailable.
 func TestCostZeroCapReadsUnavailable(t *testing.T) {
 	in := costFixture()
 	in.CapPerDay["advisor"] = 0

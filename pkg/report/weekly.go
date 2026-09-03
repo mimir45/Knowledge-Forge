@@ -12,10 +12,8 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/similarity"
 )
 
-// VaultStats is one week's headline numbers, snapshotted so the next run can show a delta.
-// HitRate is asks resolved by ANSWER_FROM_VAULT as a share of all asks recorded — cumulative
-// to date, not filtered to the week, because events carry a timestamp but nothing downstream
-// of loadAskLog windows by it yet. That is a known simplification, not a bug.
+// VaultStats is one week's headline numbers, snapshotted so the next run can show a
+// delta.
 type VaultStats struct {
 	Notes   int
 	HitRate float64
@@ -23,16 +21,7 @@ type VaultStats struct {
 	Drift   int // notes carrying a BROKEN or SUSPECT finding
 }
 
-// WeeklyInput is what moc/weekly/YYYY-WW.md renders from. Week and Year must come from
-// time.Time.ISOWeek(), not Now.Year() — a week can straddle a calendar year boundary and
-// ISOWeek's own returned year is the one that keys it correctly.
-//
-// Broken, Uncovered, DuplicatePairs and DeadCitations are Act now's four raw signal kinds,
-// passed through as the same typed values their own reports (drift.md, codebase.md,
-// duplicates.md, deadlinks.md) already compute — this renderer re-derives nothing, it only
-// re-ranks and re-labels for a different audience. DuplicatePairs here is filtered at the
-// spec's 0.85 (specThreshold), not duplicates.md's lower operating threshold: an "act now"
-// merge is a different claim than a "candidate worth a look".
+// WeeklyInput is what moc/weekly/YYYY-WW.md renders from.
 type WeeklyInput struct {
 	Week, Year int
 
@@ -55,9 +44,8 @@ type WeeklyInput struct {
 	Now   time.Time
 }
 
-// RenderWeekly produces moc/weekly/YYYY-WW.md — a ranked rollup per docs/ARCHITECTURE.md
-// §10 (Flow C — Weekly check). Its four sections and their literal emoji headers are the
-// spec; the sentences under them are this renderer's own, not copied from the example.
+// RenderWeekly produces moc/weekly/YYYY-WW.md — a ranked rollup per
+// docs/ARCHITECTURE.md §10 (Flow C — Weekly check).
 func RenderWeekly(in WeeklyInput) []byte {
 	var b strings.Builder
 	fmt.Fprintf(&b, "# Week %d, %d\n", in.Week, in.Year)
@@ -80,9 +68,7 @@ func writeActNow(b *strings.Builder, in WeeklyInput) {
 	}
 }
 
-// actNowLines ranks by kind — BROKEN, then undocumented churn, then near-duplicates, then
-// dead links — and each kind carries its own deterministic order in from the report it was
-// computed by, so no further tiebreak is needed here.
+// actNowLines ranks by kind — BROKEN, then undocumented churn, then near-duplicates.
 func actNowLines(in WeeklyInput) []string {
 	var lines []string
 	lines = append(lines, brokenLines(in)...)

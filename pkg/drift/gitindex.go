@@ -9,10 +9,7 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/coderef"
 )
 
-// build prefers the persisted index and patches it forward, so the only tree-sitter work
-// on the hook path is the handful of files the commit touched. A cache one commit behind
-// HEAD is the *normal* case — the hook fires post-commit — and patching is what makes
-// "the symbol table at HEAD" true rather than approximately true.
+// build prefers the persisted index and patches it forward.
 func (g *GitSource) build(repo, rev string) codeindex.Index {
 	root := g.root(repo)
 	if ix, ok := codeindex.Load(g.cachePath(repo)); ok && ix.Commit != "" {
@@ -39,14 +36,7 @@ func (g *GitSource) full(repo, root, rev string) codeindex.Index {
 	return ix
 }
 
-// persist caches HEAD only. A historical revision is resolved once per run by forge check
-// and never asked for again; caching it would trade disk for nothing.
-//
-// The file is .forge/code-index-<repo>.json, one per configured --repo name=path, not a
-// single shared name. The suffix is
-// required, not cosmetic: forge drift/check/logback all take --repo repeatably, so a
-// single shared name would let the second repo's index overwrite the first's on the very
-// next run.
+// persist caches HEAD only.
 func (g *GitSource) persist(repo, rev string, ix codeindex.Index) {
 	if g.cache == "" || rev != g.Head(repo) || len(ix.Files) == 0 {
 		return
@@ -62,8 +52,7 @@ func (g *GitSource) cachePath(repo string) string {
 }
 
 // nameMap answers a symbol-only citation. full holds declarations under their qualified
-// name, short under the bare member name; a lookup tries full first, because `render`
-// matching every component in the tree is not evidence about `AccountsLoader.render`.
+// name, short under the bare member name; a lookup tries full first.
 type nameMap struct {
 	full  map[string][]loc
 	short map[string][]loc
@@ -74,10 +63,7 @@ type loc struct {
 	sym        codeindex.Symbol
 }
 
-// Find resolves a name across every registered repository. Where two repositories declare
-// the same name the first in (repo, path) order wins — deterministic, which is what
-// verdict purity requires, though only the "is this still declared anywhere" half of the
-// answer is trustworthy in that case.
+// Find resolves a name across every registered repository.
 func (g *GitSource) Find(name, asOf string) (string, string, codeindex.Symbol, bool) {
 	nm := g.nameIndex(asOf)
 	hits := nm.full[name]
@@ -91,9 +77,7 @@ func (g *GitSource) Find(name, asOf string) (string, string, codeindex.Symbol, b
 }
 
 // nameIndex flattens every repository's symbol table into one map so a symbol-only
-// citation costs a lookup rather than a scan. Memoised per asOf: forge check resolves a
-// different revision for each distinct verified date, and rebuilding an index per note
-// would put the weekly pass in minutes rather than seconds.
+// citation costs a lookup rather than a scan.
 func (g *GitSource) nameIndex(asOf string) *nameMap {
 	if m, ok := g.names[asOf]; ok {
 		return m
@@ -121,16 +105,13 @@ func (g *GitSource) collect(m *nameMap, repo, rev string) {
 	}
 }
 
-// ResolveAt answers a path-shaped citation against one repository's file list as it stood
-// at asOf. It goes through coderef.ScanRepo, not codeindex.Build, so — unlike Find and At
-// — it answers identically on both the cgo and the pure-Go build lane.
+// ResolveAt answers a path-shaped citation against one repository's file list as it
+// stood at asOf.
 func (g *GitSource) ResolveAt(ref coderef.Ref, asOf string) coderef.Resolution {
 	return g.registryAt(asOf).Resolve(ref)
 }
 
-// registryAt is memoised per asOf the same way nameIndex memoises per asOf: forge check
-// resolves one revision per distinct verified date across the whole vault, not once per
-// citation, so this costs one git ls-tree per distinct (repo, date) pair, not per note.
+// registryAt is memoised per asOf the same way nameIndex memoises per asOf.
 func (g *GitSource) registryAt(asOf string) *coderef.Registry {
 	if rg, ok := g.registries[asOf]; ok {
 		return rg
@@ -165,13 +146,7 @@ func (m *nameMap) sort() {
 	}
 }
 
-// lessLoc has to order two declarations that share a file, not just two that share a name.
-// One Java file routinely declares `Order.Builder` and `OrderItem.Builder`, and under the
-// short name those tie on (repo, path); sort.Slice is not stable, so the tie was settled
-// by whatever order the Files map happened to yield. That made drift.md oscillate between
-// runs on an unchanged tree — a note came and went from the suspect list because `Builder`
-// resolved to a different declaration each time. Declaration order inside the file is the
-// tiebreak, with the name behind it, because the pair is unique in the tree.
+// lessLoc has to order two declarations that share a file.
 func lessLoc(a, b loc) bool {
 	switch {
 	case a.repo != b.repo:

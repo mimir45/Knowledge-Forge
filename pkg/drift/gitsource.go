@@ -12,10 +12,7 @@ import (
 type Repo struct{ Name, Root string }
 
 // GitSource is the production Source: every answer it gives is read out of a git object
-// store, so two runs at the same tree state give the same verdicts and a revert restores
-// a demoted note without an undo log.
-//
-// It is memoised, not concurrent — Check drives it from a single goroutine.
+// store.
 type GitSource struct {
 	repos []Repo
 	cache string // directory for persisted indexes; "" disables the cache
@@ -58,9 +55,7 @@ func (g *GitSource) Head(repo string) string {
 	return h
 }
 
-// RevBefore picks the commit the note was actually written against. The note records a
-// date, not a sha, so "the tree as it stood when this was verified" is the last commit of
-// that day — inclusive, because a note is written after the code it describes.
+// RevBefore picks the commit the note was actually written against.
 func (g *GitSource) RevBefore(repo, date string) string {
 	key := repo + "@" + date
 	if r, ok := g.revs[key]; ok {
@@ -81,10 +76,8 @@ func (g *GitSource) At(repo, path, rev string) (codeindex.File, bool) {
 	return f, ok
 }
 
-// Index exposes the same cache-preferring, patch-forward index indexAt already builds for
-// At and Find, so a caller that also wants the full symbol table (coverage reporting, for
-// one) doesn't pay for a second full tree-sitter parse to get what this package already
-// has in hand.
+// Index exposes the same cache-preferring, patch-forward index indexAt already builds
+// for At and Find, so a caller that also wants the full symbol table.
 func (g *GitSource) Index(repo, rev string) codeindex.Index {
 	return g.indexAt(repo, rev)
 }

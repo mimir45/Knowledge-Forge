@@ -6,9 +6,7 @@ import (
 )
 
 // TestBannedPhrasesMatchesShippedFile pins the parser against the literal shipped
-// writing-rules.md content, per references/writing-rules.md's own doc comment: the list
-// is meant to grow without a recompile, but a parser regression that silently returns zero
-// phrases must fail loudly, not just let antislopGate stop catching anything.
+// writing-rules.md content, per references/writing-rules.md's own doc comment.
 func TestBannedPhrasesMatchesShippedFile(t *testing.T) {
 	got := bannedPhrases()
 	want := []string{

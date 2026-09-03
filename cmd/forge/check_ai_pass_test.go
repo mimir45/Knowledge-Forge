@@ -7,8 +7,7 @@ import (
 )
 
 // TestTopBrokenIgnoresSuspectAndTiesBreakOnRef: a SUSPECT finding must never win over a
-// BROKEN one regardless of order, and two BROKEN findings on the same note need a
-// deterministic tiebreak or the printed instruction would vary run to run.
+// BROKEN one regardless of order.
 func TestTopBrokenIgnoresSuspectAndTiesBreakOnRef(t *testing.T) {
 	fs := []drift.Finding{
 		{Note: "notes/concept/b.md", Ref: "z.go#Foo", Verdict: drift.Suspect, Reason: "moved"},

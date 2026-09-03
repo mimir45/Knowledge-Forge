@@ -8,8 +8,6 @@ import (
 )
 
 // Append writes pairs the file does not already hold and returns how many it added.
-// The dataset lives under .forge/, which is derived and gitignored in the vault, so it
-// stays local — the datasets (see docs/datasets.md) are never transmitted anywhere.
 func Append(path string, pairs []Pair) (int, error) {
 	seen, err := existingKeys(path)
 	if err != nil {
@@ -54,10 +52,7 @@ func encode(f *os.File, p Pair) error {
 	return err
 }
 
-// existingKeys makes the capture idempotent. The hook can legitimately fire twice on one
-// commit — `commit --amend`, a rebase, a manual re-run — and the file is append-only.
-// A line that no longer parses is skipped rather than fatal: a truncated tail must not
-// wedge every future commit.
+// existingKeys makes the capture idempotent.
 func existingKeys(path string) (map[string]bool, error) {
 	keys := map[string]bool{}
 	f, err := os.Open(path)

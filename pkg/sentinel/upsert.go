@@ -1,16 +1,13 @@
 package sentinel
 
 // Upsert creates the file (and its parent directories) if absent, replaces an existing
-// id block's body in place, or appends a new block at end of file. A second call with an
-// unchanged body writes nothing new to disk — writeFile compares before it writes.
+// id block's body in place, or appends a new block at end of file.
 func Upsert(path, id string, style Style, body string) error {
 	return upsert(path, id, style, body, appendBlock)
 }
 
-// UpsertBefore is Upsert but anchors a *newly created* block immediately before the given
-// 1-based source line. An existing block (found by id) is updated in place regardless of
-// anchorLine — once placed, a marker tracks its own text, not a line number that drifts
-// every time code above it changes.
+// UpsertBefore is Upsert but anchors a *newly created* block immediately before the
+// given 1-based source line.
 func UpsertBefore(path, id string, style Style, body string, anchorLine int) error {
 	insert := func(lines, block []string) []string { return insertBefore(lines, block, anchorLine) }
 	return upsert(path, id, style, body, insert)

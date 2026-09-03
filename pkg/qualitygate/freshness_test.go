@@ -7,8 +7,7 @@ import (
 )
 
 // TestFreshnessGateAtBoundary pins recall.IsStale's exact boundary via the injected
-// clock, instead of racing time.Now() — one day inside freshness_days passes, one day
-// past it fails, both anchored on the same verified date.
+// clock, instead of racing time.Now() — one day inside freshness_days passes.
 func TestFreshnessGateAtBoundary(t *testing.T) {
 	s := testSchema(t)
 	verified := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -30,8 +29,7 @@ func TestFreshnessGateAtBoundary(t *testing.T) {
 }
 
 // TestFreshnessGateAtUndatedCreateIsSkipped confirms CREATE's one divergence from
-// UPDATE: an undated brand-new draft is Skipped here (schema.go's RetryOnce already
-// covers the missing-required-field case), not reported stale a second time.
+// UPDATE: an undated brand-new draft is Skipped here.
 func TestFreshnessGateAtUndatedCreateIsSkipped(t *testing.T) {
 	s := testSchema(t)
 	src := strings.Replace(goodNote, "updated: 2026-08-07", "updated: \"\"", 1)

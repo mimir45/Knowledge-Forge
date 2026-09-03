@@ -12,8 +12,7 @@ import (
 )
 
 // TestDependsOnResolvesJavaClassImport covers the ordinary case: one file imports a
-// class declared in a sibling package, and the two packages' directories are the modules
-// CodeGroup groups by.
+// class declared in a sibling package.
 func TestDependsOnResolvesJavaClassImport(t *testing.T) {
 	ix := codeindex.Index{Files: map[string]codeindex.File{
 		"src/main/java/com/food/order/Consumer.java": {Lang: "java",
@@ -29,9 +28,7 @@ func TestDependsOnResolvesJavaClassImport(t *testing.T) {
 }
 
 // TestDependsOnResolvesJavaWildcardAndStaticImports covers the two shapes the extractor
-// hands the resolver besides a plain class import: a wildcard (already star-stripped by
-// codeindex, arrives as a bare package name) and a static member import (one segment
-// past the class).
+// hands the resolver besides a plain class import: a wildcard.
 func TestDependsOnResolvesJavaWildcardAndStaticImports(t *testing.T) {
 	ix := codeindex.Index{Files: map[string]codeindex.File{
 		"src/main/java/com/food/order/Consumer.java": {Lang: "java",
@@ -63,8 +60,7 @@ func TestDependsOnResolvesRelativeTSImports(t *testing.T) {
 }
 
 // TestDependsOnDropsUnresolvableAndSelfImports is the plan's explicit "do not invent a
-// node" case: a third-party Java package, a bare TS specifier, and a same-directory
-// import must all leave DependsOn empty rather than guessing.
+// node" case: a third-party Java package, a bare TS specifier.
 func TestDependsOnDropsUnresolvableAndSelfImports(t *testing.T) {
 	ix := codeindex.Index{Files: map[string]codeindex.File{
 		"src/main/java/com/food/order/Consumer.java": {Lang: "java",
@@ -86,8 +82,7 @@ func TestDependsOnDropsUnresolvableAndSelfImports(t *testing.T) {
 }
 
 // TestDependsOnIsDedupedAndSorted: two files in the same group importing the same or
-// different dependencies must fold to one deduplicated, sorted slice — moc/codebase.md
-// has to render identically across runs (2b's determinism standard).
+// different dependencies must fold to one deduplicated, sorted slice.
 func TestDependsOnIsDedupedAndSorted(t *testing.T) {
 	ix := codeindex.Index{Files: map[string]codeindex.File{
 		"src/pages/A.tsx": {Lang: "typescript", Imports: []string{"../widgets/Button"}},
@@ -102,9 +97,7 @@ func TestDependsOnIsDedupedAndSorted(t *testing.T) {
 }
 
 // TestDependsOnIsDeterministicAcrossRuns guards against a recurring class of bug
-// elsewhere in this codebase: Go's map iteration order is randomized per run, so a slice built
-// from map keys without a sort is nondeterministic even though every individual value is
-// "correct". Enough files share a directory here that an unsorted build would show it.
+// elsewhere in this codebase: Go's map iteration order is randomized per run.
 func TestDependsOnIsDeterministicAcrossRuns(t *testing.T) {
 	ix := codeindex.Index{Files: map[string]codeindex.File{
 		"src/pages/A.tsx": {Lang: "typescript", Imports: []string{
@@ -141,11 +134,8 @@ func slicesEq(a, b []string) bool {
 	return true
 }
 
-// TestGroupsOfPopulatesDependsOnEndToEnd builds a real temp git repo — two Java packages
-// and a TypeScript pages/widgets pair — and drives the actual Parse -> Build -> dependsOn
-// -> groupsOf pipeline, not a hand-built Index. This is the one test in the suite that
-// would fail if the tree-sitter grammar's import node shapes ever changed underneath the
-// hand-built-Index tests above.
+// TestGroupsOfPopulatesDependsOnEndToEnd builds a real temp git repo — two Java
+// packages and a TypeScript pages/widgets pair.
 func TestGroupsOfPopulatesDependsOnEndToEnd(t *testing.T) {
 	if !codeindex.Available() {
 		t.Skip("built without cgo: no symbol table to build")

@@ -9,11 +9,7 @@ import (
 	"github.com/mimir45/Knowledge-Forge/profiles"
 )
 
-// profileData is what profiles/me.template.md is rendered against. Five of these come
-// from the wizard's five questions; the rest are derived here so the wizard does not
-// grow a sixth. Every derived value is a starting point the template tells the user to
-// edit — assume_known in particular is worth thirty seconds of their attention and
-// cannot be guessed from a seniority label.
+// profileData is what profiles/me.template.md is rendered against.
 type profileData struct {
 	PrimaryLanguage string
 	Frameworks      []string
@@ -29,9 +25,7 @@ type profileData struct {
 	Generated       string
 }
 
-// defaultAvoid is the default "avoid" list for a generated profile. It is
-// seniority-independent on purpose:
-// nobody at any level wants the note to open with "in this article we will".
+// defaultAvoid is the default "avoid" list for a generated profile.
 var defaultAvoid = []string{
 	"marketing language", "history lessons", "'in this article we will'",
 }
@@ -76,9 +70,7 @@ func (o initOpts) PrimaryLanguageOrAgnostic() string {
 }
 
 // assumptionsFor turns one seniority answer into the two lists that do the most work at
-// synthesis time. The junior case is the interesting one: it is the only level with a
-// non-empty never_assume, because the fields are asymmetric — assume_known removes
-// explanation, never_assume adds it, and a junior needs the second more than the first.
+// synthesis time.
 func assumptionsFor(seniority string) (known, never []string) {
 	switch seniority {
 	case "junior":
@@ -114,10 +106,8 @@ func yamlList(items []string) string {
 	return "[" + strings.Join(out, ", ") + "]"
 }
 
-// yamlScalar quotes anything that is not a bare identifier. defaultAvoid above
-// is the forcing case: it contains spaces, and one entry is already single-quoted, so
-// emitting these raw produces frontmatter that stops parsing at the first apostrophe.
-// Simple values stay unquoted so the common lists still read as prose in Obsidian.
+// yamlScalar quotes anything that is not a bare identifier. defaultAvoid above is the
+// forcing case: it contains spaces, and one entry is already single-quoted.
 func yamlScalar(v string) string {
 	if v != "" && strings.IndexFunc(v, func(r rune) bool {
 		return !(r == '-' || r == '_' || r == '.' || r == '/' ||

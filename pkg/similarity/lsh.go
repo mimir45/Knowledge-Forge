@@ -6,20 +6,7 @@ import (
 	"sort"
 )
 
-// Bands and Rows partition the signature for locality-sensitive hashing; Bands*Rows must
-// equal Hashes. Two documents become candidates when any one band matches exactly, with
-// probability 1-(1-s^Rows)^Bands.
-//
-// Banding is purely a recall device — the exact estimate below does the deciding — so the
-// tuning rule is one-sided: nominate every true pair, and do not care how many extra ones
-// come with it. Rows is therefore chosen so P ≥ 0.999 at DuplicateThreshold, not so the
-// curve is steep there. 64x2 gives P(0.40) = 0.99998 and P(0.575) ≈ 1.
-//
-// Two earlier tunings were measured wrong, both silently: 16x8 (P(0.575) ≈ 0.11) and 32x4
-// (P(0.40) = 0.56). Each returned an empty report while Estimate agreed the pair was a
-// duplicate. The cost of the correction is candidate volume — at s=0.10, 64x2 nominates
-// about half of all pairs — which is 1142 signature comparisons on the real vault and not
-// worth optimising until a vault is large enough to measure it.
+// Bands and Rows partition the signature for locality-sensitive hashing.
 const (
 	Bands = 64
 	Rows  = Hashes / Bands
@@ -53,16 +40,8 @@ func NewIndex() *Index {
 	return ix
 }
 
-// Add indexes one document. group scopes comparison: only documents sharing a group are ever
-// paired. For notes the group is the note type, and that restriction is what makes the score
-// mean anything — the real vault's highest-scoring pairs are all cross-type
-// (decision↔pitfall, concept↔decision) and they are not duplicates, they are the seven-type
-// taxonomy of the vault's seven note types doing its job. Scoring them dropped the fixture's real
-// near-duplicate below five vault non-duplicates; scoping to one type puts it back on top.
-//
-// Text with no shingles at all is skipped rather than stored: an empty signature is
-// all-maxima, and two empty notes would otherwise estimate as a perfect duplicate pair —
-// the report's most embarrassing possible false positive.
+// Add indexes one document. group scopes comparison: only documents sharing a group are
+// ever paired.
 func (ix *Index) Add(id, group, text string) {
 	if len(Shingle(text)) == 0 {
 		return
@@ -87,11 +66,6 @@ func bandKey(sig Signature, band int) uint64 {
 }
 
 // Candidates reports how many distinct pairs banding nominated for exact comparison.
-//
-// It is the denominator duplicates.md has to quote. "No duplicates found" is only a claim
-// worth reading next to the number of pairs that were actually looked at: the same
-// sentence means one thing after 1142 comparisons and nothing at all after zero, and two
-// earlier band tunings failed in exactly that silent way.
 func (ix *Index) Candidates() int { return len(ix.candidateList()) }
 
 // Pairs returns every document pair estimated at or above threshold, most similar first.

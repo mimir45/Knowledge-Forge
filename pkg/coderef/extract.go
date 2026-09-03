@@ -6,10 +6,7 @@ import (
 	"strings"
 )
 
-// sourceExt is the set of extensions a citation may name. Deliberately narrow: the
-// vault is full of `.md`, `.yml` and `.json` spans that are configuration talk, not
-// code references, and every one of them would resolve to nothing and inflate the
-// unresolved count NF-4 is trying to measure honestly.
+// sourceExt is the set of extensions a citation may name.
 var sourceExt = map[string]bool{
 	".java": true, ".kt": true, ".ts": true, ".tsx": true, ".js": true, ".jsx": true,
 }
@@ -44,9 +41,6 @@ func FromBody(noteRel string, body []byte) []Ref {
 // parseSpan classifies one inline code span. Most spans are neither — `mvn test`,
 // `spring.datasource.url`, a shell flag — and returning false for them is the job.
 func parseSpan(s string) (Ref, bool) {
-	// A glob is a description of a file set, not a citation of one. Measured against the
-	// real vault, `**/*.test.tsx` and `src/components/**/*.ts` were resolving to nothing
-	// and being counted as broken references, which is the opposite of what they are.
 	if s == "" || strings.ContainsAny(s, " \t\"'|$<>*?") {
 		return Ref{}, false
 	}
@@ -86,10 +80,7 @@ func extOf(s string) string {
 	return ""
 }
 
-// FromFrontmatter reads the canonical `code_refs:` block. This is the shape new notes
-// write and the one that needs no guessing — repo named, path repo-relative, symbol
-// explicit. Each entry is "repo:path[:line][#symbol]", e.g.
-// "MeterReadingsService:src/main/java/app/ReadingController.java#create".
+// FromFrontmatter reads the canonical `code_refs:` block.
 func FromFrontmatter(noteRel string, entries []string) []Ref {
 	var out []Ref
 	for _, e := range entries {

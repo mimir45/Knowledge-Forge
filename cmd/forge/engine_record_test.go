@@ -2,9 +2,7 @@ package main
 
 import "testing"
 
-// isLockedStage guards a third path (config load and engine.Select are the other two,
-// pkg/engine/select_test.go) against stamping engine_trail as if a model tier ran a
-// stage the T0 static core hard-locks to none.
+// isLockedStage guards a third path.
 func TestIsLockedStageMatchesEngineLockedStages(t *testing.T) {
 	for _, s := range []string{"recall", "write", "index"} {
 		if !isLockedStage(s) {

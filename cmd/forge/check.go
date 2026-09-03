@@ -10,9 +10,7 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/report"
 )
 
-// checkCfg is the weekly pass's inputs. The destination is fixed rather than a flag:
-// the renderers cross-reference each other by relative path ("see ../moc/codebase.md"),
-// so a report written outside reports/ would carry links that resolve to nothing.
+// checkCfg is the weekly pass's inputs.
 type checkCfg struct {
 	vault        string
 	repos        repoList
@@ -43,9 +41,7 @@ func cmdCheck(args []string) int {
 }
 
 // applyConfig fills what the flags left at zero. check is the one command that reads
-// more than the vault path out of the chain, so the resolution lives here rather than
-// in config_resolve.go: --days and the duplicate threshold are report tuning, and only
-// this command renders reports.
+// more than the vault path out of the chain.
 func (c *checkCfg) applyConfig() int {
 	root, code := vaultOrExit("check", c.vault)
 	if code != 0 {
@@ -107,9 +103,7 @@ func runWeekly(cfg checkCfg) int {
 	return code
 }
 
-// job is one report: where it goes and how to build it. The closure defers the render
-// until writeAll runs it under a recover, which is what keeps one bad renderer from
-// costing the other eight.
+// job is one report: where it goes and how to build it.
 type job struct {
 	rel    string // vault-relative destination
 	render func() ([]byte, error)
@@ -137,9 +131,7 @@ func writeAll(root string, js []job) int {
 	return 0
 }
 
-// safeRender turns a panicking renderer into one failed file. The reports are pure
-// functions over collected data, so the failure mode that matters is a nil map or a
-// short slice in one collector — which must not take the eight healthy reports with it.
+// safeRender turns a panicking renderer into one failed file.
 func safeRender(f func() ([]byte, error)) (md []byte, err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -151,9 +143,6 @@ func safeRender(f func() ([]byte, error)) (md []byte, err error) {
 
 // writeReport creates the parent directory and skips the write when the bytes already
 // match, for the same reason forge index does: an identical rewrite still bumps mtime.
-// It reports whether it actually touched the file, because "unchanged" is the answer the
-// date-not-timestamp headers are designed to produce and a run that never says so gives
-// the reader no way to tell idempotence from a lucky diff.
 func writeReport(path string, md []byte) (changed bool, err error) {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return false, err
@@ -171,9 +160,7 @@ func unchangedNote(changed bool) string {
 	return " (unchanged)"
 }
 
-// jobs lists the nine vault-health reports, cost.md, the codebase map, and the weekly
-// rollup. cost.md and weekly run unconditionally like the other eight always-on reports
-// — Check.Reports is not filtered against any of them today.
+// jobs lists the nine vault-health reports, cost.md, the codebase map.
 func jobs(cfg checkCfg, d *checkData) []job {
 	js := []job{
 		{"reports/coverage.md", d.coverage},

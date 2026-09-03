@@ -12,9 +12,7 @@ type roundTripperFunc func(*http.Request) (*http.Response, error)
 
 func (f roundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
 
-// testServer's handlers discard w.Write's error on purpose: a write failure into an
-// httptest connection the same process is about to read surfaces as the client-side
-// error each test already asserts on, and t.Fatal is not legal from the server goroutine.
+// testServer's handlers discard w.Write's error on purpose.
 func testServer(t *testing.T, handler http.HandlerFunc) http.RoundTripper {
 	t.Helper()
 	srv := httptest.NewServer(handler)

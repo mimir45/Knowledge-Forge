@@ -34,9 +34,7 @@ code_refs: [app:src/main/java/com/food/order/Order.java#Order.place]
 Order placement goes through Order.place.
 `
 
-// fullLogback turns knowledge_map, claude_md_fragment and inline_markers all on — the
-// packaged example's shape, not minimal.md's, so a test asserting "this writes something"
-// exercises every gate at once.
+// fullLogback turns knowledge_map, claude_md_fragment and inline_markers all on.
 func fullLogback() *config.Config {
 	return &config.Config{Static: config.Static{LogBack: config.LogBack{
 		KnowledgeMap: true, ClaudeMDFragment: true, InlineMarkers: true,

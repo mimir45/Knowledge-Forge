@@ -68,9 +68,7 @@ func TestPairsFindsNearDuplicateAndNotTheRest(t *testing.T) {
 	}
 }
 
-// Cross-type pairs must never be scored, however similar the text. In the real vault the
-// top-scoring pairs are all cross-type and none of them is a duplicate: a decision note and
-// the pitfall note that caused it share almost all their vocabulary by design.
+// Cross-type pairs must never be scored, however similar the text.
 func TestGroupsAreNeverComparedAcrossTypes(t *testing.T) {
 	ix := NewIndex()
 	ix.Add("a.md", "concept", noteA)
@@ -80,10 +78,8 @@ func TestGroupsAreNeverComparedAcrossTypes(t *testing.T) {
 	}
 }
 
-// The end-to-end acceptance criterion: the fixture vault's deliberate F7 near-duplicate must
-// appear in the report. It is the pair testdata/README.md exists to make the duplicate gate
-// catch, and it is the pair two earlier band tunings silently dropped — Pairs returned
-// nothing while Estimate agreed it was a duplicate.
+// The end-to-end acceptance criterion: the fixture vault's deliberate F7 near-duplicate
+// must appear in the report.
 func TestFixtureNearDuplicateIsNominated(t *testing.T) {
 	ix := NewIndex()
 	dir := filepath.Join("..", "..", "testdata", "vault", "concepts")
@@ -116,9 +112,7 @@ func bodyOf(t *testing.T, path string) string {
 	return s
 }
 
-// Two notes with no shingles must not come out as a perfect duplicate pair. An empty
-// signature is all-maxima, so a naive index would score them 1.0 — the report's most
-// embarrassing possible false positive, and the fixture vault has notes this short.
+// Two notes with no shingles must not come out as a perfect duplicate pair.
 func TestEmptyDocumentsAreNotDuplicates(t *testing.T) {
 	ix := NewIndex()
 	ix.Add("empty-1.md", "concept", "")
@@ -188,10 +182,8 @@ func BenchmarkSign(b *testing.B) {
 	}
 }
 
-// Worst case, deliberately: 500 notes that are all ~0.95 similar to each other, so banding
-// nominates every one of the 124750 pairs and no pruning is possible. This does not show LSH
-// beating O(n^2) — a corpus where every pair really is a duplicate cannot show that — it
-// bounds the price when banding prunes nothing. 500 notes is five times the real vault.
+// Worst case, deliberately: 500 notes that are all ~0.95 similar to each other, so
+// banding nominates every one of the 124750 pairs and no pruning is possible.
 func BenchmarkPairs500Notes(b *testing.B) {
 	ix := NewIndex()
 	for i := 0; i < 500; i++ {

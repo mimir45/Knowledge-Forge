@@ -9,10 +9,7 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
-// D3 is the human-correction dataset: (model note, your edited note) pairs,
-// harvested from the vault's git history, valued as training data for note refinement, and
-// the reason it is built in Phase 1 rather than 6b is that the data only accumulates
-// forward — a hook installed later cannot recover the edits made before it.
+// D3 is the human-correction dataset: (model note, your edited note) pairs.
 const (
 	D3Kind = "d3-human-edit"
 	D3Path = ".forge/datasets/d3.jsonl"
@@ -24,21 +21,15 @@ const (
 	D3Window  = 7 * 24 * time.Hour
 	notesRoot = "notes/"
 
-	// ForgeTrailer marks a commit forge made itself. Nothing writes it yet: today every
-	// vault commit is a human's, so the check is inert. It stops being inert in Phase 4,
-	// when forge-librarian starts committing notes it wrote — without it those commits
-	// would enter D3 as (model output, model output) pairs that look like preferences.
+	// ForgeTrailer marks a commit forge made itself.
 	ForgeTrailer = "Forge-Write"
 )
 
-// generatedOrigins are the schema.yaml `origin` values that mean forge produced the note.
-// The fourth value, `import`, is what the Phase 1 migration stamped on all 91 pre-existing
-// notes: nothing about them is model output, so editing one is not a correction of forge.
+// generatedOrigins are the schema.yaml `origin` values that mean forge produced the
+// note.
 var generatedOrigins = map[string]bool{"ask": true, "session-capture": true, "garden": true}
 
-// Pair is one JSONL record. It carries the two note texts because that is the training
-// signal, and metadata about the notes — never the prompt that produced them, following the
-// principle: "Never store raw question text — hash + extracted topic only."
+// Pair is one JSONL record.
 type Pair struct {
 	Kind        string    `json:"kind"`
 	Note        string    `json:"note"`
@@ -64,9 +55,7 @@ type Options struct {
 	Window time.Duration
 }
 
-// Capture returns the pairs one commit contributes. Errors are returned rather than
-// logged: the caller decides, and the hook wrapper is what guarantees a commit never
-// fails because of us.
+// Capture returns the pairs one commit contributes.
 func Capture(g Git, opt Options) ([]Pair, error) {
 	sha, edited, err := g.CommitMeta(opt.Commit)
 	if err != nil {
@@ -111,9 +100,7 @@ func pairsFor(g Git, sha string, edited time.Time, paths []string, w time.Durati
 	return out
 }
 
-// isNote restricts D3 to the contract notes under notes/. raw/ and sources/ are inputs,
-// _index.md and lint-report.md are generated artifacts, and an edit to any of them is not
-// a correction of a note forge wrote.
+// isNote restricts D3 to the contract notes under notes/. raw/ and sources/ are inputs.
 func isNote(rel string) bool {
 	return strings.HasPrefix(rel, notesRoot) && strings.HasSuffix(rel, ".md")
 }
@@ -125,9 +112,6 @@ func pairFor(g Git, sha string, edited time.Time, rel string, w time.Duration) (
 	if err != nil || org.SHA == "" || org.SHA == sha {
 		return Pair{}, false // unknown history, or born in this very commit
 	}
-	// A negative delta means the edit commit dates before the add commit — clock skew on a
-	// synced vault, grafted history, a hand-set GIT_COMMITTER_DATE. Storing that pair puts
-	// the older text on the "human-preferred" side, which is inverted training signal.
 	if d := edited.Sub(org.When); d < 0 || d > w {
 		return Pair{}, false // outside the window: a later revisit, not a correction
 	}

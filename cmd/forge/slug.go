@@ -49,9 +49,7 @@ func emitSlug(title, vaultDir string, asJSON bool) int {
 	return 0
 }
 
-// existingSlugs collects every slug already claimed, falling back to the filename for
-// notes the migration has not reached yet — otherwise a pre-contract note's name could
-// be handed out twice.
+// existingSlugs collects every slug already claimed.
 func existingSlugs(root string) (map[string]bool, error) {
 	rels, err := vault.Walk(root)
 	if err != nil {

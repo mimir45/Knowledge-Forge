@@ -12,11 +12,7 @@ import (
 )
 
 // buildGroups is check_codebase.go's codebases/oneCodebase pipeline minus churn and
-// owners: logback has no --days window and nothing it renders uses either, so this
-// loads the vault once and skips the gitsig.Log a churn report would need.
-// gitsig.Analyze(nil) yields a valid, empty Stats — groupsOf reads it for Churn/Owner
-// data that stays zero/"" throughout, which is fine since RenderKnowledgeMap and the
-// CLAUDE.md fragments never look at either field.
+// owners: logback has no --days window and nothing it renders uses either.
 func buildGroups(vaultRoot string, r drift.Repo, rg *coderef.Registry, src symbolFinder) ([]report.CodeGroup, error) {
 	notes, err := loadNotes(vaultRoot)
 	if err != nil {
@@ -31,9 +27,7 @@ func buildGroups(vaultRoot string, r drift.Repo, rg *coderef.Registry, src symbo
 	return groupsOf(scanned.Files, gitsig.Analyze(nil), cited[r.Name], dependsOn(ix, scanned.Files)), nil
 }
 
-// citedPathsFree is check_codebase.go's citedPaths without the *checkData receiver — the
-// same join, over an explicit notes/slugs pair instead of the weekly pass's cached
-// fields, so forge logback does not need to build a checkData just to reuse this logic.
+// citedPathsFree is check_codebase.go's citedPaths without the *checkData receiver.
 func citedPathsFree(notes []*vault.Note, slugs map[string]string, rg *coderef.Registry,
 	src symbolFinder) map[string]map[string][]string {
 
@@ -59,9 +53,7 @@ func slugsOf(notes []*vault.Note) map[string]string {
 	return out
 }
 
-// writeKnowledgeMap renders docs/knowledge-map.md into the repo root. --dry-run reports
-// what would change without touching disk, following writeReport's own changed/unchanged
-// vocabulary so forge logback's output reads like forge check's.
+// writeKnowledgeMap renders docs/knowledge-map.md into the repo root.
 func writeKnowledgeMap(r drift.Repo, groups []report.CodeGroup, dryRun bool) bool {
 	path := filepath.Join(r.Root, "docs", "knowledge-map.md")
 	md := report.RenderKnowledgeMap(groups)

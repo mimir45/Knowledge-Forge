@@ -1,12 +1,5 @@
 // Package qualitygate implements seven pre-write gates and the compile check from
-// docs/ARCHITECTURE.md §8 (Quality gates and quarantine).
-//
-// forge verify-code is a syntax/compile check, never a dependency resolver: it never
-// runs `npm install`, never resolves Maven/Gradle coordinates, and never touches the
-// network. It shells out to the system toolchain already on the machine (javac, tsc,
-// bash -n), following the same precedent as pkg/gitsig: shell to the
-// tool, don't embed it. A snippet that references a real dependency the sandbox does
-// not have on its classpath is not a defect in the snippet — see verdictFromDiagnostics.
+// docs/ARCHITECTURE.md §8.
 package qualitygate
 
 import (
@@ -17,10 +10,7 @@ import (
 	"time"
 )
 
-// Verdict is forge verify-code's three-valued outcome. The honest capability boundary
-// is the reason there are three, not two: T0 can prove "this does not parse" but can
-// never prove "this is semantically correct against a classpath it was never given," so
-// that case is Skipped, not Pass and not Fail.
+// Verdict is forge verify-code's three-valued outcome.
 type Verdict int
 
 const (
@@ -42,10 +32,7 @@ func (v Verdict) String() string {
 	}
 }
 
-// MarshalJSON serializes the name, not the iota ordinal. Without this, forge
-// verify-code's JSON output silently reorders itself every time this const block
-// gains a value — a wire-format break no test would catch, since Go's default int
-// encoding never errors, just changes meaning.
+// MarshalJSON serializes the name, not the iota ordinal.
 func (v Verdict) MarshalJSON() ([]byte, error) { return []byte(`"` + v.String() + `"`), nil }
 
 // UnmarshalJSON is the counterpart, so gate_test.go and any golden-file test can
@@ -81,11 +68,7 @@ const (
 	kindUnresolved
 )
 
-// verdictFromDiagnostics applies the ordering invariant this package is built around:
-// any syntax (or otherwise unclassified) diagnostic forces Fail, regardless of any
-// unresolved-dependency diagnostic present in the same run. Skipped is reserved for the
-// narrow case where every diagnostic is unresolved-dependency in nature — "fail
-// dominates skipped," never the reverse.
+// verdictFromDiagnostics applies the ordering invariant this package is built around.
 func verdictFromDiagnostics(kinds []diagKind) Verdict {
 	if len(kinds) == 0 {
 		return Pass
@@ -104,8 +87,7 @@ func verdictFromDiagnostics(kinds []diagKind) Verdict {
 }
 
 // CompileCheck dispatches to the language-specific checker under a timeout. lang must
-// already be resolved — DetectLang below turns a fenced code block's info-string into
-// one of the supported values, or "" when nothing recognized applies.
+// already be resolved.
 func CompileCheck(lang string, src []byte, timeout time.Duration) CompileResult {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
@@ -122,8 +104,7 @@ func CompileCheck(lang string, src []byte, timeout time.Duration) CompileResult 
 }
 
 // DetectLang maps a fenced block's info-string (```java, ```ts, ```typescript, ```sh,
-// ```bash) to a CompileCheck lang value. Kotlin and Python are recognized but
-// unsupported — reported, not silently dropped from the note.
+// ```bash) to a CompileCheck lang value.
 func DetectLang(infoString string) string {
 	tag := strings.ToLower(strings.TrimSpace(strings.SplitN(infoString, " ", 2)[0]))
 	switch tag {
@@ -145,10 +126,7 @@ func splitNonEmpty(s string) []string {
 }
 
 // stripDir removes every occurrence of a throwaway temp dir's absolute path from a set
-// of diagnostic lines. Without this, two identical runs of the same snippet produce
-// different os.MkdirTemp paths embedded in Diagnostics, which breaks this codebase's
-// determinism convention (gate_test.go hashes Report.Outcomes across two runs). The
-// snippet's basename survives — only the random directory prefix is noise.
+// of diagnostic lines.
 func stripDir(lines []string, dir string) []string {
 	out := make([]string, len(lines))
 	for i, l := range lines {

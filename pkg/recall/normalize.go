@@ -1,7 +1,5 @@
-// Package recall is the retrieval-before-research engine: it decides whether the
-// vault already answers a question before any research runs. It is T0 — pure Go, zero
-// model calls, deterministic — and the whole product rests on it (the spec: "stage 1
-// is the whole ballgame"). references/recall-spec.md is the contract.
+// Package recall is the retrieval-before-research engine: it decides whether the vault
+// already answers a question before any research runs.
 package recall
 
 import (
@@ -10,9 +8,7 @@ import (
 	"unicode"
 )
 
-// stopwords are the scaffolding of the phrasings that trigger the skill — "how does X
-// work", "what is the difference between X and Y", "best practices for X". Left in, they
-// are 3–5 tokens no title can match, and the ceiling on a perfect hit drops by a third.
+// stopwords are the scaffolding of the phrasings that trigger the skill.
 var stopwords = map[string]bool{}
 
 func init() {
@@ -27,8 +23,6 @@ func init() {
 }
 
 // Tokens splits text into lowercase alphanumeric tokens, dropping single characters.
-// It is the one tokenizer: questions, titles, slugs and bodies all go through it, so a
-// term matches itself no matter which side of the comparison it came from.
 func Tokens(text string) []string {
 	split := func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) }
 	var out []string

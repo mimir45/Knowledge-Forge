@@ -14,9 +14,8 @@ func (d *checkData) coverage() ([]byte, error) {
 	}), nil
 }
 
-// values reads an enum out of references/schema.yaml. coverage.md cannot name an absence
-// without it: counting the stacks that appear in notes says what has been written about,
-// and only subtracting from the full vocabulary says what has not.
+// values reads an enum out of references/schema.yaml. coverage.md cannot name an
+// absence without it.
 func (d *checkData) values(field string) []string {
 	if d.schema == nil {
 		return nil
@@ -28,9 +27,7 @@ func (d *checkData) values(field string) []string {
 	return f.Values
 }
 
-// staleness reads d.askCounts, loaded from .forge/log.jsonl by loadAskLog. On a vault
-// with no telemetry-enabled `forge recall` runs yet — everything imported, nothing
-// asked — that map is empty and the report falls back to days overdue, same as before.
+// staleness reads d.askCounts, loaded from .forge/log.jsonl by loadAskLog.
 func (d *checkData) staleness() ([]byte, error) {
 	return report.RenderStaleness(report.StalenessInput{
 		Entries: d.entries, Asks: d.askCounts, Now: d.now,
@@ -44,9 +41,7 @@ func (d *checkData) duplicates() ([]byte, error) {
 	}), nil
 }
 
-// orphans counts against the graph's population, not the contract's. An orphan is a note
-// nothing links to, and moc/ pages link — excluding them from the denominator would count
-// notes the maps do reach.
+// orphans counts against the graph's population, not the contract's.
 func (d *checkData) orphans() ([]byte, error) {
 	return report.RenderOrphans(report.OrphansInput{
 		Orphans: d.graph.Orphans(d.nodes), Total: len(d.nodes),
@@ -54,9 +49,7 @@ func (d *checkData) orphans() ([]byte, error) {
 	}), nil
 }
 
-// gaps reads d.askList, loaded from .forge/log.jsonl by loadAskLog. An empty list still
-// renders the honest "no data yet" state the renderer already distinguishes from "no
-// gaps" — see reports/gaps.md — it just now means telemetry is off or unused, not absent.
+// gaps reads d.askList, loaded from .forge/log.jsonl by loadAskLog.
 func (d *checkData) gaps() ([]byte, error) {
 	return report.RenderGaps(report.GapsInput{Asks: d.askList, Now: d.now}), nil
 }
@@ -102,9 +95,7 @@ func (d *checkData) drift() ([]byte, error) {
 	}), nil
 }
 
-// cost surfaces d.budgetErr the same way churn and drift surface theirs: store.Open
-// failing here means the same cache forge index and forge drift depend on is broken, and
-// skipping cost.md alone leaves the other reports free to still run.
+// cost surfaces d.budgetErr the same way churn and drift surface theirs.
 func (d *checkData) cost() ([]byte, error) {
 	if d.budgetErr != nil {
 		return nil, d.budgetErr
@@ -112,9 +103,7 @@ func (d *checkData) cost() ([]byte, error) {
 	return report.RenderCost(d.budget), nil
 }
 
-// codebase concatenates one rendered section per repository. RenderCodebase names a single
-// repo because a map of two codebases is two maps; joining them here keeps moc/codebase.md
-// a single entry point without teaching the renderer about a list it cannot rank across.
+// codebase concatenates one rendered section per repository.
 func (d *checkData) codebase() ([]byte, error) {
 	if d.repoErr != nil {
 		return nil, d.repoErr
@@ -132,10 +121,7 @@ func (d *checkData) codebase() ([]byte, error) {
 	return out, nil
 }
 
-// weekly is the one report in this file that is not a pure function of d: it also reads
-// and writes .forge/weekly-stats.json, because a week-over-week delta has nowhere else to
-// live. A second run in the same ISO week overwrites that week's snapshot rather than
-// duplicating it — see report.WeeklyStore.Record — so this is not a correctness risk.
+// weekly is the one report in this file that is not a pure function of d.
 func (d *checkData) weekly() ([]byte, error) {
 	store := report.OpenWeeklyStore(filepath.Join(d.root, ".forge"))
 	key := report.WeekKey(d.now)

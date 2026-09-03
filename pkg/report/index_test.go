@@ -78,9 +78,7 @@ func TestRenderIndexDeterministicTies(t *testing.T) {
 }
 
 // TestStaleTiesBreakOnSlug: `verified` is a date, so same-day ties are the common case,
-// not a corner. The stale list is truncated to 15, so an unbroken tie does not merely
-// reorder the section — it decides which notes appear in it. sort.Slice is not stable, and
-// the same defect in pkg/drift's name table made drift.md oscillate on an unchanged tree.
+// not a corner.
 func TestStaleTiesBreakOnSlug(t *testing.T) {
 	in := IndexInput{Now: now}
 	for _, s := range []string{"zebra", "alpha", "middle"} {

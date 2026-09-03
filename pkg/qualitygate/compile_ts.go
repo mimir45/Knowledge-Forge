@@ -11,15 +11,12 @@ import (
 
 // tsUnresolvedCodes are the TS diagnostic codes a missing import or missing @types
 // package produces — a sandbox-classpath limitation, not a defect in the snippet.
-// Everything else (in particular the TS1xxx parser-error range) is a real problem.
 var tsUnresolvedCodes = map[string]bool{"TS2307": true, "TS2304": true}
 
 var tsDiagCodeRe = regexp.MustCompile(`error (TS\d+):`)
 
-// compileTS runs `tsc --noEmit --skipLibCheck` against one file in a throwaway temp
-// dir with no node_modules present, so it never resolves a real npm dependency — only
-// the language's own syntax and (via the code map above) which failures are ours to
-// call a defect versus an artifact of having no package installed.
+// compileTS runs `tsc --noEmit --skipLibCheck` against one file in a throwaway temp dir
+// with no node_modules present, so it never resolves a real npm dependency.
 func compileTS(ctx context.Context, src []byte) CompileResult {
 	if _, err := exec.LookPath("tsc"); err != nil {
 		return toolchainMissing("tsc")

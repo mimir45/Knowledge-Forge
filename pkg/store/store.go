@@ -1,9 +1,4 @@
-// Package store is the derived SQLite cache. Markdown is the only source of truth;
-// nothing here is authoritative and `forge reindex` rebuilds all of it from the vault.
-// Pure Go driver (modernc.org/sqlite) so the binary stays static under CGO_ENABLED=0.
-//
-// One exception: budget.go's table. Per-day USD spend is the one
-// value SQLite holds that markdown does not — Reset() never lists it, on purpose.
+// Package store is the derived SQLite cache.
 package store
 
 import (
@@ -63,9 +58,7 @@ func Open(vaultRoot string) (*Store, error) {
 // Close releases the database handle.
 func (s *Store) Close() error { return s.DB.Close() }
 
-// Reset drops every derived row. This is what makes the cache disposable: `forge
-// reindex` calls it and repopulates purely from markdown, so a corrupt or stale DB is
-// never a data-loss event.
+// Reset drops every derived row.
 func (s *Store) Reset() error {
 	for _, t := range []string{"notes", "note_stack", "note_tags", "links"} {
 		if _, err := s.DB.Exec("DELETE FROM " + t); err != nil {

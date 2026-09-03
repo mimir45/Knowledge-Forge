@@ -12,10 +12,7 @@ import (
 	packaged "github.com/mimir45/Knowledge-Forge/config"
 )
 
-// PackagedName is what the embedded base layer is called in errors and in Layers. It is
-// not a path on disk: the example is compiled into the binary so a stranger who runs
-// `forge` from a tarball still gets a complete config (D-2 — the packaged layer is
-// never edited by users, so there is no reason for it to be a file they can lose).
+// PackagedName is what the embedded base layer is called in errors and in Layers.
 const PackagedName = "<packaged>/config/forge.config.example.md"
 
 // EnvVar is the highest-precedence layer: an explicit, ad hoc, one-run override.
@@ -36,11 +33,6 @@ type layer struct {
 }
 
 // Load resolves the four-layer config chain and returns the merged, validated config.
-//
-// Precedence, lowest first: packaged example, ~/.forge/forge.config.md (written by
-// forge init), <project>/.forge.config.md, $FORGE_CONFIG. A missing optional layer is
-// skipped; a missing $FORGE_CONFIG is an error, because the user named it explicitly
-// and silently ignoring it would run them on settings they think they replaced.
 func Load(opts Options) (*Config, error) {
 	opts = opts.withDefaults()
 	layers, err := readLayers(opts)
@@ -134,9 +126,7 @@ func readFile(path string) (layer, bool, error) {
 	return layer{path, data}, true, nil
 }
 
-// parse reads one layer. The file is frontmatter-only markdown (readable in Obsidian too), but a bare YAML document is accepted as well — nothing is
-// readable in Obsidian too"), but a bare YAML document is accepted as well — nothing is
-// gained by rejecting a file whose content is unambiguous.
+// parse reads one layer. The file is frontmatter-only markdown.
 func parse(src []byte) (map[string]any, error) {
 	y := frontmatter(src)
 	var out map[string]any
@@ -149,9 +139,7 @@ func parse(src []byte) (map[string]any, error) {
 	return out, nil
 }
 
-// frontmatter returns the YAML between the leading `---` fence and the next one, or the
-// whole input when there is no fence. CRLF is normalized first so a config edited on
-// Windows and committed without .gitattributes still parses.
+// frontmatter returns the YAML between the leading `---` fence and the next one.
 func frontmatter(src []byte) []byte {
 	s := strings.ReplaceAll(string(src), "\r\n", "\n")
 	s = strings.TrimPrefix(s, "\ufeff")
@@ -166,8 +154,6 @@ func frontmatter(src []byte) []byte {
 }
 
 // decode turns the merged map into the typed Config by round-tripping it through YAML.
-// Going back through the marshaller rather than reflecting over the map by hand means
-// the struct tags stay the single description of the schema.
 func decode(merged map[string]any) (*Config, error) {
 	buf, err := yaml.Marshal(merged)
 	if err != nil {

@@ -8,10 +8,7 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/report"
 )
 
-// aiPass runs check.ai_pass's three sub-tasks when enabled: each builds an engine.Request
-// and calls engine.Host{}.Run() directly, bypassing engine.Resolve/budget entirely — the
-// host tier is a no-I/O instruction print (pkg/engine/host.go), not a real backend call.
-// Print-only: nothing here writes to the vault or auto-applies anything.
+// aiPass runs check.ai_pass's three sub-tasks when enabled.
 func aiPass(d *checkData) {
 	if d.cfg.config == nil || !d.cfg.config.Check.AIPass {
 		return

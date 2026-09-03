@@ -6,9 +6,7 @@ import (
 	"testing"
 )
 
-// writeLayer drops a frontmatter-only config at path, creating its directory. The format
-// is frontmatter-only markdown, so the tests exercise the same parser production does
-// rather than a YAML shortcut.
+// writeLayer drops a frontmatter-only config at path, creating its directory.
 func writeLayer(t *testing.T, path, body string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
@@ -22,10 +20,7 @@ func writeLayer(t *testing.T, path, body string) {
 func homeCfg(dir string) string    { return filepath.Join(dir, ".forge", "forge.config.md") }
 func projectCfg(dir string) string { return filepath.Join(dir, ".forge.config.md") }
 
-// isolated returns Options pointing every optional layer at empty temp dirs, so a real
-// ~/.forge/forge.config.md on the machine running the tests cannot reach them. Clearing
-// $FORGE_CONFIG matters as much: an empty EnvPath falls through to the environment, and
-// a developer who has one exported would otherwise see failures nobody else can.
+// isolated returns Options pointing every optional layer at empty temp dirs.
 func isolated(t *testing.T) Options {
 	t.Helper()
 	t.Setenv(EnvVar, "")
@@ -33,10 +28,7 @@ func isolated(t *testing.T) Options {
 }
 
 // TestPresetsRoundTrip is the highest-value test in this package: it asserts that what
-// `forge init` writes is something `config.Load` accepts. Every engine preset assigns
-// model engines to pipeline stages, and three stages are locked to "none" — if a preset
-// ever reached one of them, the default install would produce a config the binary
-// refuses on the very next command.
+// `forge init` writes is something `config.Load` accepts.
 func TestPresetsRoundTrip(t *testing.T) {
 	for _, name := range PresetNames() {
 		t.Run(name, func(t *testing.T) {
@@ -51,9 +43,8 @@ func TestPresetsRoundTrip(t *testing.T) {
 	}
 }
 
-// TestPresetEmptyName is the default `forge init` path: --stack-preset defaults to "" and
-// configDelta asks for it unconditionally, so an error here would break every install
-// that did not name a stack.
+// TestPresetEmptyName is the default `forge init` path: --stack-preset defaults to ""
+// and configDelta asks for it unconditionally.
 func TestPresetEmptyName(t *testing.T) {
 	p, err := Preset("")
 	if err != nil {
@@ -70,9 +61,7 @@ func TestPresetUnknownName(t *testing.T) {
 	}
 }
 
-// TestPrecedence walks all four layers with the same key. Each higher layer must win,
-// and Layers must report what was actually read — `forge config --layers` is the only
-// way a user diagnoses "why is this setting not taking effect".
+// TestPrecedence walks all four layers with the same key.
 func TestPrecedence(t *testing.T) {
 	o := isolated(t)
 	env := filepath.Join(t.TempDir(), "env.md")
@@ -96,8 +85,7 @@ func TestPrecedence(t *testing.T) {
 }
 
 // TestPackagedAlwaysLowest guards the reason init writes only a delta: keys the user
-// never decided must keep coming from the packaged layer, so a binary upgrade delivers
-// new defaults instead of being shadowed by a stale full copy.
+// never decided must keep coming from the packaged layer.
 func TestPackagedAlwaysLowest(t *testing.T) {
 	o := isolated(t)
 	writeLayer(t, homeCfg(o.HomeDir), "vault_path: /somewhere\n")
@@ -124,9 +112,7 @@ func TestMergeNarrowsLists(t *testing.T) {
 	}
 }
 
-// TestMergeKeepsSiblingKeys is the same rule's other half. A layer that sets one key of
-// a map must not delete the map's other keys — this is what keeps `pipeline.recall:
-// {engine: none}` alive when a user layer only mentions `pipeline.verify`.
+// TestMergeKeepsSiblingKeys is the same rule's other half.
 func TestMergeKeepsSiblingKeys(t *testing.T) {
 	o := isolated(t)
 	writeLayer(t, projectCfg(o.ProjectDir), "paths:\n  notes: written/\n")
@@ -139,9 +125,7 @@ func TestMergeKeepsSiblingKeys(t *testing.T) {
 	}
 }
 
-// TestLockedStageRefused is the T0 invariant's enforcement point. The error must name
-// the file that set it: a chain has four layers and "something set write: host" is not
-// a diagnosis a user can act on.
+// TestLockedStageRefused is the T0 invariant's enforcement point.
 func TestLockedStageRefused(t *testing.T) {
 	for _, stage := range LockedStages {
 		t.Run(stage, func(t *testing.T) {
@@ -158,8 +142,6 @@ func TestLockedStageRefused(t *testing.T) {
 }
 
 // TestLockedStageMergedNotPerLayer: a packaged "none" plus a project "host" must fail.
-// Validating layers in isolation would pass both — the packaged one says none, and the
-// project one is only a fragment — so validation has to run on the merged result.
 func TestLockedStageMergedNotPerLayer(t *testing.T) {
 	o := isolated(t)
 	writeLayer(t, homeCfg(o.HomeDir), "pipeline:\n  recall: {engine: none}\n")
@@ -196,10 +178,7 @@ func TestOptionalLayersMayBeMissing(t *testing.T) {
 	}
 }
 
-// TestThresholdOrdering enforces answer >= update >= neighbour. It deliberately checks
-// ordering rather than values: moving the thresholds to paper over
-// a recall scoring defect is a different matter from a user tuning their own vault, and
-// only the latter is this validation's job.
+// TestThresholdOrdering enforces answer >= update >= neighbour.
 func TestThresholdOrdering(t *testing.T) {
 	o := isolated(t)
 	writeLayer(t, projectCfg(o.ProjectDir),
@@ -213,8 +192,7 @@ func TestThresholdOrdering(t *testing.T) {
 }
 
 // TestFrontmatterVariants: the file is markdown, so it arrives with prose after the
-// fence, occasionally CRLF from a Windows editor, and occasionally a BOM from one that
-// means well. All three must parse to the same thing.
+// fence, occasionally CRLF from a Windows editor.
 func TestFrontmatterVariants(t *testing.T) {
 	body := "vault_path: /v\n"
 	cases := map[string]string{

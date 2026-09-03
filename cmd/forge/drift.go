@@ -59,9 +59,6 @@ func cmdDrift(args []string) int {
 		fmt.Fprint(os.Stderr, "forge drift: at least one --repo is required\n")
 		return 2
 	}
-	// resolveVault short-circuits on a non-empty flag, so the git hooks — which always
-	// pass --vault — never touch the chain. That keeps the 100ms hook-path budget a
-	// question about drift itself rather than about config I/O.
 	root, code := vaultOrExit("drift", cfg.vault)
 	if code != 0 {
 		return code
@@ -161,10 +158,7 @@ func byRel(notes []*vault.Note) map[string]*vault.Note {
 	return m
 }
 
-// scanRepos runs coderef.ScanRepo once per repository, keyed by name. registryOf and
-// forge check's codebase collector both need every repo's file list — the registry to
-// resolve citations, the collector to list files per module — so scanning once here and
-// sharing the result avoids a second `git ls-tree` per repo on every run.
+// scanRepos runs coderef.ScanRepo once per repository.
 func scanRepos(repos []drift.Repo) (map[string]coderef.Repo, error) {
 	out := make(map[string]coderef.Repo, len(repos))
 	for _, r := range repos {
@@ -177,9 +171,7 @@ func scanRepos(repos []drift.Repo) (map[string]coderef.Repo, error) {
 	return out, nil
 }
 
-// newRegistryFrom builds the registry in repos' order rather than the map's — coderef's
-// registry breaks same-base-name ties by (repo, path) order, so scan order is part of its
-// verdict and a map iteration would make that verdict non-deterministic.
+// newRegistryFrom builds the registry in repos' order rather than the map's.
 func newRegistryFrom(repos []drift.Repo, scans map[string]coderef.Repo) *coderef.Registry {
 	out := make([]coderef.Repo, 0, len(repos))
 	for _, r := range repos {
@@ -196,16 +188,7 @@ func registryOf(repos []drift.Repo) (*coderef.Registry, error) {
 	return newRegistryFrom(repos, scans), nil
 }
 
-// gateOf unions the changed sets of every repository. Touched paths are not
-// repo-qualified, so a path present in two repos over-includes rather than
-// under-includes — the safe direction for a gate whose only job is to keep work off the
-// hook path. Deleted paths are repo-qualified, because a BROKEN finding built from one
-// needs a real repo to resolve against.
-//
-// It fails closed. An empty gate and an unresolvable anchor produce the same findings —
-// none — but they mean opposite things, and the second is drift silently never running on
-// a hook that by design never prints. So a sha no repository can resolve is an error, not
-// a clean run.
+// gateOf unions the changed sets of every repository.
 func gateOf(cfg driftCfg) (*drift.Changed, error) {
 	if cfg.since == "" {
 		return nil, nil

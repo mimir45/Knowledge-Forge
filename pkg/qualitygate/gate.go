@@ -7,10 +7,7 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
-// Remedy is what a failing gate recommends. It is advisory — Run never acts on it,
-// pkg/qualitygate/quarantine.go and the forge gate CLI do — each gate having a different
-// failure response means collapsing them to one Fail/Pass bit would lose exactly the
-// distinction the skill needs to act correctly.
+// Remedy is what a failing gate recommends.
 type Remedy int
 
 const (
@@ -34,8 +31,7 @@ func (r Remedy) String() string {
 }
 
 // MarshalJSON serializes the name, not the iota ordinal — same rationale as
-// compile.go's Verdict.MarshalJSON: forge gate's JSON output must not silently
-// change meaning every time this const block gains a value.
+// compile.go's Verdict.MarshalJSON.
 func (r Remedy) MarshalJSON() ([]byte, error) { return []byte(`"` + r.String() + `"`), nil }
 
 func (r *Remedy) UnmarshalJSON(b []byte) error {
@@ -58,9 +54,7 @@ const (
 	ModeUpdate
 )
 
-// Outcome is one gate's verdict. Verdict reuses compile.go's three-valued type: a gate
-// that cannot judge a note (no toolchain, no defined convention) is Skipped, not Pass —
-// see citation.go and freshness.go for the two gates this applies to today.
+// Outcome is one gate's verdict.
 type Outcome struct {
 	Gate    string  `json:"gate"`
 	Verdict Verdict `json:"verdict"`
@@ -74,17 +68,8 @@ type Report struct {
 	Quarantine bool      `json:"quarantine"`
 }
 
-// Run executes all seven gates against one draft note and returns their combined report.
-// draft.Rel must already be set to the note's intended vault-relative
-// path — including for CREATE, where the file does not exist on disk yet — because the
-// link and duplicate gates both need it to know which directory-group (== note type) to
-// score the draft against.
-//
-// Quarantine is true when any gate Fails with a remedy that blocks the write.
-// SwitchToUpdate and DelegateToLibrarian are the two remedies that do not imply
-// Quarantine on their own: the first is a routing decision the caller may still choose
-// to honour as a Fail, the second is the librarian's post-write job, not a reason to
-// hold the note back.
+// Run executes all seven gates against one draft note and returns their combined
+// report. draft.Rel must already be set to the note's intended vault-relative path.
 func Run(cfg *config.Config, vaultRoot string, draft *vault.Note, mode Mode) (Report, error) {
 	s, err := vault.LoadSchema()
 	if err != nil {
@@ -108,8 +93,6 @@ func Run(cfg *config.Config, vaultRoot string, draft *vault.Note, mode Mode) (Re
 }
 
 // blocksWrite reports whether a Fail with this remedy should hold the note back.
-// SwitchToUpdate and DelegateToLibrarian are routing/follow-up decisions, not defects
-// the note needs fixed before it can land — see Run's doc comment.
 func blocksWrite(r Remedy) bool {
 	switch r {
 	case None, DelegateToLibrarian, SwitchToUpdate:

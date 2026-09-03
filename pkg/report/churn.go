@@ -8,10 +8,7 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/gitsig"
 )
 
-// ChurnInput is what churn.md renders from. The stats are over the *vault's* history, not
-// a code repository's: §B.4's churn.md answers "which notes keep being rewritten".
-// moc/codebase.md is where code churn lives, and the two must not be conflated — they are
-// the same measurement over different repositories and they mean different things.
+// ChurnInput is what churn.md renders from.
 type ChurnInput struct {
 	Stats  *gitsig.Stats
 	Slugs  map[string]string // vault-relative path -> slug
@@ -20,10 +17,6 @@ type ChurnInput struct {
 }
 
 // RenderChurn produces churn.md — volatile knowledge.
-//
-// A note rewritten nine times is not a bad note. It is a note about something that keeps
-// moving, and that is a signal about the system rather than the writing: the areas of the
-// codebase whose notes churn hardest are the areas whose behaviour is least settled.
 func RenderChurn(in ChurnInput) []byte {
 	var b strings.Builder
 	header(&b, "Churn", churnSummary(in), in.Now)
@@ -59,9 +52,7 @@ func writeTopChurn(b *strings.Builder, in ChurnInput) {
 	}
 }
 
-// writeCoupled shows notes that keep being edited in the same commit. Two notes that
-// always change together are usually one idea split across two files, or a pair that
-// should link to each other and does not.
+// writeCoupled shows notes that keep being edited in the same commit.
 func writeCoupled(b *strings.Builder, in ChurnInput) {
 	pairs := gitsig.TopCoupled(in.Stats, 2, 15)
 	b.WriteString("\n## Always edited together\n\n")

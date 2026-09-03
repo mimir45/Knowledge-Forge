@@ -16,15 +16,7 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
-// checkData is the vault collected once, in the two shapes the reports need.
-//
-// notes and entries are deliberately different sets and must not be interchanged.
-// notes are content notes — everything that is a node in the link graph, moc/ included,
-// because a map of content genuinely de-orphans what it points at. entries are contract
-// notes — the subset the schema judges, moc/ and the hubs excluded, because `type:` has
-// no meaning for a map and counting one would move the validity denominator. Feed notes
-// to the graph reports and entries to the coverage and staleness ones; the crisp check
-// after a run is that the two counts differ by exactly the maps and hubs.
+// checkData is the vault collected once.
 type checkData struct {
 	cfg  checkCfg
 	root string
@@ -110,11 +102,6 @@ func typeMap(notes []*vault.Note) map[string]string {
 }
 
 // typeOf reads the note type off the directory rather than the frontmatter.
-//
-// The two disagree in this vault — 31 of 91 notes fail the contract and several fail on
-// `type:` itself — and the directory is what the migration actually enforced. Duplicate
-// scoping in particular has to agree with how the notes are grouped on disk, or a pair
-// gets compared against a group it is not in.
 func typeOf(rel string) string {
 	rest, ok := strings.CutPrefix(rel, "notes/")
 	if !ok {
@@ -129,9 +116,7 @@ func typeOf(rel string) string {
 	return ""
 }
 
-// similar indexes bodies only. Frontmatter is boilerplate by construction — the same
-// eleven keys in the same order in every note — and including it would score every pair
-// of well-formed notes as partly identical.
+// similar indexes bodies only.
 func (d *checkData) similar() {
 	ix := similarity.NewIndex()
 	for _, n := range d.notes {
@@ -141,9 +126,7 @@ func (d *checkData) similar() {
 	d.pairs = ix.Pairs(d.cfg.duplicateThreshold())
 }
 
-// duplicateThreshold resolves the config value against the package constant. The
-// fallback is not decoration: collectVault is called from tests with a bare checkCfg,
-// and a zero threshold would report every pair in the vault as a duplicate.
+// duplicateThreshold resolves the config value against the package constant.
 func (c checkCfg) duplicateThreshold() float64 {
 	if c.dupThreshold > 0 {
 		return c.dupThreshold
@@ -151,9 +134,7 @@ func (c checkCfg) duplicateThreshold() float64 {
 	return similarity.DuplicateThreshold
 }
 
-// vaultHistory reads the *vault's* commits, not a code repository's. The vault churn
-// report asks which notes keep being rewritten; code churn is moc/codebase.md's subject
-// and the two must not be conflated.
+// vaultHistory reads the *vault's* commits, not a code repository's.
 func vaultHistory(root string, months int, now time.Time) (*gitsig.Stats, error) {
 	var since time.Time
 	if months > 0 {
@@ -166,12 +147,7 @@ func vaultHistory(root string, months int, now time.Time) (*gitsig.Stats, error)
 	return gitsig.Analyze(commits), nil
 }
 
-// budgetSnapshot fills d.budget from cfg.Engines.Budget, the SQLite budget table, and
-// cfg.Pipeline — cost.md's whole job is showing what the config chain and today's spend
-// jointly decide, so this is the one collector that reads config and cache directly.
-// A bare checkCfg (as the collectVault tests build) has no config to read; that degrades
-// to an empty report rather than a nil-pointer panic, the same posture duplicateThreshold
-// takes toward a zero threshold.
+// budgetSnapshot fills d.budget from cfg.Engines.Budget, the SQLite budget table.
 func (d *checkData) budgetSnapshot() error {
 	d.budget = report.CostInput{Now: d.now, StageEngine: map[string]string{}}
 	if d.cfg.config == nil {
@@ -195,9 +171,7 @@ func (d *checkData) budgetSnapshot() error {
 	return nil
 }
 
-// spentToday recovers spend from Remaining rather than a second SQL query: Remaining
-// already computes cap-minus-spent, so cap-minus-Remaining is spent, for any cap
-// including the unmetered zero value.
+// spentToday recovers spend from Remaining rather than a second SQL query.
 func spentToday(l engine.Ledger, caps map[string]float64, clock func() time.Time) (map[string]float64, error) {
 	out := make(map[string]float64, len(caps))
 	for tier, cap := range caps {

@@ -5,12 +5,7 @@ import (
 	"sync"
 )
 
-// Build parses every supported file in the list at one git revision. The worker pool is
-// sized to GOMAXPROCS per STACK §7: parsing N source files is the one embarrassingly
-// parallel hotspot in the profile, and it is the reason Go was chosen over Python here.
-//
-// The blobs come from the object store, never the working tree, so the index is a pure
-// function of tree state — the same property drift's verdicts depend on.
+// Build parses every supported file in the list at one git revision.
 func Build(repo, root, rev string, files []string) (Index, error) {
 	ix := Index{Repo: repo, Commit: rev, Extractor: Extractor,
 		Files: map[string]File{}, Deps: Deps(root)}

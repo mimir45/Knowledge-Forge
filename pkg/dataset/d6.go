@@ -11,24 +11,12 @@ import (
 )
 
 // D6 is the sixth dataset: (repo symbol or module → the note explaining it).
-// It is a derivation rather
-// than a capture tier — D1-D5 each have a write path and accumulate forward; D6 has
-// none and needs none, because `forge logback` already resolves the same
-// (symbol → note) mapping every time it runs. There is deliberately no AppendD6: adding
-// a sixth capture path would defeat the point of deriving it instead.
-//
-// Volume is "= note count" per the original spec (since removed), but that describes distinct notes, not distinct
-// pairs — a note citing five symbols yields five records, one per citation that
-// resolves. Every export's datasheet says so.
 const (
 	D6Kind = "d6-code-knowledge"
 	D6Tag  = "d6"
 )
 
-// D6Pair is one JSONL record. Unlike D1-D5, anonymization is refused outright for this
-// tier (see refuseDerivedOptions) rather than attempted: Repo, Path and Symbol are the
-// entire feature D6 exists to carry, and they are also the most employer-identifying
-// strings in the system. Every export is raw text.
+// D6Pair is one JSONL record.
 type D6Pair struct {
 	Kind   string `json:"kind"`
 	Repo   string `json:"repo"`
@@ -37,11 +25,7 @@ type D6Pair struct {
 	Note   string `json:"note"` // vault-relative path of the note citing it
 }
 
-// loadD6 is loadTier's D6 case. It fails closed on a cache Load can't read (stale
-// Extractor, corrupt JSON) rather than silently deriving a smaller corpus from whatever
-// did load — the same reasoning read.go already applied to a truncated capture line: a
-// cache nobody could parse is a cache nobody could vouch for, so the whole export
-// refuses rather than reporting success over an incomplete symbol table.
+// loadD6 is loadTier's D6 case.
 func loadD6(root string) ([]any, error) {
 	ixs, err := loadIndexes(root)
 	if err != nil {
@@ -55,11 +39,7 @@ func loadD6(root string) ([]any, error) {
 	return boxed(pairsFromNotes(notes, rg, ixs), nil)
 }
 
-// loadIndexes reads every .forge/code-index-<repo>.json this machine currently holds, in
-// sorted (repo name) order — the same determinism discipline this codebase applies
-// elsewhere, so a symbol declared in two repos resolves to the same one on every run. An
-// absent cache is a repo nobody has run `forge logback`/`check`/`drift` against yet and
-// is not an error; a present-but-unreadable one is.
+// loadIndexes reads every .forge/code-index-<repo>.json this machine currently holds.
 func loadIndexes(root string) ([]codeindex.Index, error) {
 	paths, err := filepath.Glob(filepath.Join(root, ".forge", "code-index-*.json"))
 	if err != nil {
@@ -87,10 +67,7 @@ func reposOf(ixs []codeindex.Index) []coderef.Repo {
 	return out
 }
 
-// fileList sorts an Index's file set. Everything downstream that walks a repo's files —
-// this, and findSymbol below — reads them in this order, so a tie (two files declaring
-// the same trailing member) resolves the same way on every run rather than however Go's
-// map iteration happens to land.
+// fileList sorts an Index's file set.
 func fileList(ix codeindex.Index) []string {
 	out := make([]string, 0, len(ix.Files))
 	for p := range ix.Files {
@@ -100,9 +77,7 @@ func fileList(ix codeindex.Index) []string {
 	return out
 }
 
-// loadContentNotes is loadNotes (cmd/forge/index.go) inlined for pkg/dataset: cmd depends
-// on pkg, never the reverse, so the walk-and-load pair is duplicated here rather than
-// shared.
+// loadContentNotes is loadNotes (cmd/forge/index.go) inlined for pkg/dataset.
 func loadContentNotes(root string) ([]*vault.Note, error) {
 	rels, err := vault.Walk(root)
 	if err != nil {
@@ -120,9 +95,8 @@ func loadContentNotes(root string) ([]*vault.Note, error) {
 	return out, nil
 }
 
-// pairsFromNotes resolves every note's citations and dedupes on the resulting quadruple —
-// a note citing the same symbol once in frontmatter and once in prose must not double its
-// own weight in the corpus.
+// pairsFromNotes resolves every note's citations and dedupes on the resulting
+// quadruple.
 func pairsFromNotes(notes []*vault.Note, rg *coderef.Registry, ixs []codeindex.Index) []D6Pair {
 	seen := map[string]bool{}
 	var out []D6Pair
@@ -152,10 +126,8 @@ func refsOf(n *vault.Note) []coderef.Ref {
 	return refs
 }
 
-// resolveD6 mirrors locate() (cmd/forge/check_codebase.go) exactly rather than inventing
-// a more lenient strategy: a symbol-kind ref resolves through the symbol table, anything
-// else through the registry, and a citation resolving to neither contributes no pair —
-// same as it contributes nothing to moc/codebase.md's coverage today.
+// resolveD6 mirrors locate() (cmd/forge/check_codebase.go) exactly rather than
+// inventing a more lenient strategy.
 func resolveD6(ref coderef.Ref, note string, rg *coderef.Registry, ixs []codeindex.Index) (D6Pair, bool) {
 	var repo, path string
 	if ref.Kind == coderef.KindSymbol {
@@ -169,12 +141,7 @@ func resolveD6(ref coderef.Ref, note string, rg *coderef.Registry, ixs []codeind
 	return D6Pair{Kind: D6Kind, Repo: repo, Path: path, Symbol: ref.Symbol, Note: note}, true
 }
 
-// findSymbol searches every loaded index for name, repos and files both in sorted order,
-// via File.Lookup — exact qualified name, then trailing member, the same rule
-// codeindex.File.Lookup gives forge check's own coverage numbers. Deliberately not
-// Index.FindSymbol: that method ranges over Index.Files, a map, so on a repo where two
-// files both declare the same trailing member it would pick whichever Go's map iteration
-// happened to visit first — a different file on different runs.
+// findSymbol searches every loaded index for name.
 func findSymbol(ixs []codeindex.Index, name string) (repo, path string, ok bool) {
 	for _, ix := range ixs {
 		for _, p := range fileList(ix) {

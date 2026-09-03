@@ -47,9 +47,7 @@ Order placement goes through Order.place.
 `
 
 // TestRollbackSymmetry is the brief's mandated test: break a symbol, assert demotion;
-// revert, assert restoration. It exercises the seam between Check (verdicts, from tree
-// state) and Apply (confidence, from .forge/), because rollback symmetry is a property of
-// the pair — Check has no "restored" verdict and should not have one.
+// revert, assert restoration.
 func TestRollbackSymmetry(t *testing.T) {
 	if !codeindex.Available() {
 		t.Skip("built without cgo: no symbol table to break")
@@ -78,14 +76,8 @@ func TestRollbackSymmetry(t *testing.T) {
 	assertLogCitesBoth(t, vaultDir, broke, restored)
 }
 
-// TestRollbackSymmetryOnDeletion covers same-commit deletion end to end: a file deleted in the very
-// commit the hook checks demotes the citing note immediately, an unrelated later commit
-// must not restore it (the flip-flop the gate-ordering fix in checkUnresolvedPath exists
-// to prevent — a naive fix would emit SKIPPED on the unrelated commit, and Apply's
-// restore path would treat that as "not broken"), and reverting the deletion restores it.
-// Only that last leg needs a symbol table (codeindex.Available()): the deletion and
-// flip-flop legs are pure path matching and must run — and do — under CGO_ENABLED=0,
-// the repo's default build lane, since that is the fix this test exists to pin.
+// TestRollbackSymmetryOnDeletion covers same-commit deletion end to end: a file deleted
+// in the very commit the hook checks demotes the citing note immediately.
 func TestRollbackSymmetryOnDeletion(t *testing.T) {
 	repo, vaultDir := t.TempDir(), t.TempDir()
 	writeRepo(t, repo, orderV1)
@@ -235,9 +227,7 @@ func commit(t *testing.T, root, msg string) string {
 	return head(t, root)
 }
 
-// ensureGitRepo is commit and commitDated's (gitindex_test.go) shared one-time init: both
-// need a repo with a committer identity before their first commit, and only their final
-// commit invocation differs (commitDated needs GIT_AUTHOR_DATE/GIT_COMMITTER_DATE).
+// ensureGitRepo is commit and commitDated's (gitindex_test.go) shared one-time init.
 func ensureGitRepo(t *testing.T, root string) {
 	t.Helper()
 	if _, err := os.Stat(filepath.Join(root, ".git")); os.IsNotExist(err) {

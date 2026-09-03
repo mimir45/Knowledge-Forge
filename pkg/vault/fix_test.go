@@ -70,9 +70,7 @@ func TestFixDropsRetiredKeys(t *testing.T) {
 }
 
 // TestFixCarriesLegacySourceIntoSources: `source:` is retired, but on 63 of the real
-// vault's 93 notes it is the only provenance there is. Dropping it unconverted would
-// destroy the citation and fail the note on the §12 gate, so the value must survive the
-// retirement rather than be deleted with the key.
+// vault's 93 notes it is the only provenance there is.
 func TestFixCarriesLegacySourceIntoSources(t *testing.T) {
 	out, changes := fixed(t, legacyNote)
 	for _, want := range []string{

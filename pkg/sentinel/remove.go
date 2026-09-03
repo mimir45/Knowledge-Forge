@@ -3,10 +3,7 @@ package sentinel
 import "os"
 
 // Remove strips a block by id, plus the one blank separator line Upsert's appendBlock
-// inserted ahead of it when the block sits at end of file — the common case for a fresh
-// CLAUDE.md fragment or the last marker in a file. A missing file or a block that was
-// never written are both a no-op, not an error: --remove-markers must be safe to run on
-// a repo that never had markers.
+// inserted ahead of it when the block sits at end of file.
 func Remove(path, id string, style Style) error {
 	orig, err := readOrEmpty(path)
 	if err != nil {

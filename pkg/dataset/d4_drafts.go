@@ -5,12 +5,7 @@ import (
 	"path/filepath"
 )
 
-// draftsDir holds one quarantined draft (plus its gate error) per gate failure, waiting
-// on an explicit --previous-draft retry. There is deliberately no slug-based auto-pairing
-// and no time window: the schema gate can itself fail on the slug, so a plausible fix can
-// change the join key, and a stale draft from days ago must never silently pair with an
-// unrelated retry of the same slug. The caller — the skill, which just watched its own
-// write fail — holds the one honest join key: the exact file it was handed back.
+// draftsDir holds one quarantined draft (plus its gate error) per gate failure.
 const draftsDir = ".forge/drafts"
 
 // SaveFailingDraft persists a quarantined draft and the gate error that failed it,
@@ -31,8 +26,7 @@ func SaveFailingDraft(vaultRoot, slug string, draft, gateError []byte) (string, 
 }
 
 // TakePreviousDraft reads back a draft and its paired gate error, then deletes both — a
-// retry consumes the pairing exactly once, so a second --previous-draft pointing at the
-// same path fails loudly (file not found) rather than double-emitting a D4 pair.
+// retry consumes the pairing exactly once.
 func TakePreviousDraft(path string) (draft, gateError []byte, err error) {
 	draft, err = os.ReadFile(path)
 	if err != nil {

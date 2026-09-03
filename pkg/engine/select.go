@@ -7,16 +7,12 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/config"
 )
 
-// LockedStages re-exports pkg/config's list so this package can refuse a tampered config
-// by checking the stage name directly — defense in depth, not a shortcut around it:
-// config.Load already refuses to start on the same violation via validateLockedStages.
+// LockedStages re-exports pkg/config's list so this package can refuse a tampered
+// config by checking the stage name directly — defense in depth.
 var LockedStages = config.LockedStages
 
-// Resolve walks stage's Engine/Fallback/Then chain and returns the winning engine name —
-// "none", "host", "api", "advisor", or the "local" alias — plus a human reason a caller
-// can surface (this is what makes `forge engine select --json` show *why* offline fell
-// back to none instead of just that it did). ledger may be nil, which fails budget checks
-// open; callers that care about an honest answer must pass a real one.
+// Resolve walks stage's Engine/Fallback/Then chain and returns the winning engine name
+// — "none", "host", "api", "advisor", or the "local" alias.
 func Resolve(cfg *config.Config, ledger Ledger, clock func() time.Time, stage string) (name, reason string, err error) {
 	st := cfg.Pipeline[stage]
 	if err := checkLocked(stage, st); err != nil {
@@ -31,8 +27,7 @@ func Resolve(cfg *config.Config, ledger Ledger, clock func() time.Time, stage st
 }
 
 // Select is Resolve narrowed to a Tier for callers that only need to know which
-// implementation to construct — "local" maps to TierAPI, since it is api.go under a
-// different base_url, not a fifth Engine.
+// implementation to construct — "local" maps to TierAPI.
 func Select(cfg *config.Config, ledger Ledger, clock func() time.Time, stage string) (Tier, string, error) {
 	name, reason, err := Resolve(cfg, ledger, clock, stage)
 	if err != nil {
@@ -42,9 +37,7 @@ func Select(cfg *config.Config, ledger Ledger, clock func() time.Time, stage str
 }
 
 // Exhausted reports whether stage's chain names a metered tier (api/advisor) that is
-// currently out of budget — the distinction Resolve's single winning name loses once it
-// has already degraded to "none". `on_exhausted: queue` needs this to tell "no budget
-// today" apart from "nothing metered was ever configured here" before it queues a note.
+// currently out of budget.
 func Exhausted(cfg *config.Config, ledger Ledger, clock func() time.Time, stage string) bool {
 	st := cfg.Pipeline[stage]
 	for _, cand := range chain(cfg, stage, st) {
@@ -66,9 +59,7 @@ func tierOf(name string) Tier {
 }
 
 // checkLocked is the defense-in-depth pkg/config/validate.go's LockedStageError already
-// enforces at load time. It inspects Engine, Fallback, *and* Then — a tamper that hides
-// behind pipeline.write.fallback rather than .engine must be caught here too, or this
-// layer is decorative.
+// enforces at load time.
 func checkLocked(stage string, st config.Stage) error {
 	if !isLocked(stage) {
 		return nil
@@ -91,9 +82,7 @@ func isLocked(stage string) bool {
 	return false
 }
 
-// chain lists the stage's candidates in priority order, falling back to engines.default
-// when the stage sets no Engine of its own — an unset stage is not a locked-to-none claim,
-// it is silence, and cfg.Engines.Default is what fills it.
+// chain lists the stage's candidates in priority order.
 func chain(cfg *config.Config, stage string, st config.Stage) []string {
 	var out []string
 	if st.Engine != "" {

@@ -8,8 +8,7 @@ import (
 )
 
 // TestIntentEmitsHitAboveThreshold pins the plan's >0.7 contract: a prompt that nearly
-// echoes an existing note's title scores 0.99 against the fixture (measured via
-// `forge recall --explain`), so it must surface as additionalContext.
+// echoes an existing note's title scores 0.99 against the fixture.
 func TestIntentEmitsHitAboveThreshold(t *testing.T) {
 	root := fixtureCopy(t)
 	runIndex(root, "_index.md", 4096, false)

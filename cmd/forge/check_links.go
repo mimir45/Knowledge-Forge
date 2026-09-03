@@ -15,10 +15,6 @@ import (
 )
 
 // links gathers every cited URL and the notes citing it, then checks each once.
-//
-// The map is keyed by URL rather than by note on purpose: a doc page cited by nine notes
-// is one request, not nine, and the report is only actionable if a dead URL names all
-// nine at once.
 func (d *checkData) links() {
 	byURL := map[string][]string{}
 	for _, n := range d.notes {
@@ -50,10 +46,7 @@ func (d *checkData) statuses(byURL map[string][]string) []report.Citation {
 	return out
 }
 
-// cachedOnly answers from the cache and reports everything else as unreachable, which is
-// exactly what an offline run learned: nothing. The alternative — omitting the unknowns —
-// would shrink the denominator and let deadlinks.md quietly claim a cleaner vault than it
-// checked.
+// cachedOnly answers from the cache and reports everything else as unreachable.
 func cachedOnly(dir string, urls []string) []linkcheck.Status {
 	c := linkcheck.LoadCache(dir)
 	ttl := linkcheck.DefaultOptions().TTL
@@ -69,21 +62,13 @@ func cachedOnly(dir string, urls []string) []linkcheck.Status {
 }
 
 // sourceURLs reads the url out of every citation, under both key names the vault holds.
-// The schema's key is `sources`; the pre-migration notes wrote a singular `source`, and
-// the migration did not rename it in the notes it could not otherwise fix. Reading only
-// one of the two is how the first run of this report checked 0 URLs across 91 notes.
-//
-// Both value shapes are handled too — the schema's list of mappings and the bare scalar.
-// Only http(s) is returned: the schema also admits a vault-relative path for a first-party
-// source, and there is nothing for an HTTP checker to do with one.
 func sourceURLs(fm *vault.Frontmatter) []string {
 	http, _ := sourcesOf(fm)
 	return http
 }
 
 // sourcesOf splits a note's citations into the ones an HTTP checker can judge and the
-// first-party ones it cannot. Both counts are reported: dropping the second would let
-// deadlinks.md print "0 of 0 URLs" over a vault whose every note is cited.
+// first-party ones it cannot.
 func sourcesOf(fm *vault.Frontmatter) (http []string, firstParty int) {
 	for _, key := range []string{"sources", "source"} {
 		n, ok := fm.Vals[key]

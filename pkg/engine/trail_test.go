@@ -7,9 +7,7 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
-// loadPreset mirrors pkg/config/chain_test.go's idiom (Preset → layer → Load), pointed at
-// the packaged preset file directly via EnvPath rather than pkg/config's unexported
-// marshalForTest — pkg/engine has no access to that helper and should not need one.
+// loadPreset mirrors pkg/config/chain_test.go's idiom (Preset → layer → Load).
 func loadPreset(t *testing.T, name string) *config.Config {
 	t.Helper()
 	t.Setenv(config.EnvVar, "")
@@ -23,10 +21,8 @@ func loadPreset(t *testing.T, name string) *config.Config {
 	return cfg
 }
 
-// TestTrailEntriesMatchSchema asserts every (stage,tier) pair the four engine presets can
-// produce — across Engine, Fallback and Then, since a fallback firing is a real trail
-// entry too — matches references/schema.yaml's engine_trail item_pattern. A copy of the
-// regex here could drift from the schema silently; this test reads the schema's own.
+// TestTrailEntriesMatchSchema asserts every (stage,tier) pair the four engine presets
+// can produce — across Engine, Fallback and Then.
 func TestTrailEntriesMatchSchema(t *testing.T) {
 	schema, err := vault.LoadSchema()
 	if err != nil {

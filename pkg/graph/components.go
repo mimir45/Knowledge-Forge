@@ -12,14 +12,6 @@ type Component struct {
 func (c Component) Size() int { return len(c.Members) }
 
 // Components partitions the vault into connected groups, treating links as undirected.
-//
-// Undirected is the deliberate choice. Followed as arrows, a vault of notes that all link
-// forward into one hub is a pile of singletons, which describes the data structure rather
-// than the knowledge — the question graph-health.md asks is "can a reader get from here to
-// there", and a reader follows backlinks too. Obsidian's own graph view draws it this way.
-//
-// The answer it produces is a shape, not a score: one big component and a tail of pairs is
-// a healthy wiki, fifteen equal islands is fifteen unrelated notebooks in one folder.
 func Components(nodes []Node) []Component {
 	uf := newUnionFind(nodes)
 	for _, n := range nodes {
@@ -56,9 +48,7 @@ func newUnionFind(nodes []Node) *unionFind {
 	return uf
 }
 
-// find resolves a path to its set representative, flattening as it goes. An unknown path —
-// a wikilink pointing at a note that does not exist — joins no set: a dangling link is
-// linkcheck's problem and reporting it as a component member would invent a note.
+// find resolves a path to its set representative, flattening as it goes.
 func (u *unionFind) find(x string) (string, bool) {
 	root, ok := u.parent[x]
 	if !ok {
@@ -112,9 +102,7 @@ func sortComponents(cs []Component) {
 	})
 }
 
-// WithRoots fills in each component's entry points. A component with no root is the one
-// worth naming in the report: a cluster of notes with no way into it from the vault's
-// front door, which is a different failure from an orphan and invisible to Orphans.
+// WithRoots fills in each component's entry points.
 func (g *Graph) WithRoots(comps []Component) []Component {
 	out := make([]Component, len(comps))
 	for i, c := range comps {

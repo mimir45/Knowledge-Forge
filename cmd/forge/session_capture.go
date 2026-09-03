@@ -38,11 +38,7 @@ Writes nothing when transcript_path is absent or unreadable.
 Fail-silent: the exit code is always 0.
 `
 
-// cmdSessionCapture is Phase 5's SessionEnd hook: a cheap, model-free scan of the
-// session's transcript for "we established/decided/concluded that..." moments, written
-// as capped, low-confidence stub notes via the same _inbox/ convention forge gate uses.
-// Like every other hook subcommand here, it must never fail the session: any error just
-// means no stubs get written, never a nonzero exit.
+// cmdSessionCapture is Phase 5's SessionEnd hook: a cheap.
 func cmdSessionCapture(args []string) int {
 	fs := flag.NewFlagSet("forge session-capture", flag.ContinueOnError)
 	vaultDir := fs.String("vault", "", "vault root; defaults to config vault_path, then .")
@@ -81,10 +77,7 @@ func readSessionEnd(r io.Reader) (sessionEndPayload, error) {
 	return p, err
 }
 
-// captureSession finds conclusion sentences, dedupes against the session-id+content-hash
-// store (so a resumed session that re-fires SessionEnd doesn't duplicate stubs — but the
-// same conclusion restated in a *different* session is treated as new, since the key
-// includes session id), and writes up to maxStubs.
+// captureSession finds conclusion sentences.
 func captureSession(root string, p sessionEndPayload) {
 	texts, err := extractAssistantText(p.TranscriptPath)
 	if err != nil {
@@ -138,10 +131,7 @@ type transcriptEntry struct {
 	} `json:"message"`
 }
 
-// parseAssistantLine extracts text blocks from one transcript JSONL line, nil for
-// anything that isn't an assistant turn (user turns, tool results, summaries) — this is
-// deliberate: raw transcript text can hold tool output and file contents, and the
-// telemetry invariant against ever exporting those extends to what session-capture writes.
+// parseAssistantLine extracts text blocks from one transcript JSONL line.
 func parseAssistantLine(line []byte) []string {
 	var e transcriptEntry
 	if json.Unmarshal(line, &e) != nil || e.Message.Role != "assistant" {
@@ -159,8 +149,7 @@ func parseAssistantLine(line []byte) []string {
 var conclusionRe = regexp.MustCompile(`(?i)\bwe (?:established|decided|concluded|agreed) that\b[^.\n]*[.\n]?`)
 
 // scanConclusions finds "we established/decided/concluded/agreed that..." sentences
-// across assistant turns — the cheap, regex-only signal the plan calls for, no model
-// call and no attempt at real NLU.
+// across assistant turns — the cheap, regex-only signal the plan calls for.
 func scanConclusions(texts []string) []string {
 	var found []string
 	for _, t := range texts {
@@ -234,9 +223,7 @@ func stubTitle(text string) string {
 }
 
 // truncateValidUTF8 cuts s to at most n bytes without splitting a multi-byte rune.
-// validate.go's MaxLength check counts bytes (len(v)), so this stays under budget while
-// never emitting invalid UTF-8 — a real risk here since captured conclusions can be
-// non-English.
+// validate.go's MaxLength check counts bytes (len(v)).
 func truncateValidUTF8(s string, n int) string {
 	for n > 0 && !utf8.RuneStart(s[n]) {
 		n--
@@ -244,11 +231,7 @@ func truncateValidUTF8(s string, n int) string {
 	return strings.TrimSpace(s[:n])
 }
 
-// stubFrontmatter emits only the keys session-capture can honestly derive: title/slug
-// from the captured text, type/depth/freshness_days at schema defaults (not a real
-// classification), origin/dates/forge_version from the run itself. stack and tags are
-// deliberately absent — inventing them would be worse than leaving them for a human,
-// per stubOpenQuestions.
+// stubFrontmatter emits only the keys session-capture can honestly derive.
 func stubFrontmatter(title, slug string) (*vault.Frontmatter, error) {
 	now := time.Now().UTC().Format("2006-01-02")
 	src := fmt.Sprintf(
@@ -260,8 +243,7 @@ func stubFrontmatter(title, slug string) (*vault.Frontmatter, error) {
 }
 
 // stubOpenQuestions names exactly what a session-capture stub can't honestly claim to
-// know, so a reviewer sees what to fill in before this leaves _inbox/ — the same
-// convention forge gate's own quarantine path uses for its own failing drafts.
+// know, so a reviewer sees what to fill in before this leaves _inbox/.
 func stubOpenQuestions() []string {
 	return []string{
 		"stack: not inferred from the transcript; fill in before publishing",

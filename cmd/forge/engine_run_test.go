@@ -26,10 +26,7 @@ func TestQueueNoteStampsPendingAdvisor(t *testing.T) {
 }
 
 // TestOnExhaustedBehaviorDiverges pins that the three on_exhausted values now reach
-// genuinely different outcomes, rather than all three converging on the same silent
-// none-fallthrough. Each case forces the
-// same exhausted-budget path (cap $0.00, no fallback in the chain) and checks the exit
-// code and, for queue, the note write that used to be the only distinguishable effect.
+// genuinely different outcomes.
 func TestOnExhaustedBehaviorDiverges(t *testing.T) {
 	cases := []struct {
 		name        string
@@ -60,9 +57,7 @@ func TestOnExhaustedBehaviorDiverges(t *testing.T) {
 	}
 }
 
-// exhaustedConfig points "research" at api with a $0.00 cap and no fallback, so
-// engine.Resolve always degrades to none and engine.Exhausted is always true — the
-// precondition every onExhausted case needs, independent of the value under test.
+// exhaustedConfig points "research" at api with a $0.00 cap and no fallback.
 func exhaustedConfig(onExhausted string) *config.Config {
 	return &config.Config{
 		Pipeline: map[string]config.Stage{"research": {Engine: "api"}},

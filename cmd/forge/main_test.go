@@ -5,11 +5,7 @@ import (
 	"testing"
 )
 
-// TestUsageListsEveryCommand pins the two lists in main.go against each other. Nothing
-// did until now, and the failure mode is quiet in exactly the wrong direction: a command
-// registered but never mentioned in the usage block is a feature that ships undiscovered.
-// Two commands were added in the same edit that introduced this test, which is the moment
-// the gap was worth closing.
+// TestUsageListsEveryCommand pins the two lists in main.go against each other.
 func TestUsageListsEveryCommand(t *testing.T) {
 	body := usageBody(t)
 	for name := range commands {

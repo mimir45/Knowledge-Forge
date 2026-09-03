@@ -23,9 +23,8 @@ func TestInboundCounts(t *testing.T) {
 }
 
 // TestRootDetectionIsNotInboundCount guards against conflating root detection with
-// inbound-link count.
-// index.md has zero inbound links and must not be reported as an orphan; a buried note
-// with zero inbound must be.
+// inbound-link count. index.md has zero inbound links and must not be reported as an
+// orphan; a buried note with zero inbound must be.
 func TestRootDetectionIsNotInboundCount(t *testing.T) {
 	g := Build([]Node{
 		{Rel: "index.md", Outbound: []string{"concepts/a.md"}},
@@ -50,8 +49,7 @@ func TestRootDetectionIsNotInboundCount(t *testing.T) {
 }
 
 // TestMutualLinkPairIsStillClassified: the fixture's index.md and log.md link to each
-// other, which a count-based rule would call non-orphans by accident. Both must be roots
-// on structural grounds instead — the classification has to hold for the right reason.
+// other, which a count-based rule would call non-orphans by accident.
 func TestMutualLinkPairIsStillClassified(t *testing.T) {
 	g := Build([]Node{
 		{Rel: "index.md", Outbound: []string{"log.md"}},
@@ -95,8 +93,7 @@ func TestOrphansPreservesInputOrder(t *testing.T) {
 }
 
 // TestUnresolvedTargetIsNeverReportedAsANote: the fixture carries a [[does-not-exist]]
-// link. Even if a caller hands Build an unresolved target, every report Build produces
-// iterates the node list, so a phantom can never appear in vault output.
+// link.
 func TestUnresolvedTargetIsNeverReportedAsANote(t *testing.T) {
 	nodes := []Node{{Rel: "concepts/a.md", Outbound: []string{"does-not-exist.md"}}}
 	g := Build(nodes)

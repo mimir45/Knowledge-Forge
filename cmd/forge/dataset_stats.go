@@ -50,8 +50,7 @@ func runDatasetStats(root string, w io.Writer) int {
 }
 
 // writeTierCounts prints all six rows in one table. d6's first/last columns read "—"
-// unconditionally (it has no per-record timestamp — see stampOf's doc comment), which is
-// enough to distinguish it from a capture tier that has simply captured nothing yet.
+// unconditionally (it has no per-record timestamp — see stampOf's doc comment).
 func writeTierCounts(tw *tabwriter.Writer, stats []dataset.TierStats) {
 	fmt.Fprintf(tw, "Pairs (d1-d5 captured over time; d6 recomputed live, see usage):\n")
 	fmt.Fprintf(tw, "  set\tkind\tpairs\tfirst\tlast\n")
@@ -83,9 +82,7 @@ func writeAdequacy(tw *tabwriter.Writer, stats []dataset.TierStats) {
 	fmt.Fprintf(tw, "  drafting, then advisor distillation — in that order.\n")
 }
 
-// adequacy is ADDENDUM D.2's table read back one tier at a time. Every string here is
-// bounded above deliberately: the section's whole purpose is to stop someone spending a
-// month fine-tuning on 200 examples and concluding fine-tuning does not work.
+// adequacy is ADDENDUM D.2's table read back one tier at a time.
 func adequacy(tag string, n int) string {
 	switch tag {
 	case "d1":
@@ -108,9 +105,7 @@ func adequacy(tag string, n int) string {
 	return ""
 }
 
-// band applies D.2's 100 / 1000 thresholds, which are the two that actually change the
-// answer: below 100 nothing trains, 100-500 is the small-adapter window, and 1k-5k is
-// where a 7-8B drafting LoRA becomes credible.
+// band applies D.2's 100 / 1000 thresholds.
 func band(n int, under100, under1000, over string) string {
 	switch {
 	case n < 100:

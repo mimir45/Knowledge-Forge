@@ -77,9 +77,7 @@ func TestCacheSourceObjectResponseCachedVerbatim(t *testing.T) {
 }
 
 // TestCacheSourceExtractsResultField pins the real WebFetch PostToolUse shape, captured
-// from a live hook payload since it was never documented officially: tool_response is an
-// object {result, url, code, codeText, bytes, durationMs}, and only result's text belongs in the
-// cache — the wrapper fields must not leak into the cached body.
+// from a live hook payload since it was never documented officially.
 func TestCacheSourceExtractsResultField(t *testing.T) {
 	root := t.TempDir()
 	p := postToolUsePayload{
@@ -105,8 +103,7 @@ func TestCacheSourceExtractsResultField(t *testing.T) {
 }
 
 // TestCacheSourceEmptyResultStillExtracted pins the map-decode-over-struct choice: a
-// present-but-empty "result" ("" — a real fetch outcome, not malformed input) must be
-// returned as the extracted body, not fall through to caching the whole wrapper object.
+// present-but-empty "result".
 func TestCacheSourceEmptyResultStillExtracted(t *testing.T) {
 	root := t.TempDir()
 	p := postToolUsePayload{

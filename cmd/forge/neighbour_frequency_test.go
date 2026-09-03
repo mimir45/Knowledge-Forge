@@ -12,39 +12,13 @@ import (
 )
 
 // This harness adds a per-note "appears in N of M query results" column to the
-// neighbour-floor sweep's picture. It lives in its own file rather than inside
-// neighbour_floor_test.go because it isn't a floor sweep: the floor is fixed at
-// recall.DefaultThresholds.Neighbour and nothing varies. It answers a different
-// question — does a note's neighbour eligibility depend on how many unrelated queries it
-// turns up for, a document-frequency property recall-spec.md §2.3.1 computes for terms
-// and never for notes.
-//
-// The hypothesis under test is "a note scoring on every query in an ecosystem" — not on
-// every query, full stop. A raw N/M count over a query set spanning several unrelated
-// ecosystems (Spring, Keycloak, React, Docker, ...) cannot tell those apart: a note at
-// 5/15 could be scattered noise, or it could be 5/5 on exactly the Spring-flavored
-// subset, which is the hypothesis confirmed, not refuted. So for every slug that appears
-// in more than one query, this records *which* queries — the golden is read alongside
-// them, not just at its counts.
-//
-// It also counts two different things queries can saturate, which are not the same
-// number: how many queries return a full TopN=10 *nonzero-scored* candidates from
-// recall.Rank (rankCapped — recall.Rank returns nonZero(cands) truncated to TopN, so this
-// only says ten notes overlapped at all), and, since the neighbour band's pool was
-// widened from TopN=10 to NeighbourWindow=20, how many queries exhaust that wider pool
-// itself (poolSaturated — recall.NeighbourPool(pool) hits all 20 slots, meaning even the
-// widened window ran out of room, not just the floor). calibration.golden's JPA row is
-// the proof rankCapped and neighbour admission diverge: it has a nonzero top score
-// (0.119) and 0 neighbours in the same run.
+// neighbour-floor sweep's picture.
 
 const freqGoldenPath = "testdata/neighbour-frequency.golden"
 const ecosystemsPath = "testdata/query-ecosystems.txt"
 
 // TestNeighbourDocumentFrequency reports, for every note admitted as a neighbour in at
-// least one of the fifteen testdata/neighbour-labels.txt queries, how many of those
-// queries admit it and which ones. It asserts nothing about which count is too high —
-// that is a separate design judgment — only that the count and the query list stay
-// reproducible.
+// least one of the fifteen testdata/neighbour-labels.txt queries.
 func TestNeighbourDocumentFrequency(t *testing.T) {
 	got := frequencyTable(t)
 	if *updateGolden {
@@ -78,9 +52,7 @@ func minOf(counts []int) int {
 	return m
 }
 
-// freqRow is one note's frequency plus which queries admitted it — the query list is
-// what lets a reader tell "scattered" from "ecosystem-universal" apart; the count alone
-// cannot.
+// freqRow is one note's frequency plus which queries admitted it.
 type freqRow struct {
 	slug    string
 	queries []string
@@ -97,9 +69,6 @@ func frequencyTable(t *testing.T) string {
 	counts := make([]int, 0, len(queries))
 	for _, q := range queries {
 		pool := recall.RankPool(recall.Query{Question: q.question}, docs, calibrationNow)
-		// Equivalent to len(recall.Rank(...)) == recall.TopN: Rank is truncate(pool, TopN),
-		// and pool is already nonZero-filtered, so truncation hits TopN iff pool has at
-		// least that many entries.
 		if len(pool) >= recall.TopN {
 			rankCapped++
 		}
@@ -121,13 +90,7 @@ func frequencyTable(t *testing.T) string {
 	return renderFrequencyTable(queries, eco, freq, rankCapped, poolSaturated, counts)
 }
 
-// loadQueryEcosystems parses testdata/query-ecosystems.txt: which ecosystem cluster each
-// of neighbour-labels.txt's fifteen queries belongs to, written and committed before any
-// scoring change so the labelling can't be picked to fit a result seen afterward. Format
-// mirrors
-// loadNeighbourLabels: a "Q:" line followed by an "Ecosystem:" line, "#" and blank lines
-// ignored. Keyed by question text so it joins against labelledQuery without depending on
-// row order matching between the two files.
+// loadQueryEcosystems parses testdata/query-ecosystems.txt.
 func loadQueryEcosystems(t *testing.T) map[string]string {
 	t.Helper()
 	f, err := os.Open(ecosystemsPath)
@@ -193,11 +156,7 @@ func renderFrequencyTable(queries []labelledQuery, eco map[string]string, freq m
 	return b.String()
 }
 
-// springClusterRollup answers the actual hypothesis under test — "a note scoring on
-// every query in an ecosystem" — which the full-fifteen N/M column above cannot: a note scattered
-// across unrelated ecosystems and a note universal within one both produce the same raw
-// count. `spring` is testdata/query-ecosystems.txt's only cluster with M >= 2 in this
-// label set (6 of 15); the others are singletons a ratio can't say anything about.
+// springClusterRollup answers the actual hypothesis under test.
 func springClusterRollup(queries []labelledQuery, eco map[string]string, rows []*freqRow) string {
 	total := 0
 	for _, q := range queries {

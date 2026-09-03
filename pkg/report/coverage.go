@@ -8,11 +8,6 @@ import (
 )
 
 // CoverageInput is what coverage.md renders from.
-//
-// Vocabulary is the authoritative `stack` enum out of references/schema.yaml. It is what
-// makes this report say anything: counting the stacks that appear in notes tells you what
-// you have written about, and only subtracting from the full vocabulary tells you what you
-// have not. Without it the report cannot name an absence.
 type CoverageInput struct {
 	Entries    []Entry
 	Vocabulary []string
@@ -21,12 +16,6 @@ type CoverageInput struct {
 }
 
 // RenderCoverage produces coverage.md — where the wiki is thin.
-//
-// "Missing" here means one specific thing: a stack the schema knows about with zero notes
-// against it. That is a different absence from gaps.md's (asked about and never written)
-// and from codebase.md's (code that churns with no note citing it), and the three are kept
-// apart deliberately — they have different denominators and merging them would produce a
-// number that answers none of the questions.
 func RenderCoverage(in CoverageInput) []byte {
 	counts := stackCounts(in.Entries)
 	var b strings.Builder
@@ -63,9 +52,7 @@ func writeCovered(b *strings.Builder, counts map[string]int) {
 	}
 }
 
-// writeUncovered is the actionable half. A vocabulary value with no notes is either a real
-// hole or a stack you do not actually work in — the report cannot tell the difference and
-// does not pretend to.
+// writeUncovered is the actionable half.
 func writeUncovered(b *strings.Builder, in CoverageInput, counts map[string]int) {
 	missing := uncovered(in.Vocabulary, counts)
 	fmt.Fprintf(b, "\n## No notes — %d\n\n", len(missing))

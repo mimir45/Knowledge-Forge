@@ -93,21 +93,7 @@ func Walk(root string) ([]string, error) {
 }
 
 // excludedPrefixes are regions of the vault the note contract deliberately does not
-// cover: symlinked ingest input and its compiled digests. See references/taxonomy.md §5.
-//
-// reports/ is excluded for a different reason than the rest: it is this tool's own output,
-// and a report that counted itself would be wrong on every run after the first. Nine
-// generated files would move the note denominator, nominate each other as duplicates (they
-// share heavy boilerplate, and at ShingleWords=1 that scores high), and — worst — the
-// wikilinks inside duplicates.md and orphans.md would give their subjects inbound links,
-// so orphans.md would erase the orphans it exists to list. A report must never change the
-// number it reports.
-//
-// moc/weekly/ is excluded for the same reason, not moc/codebase.md's: a MOC is a stable
-// map meant to stay in the graph, but a weekly rollup is dated output that accumulates one
-// new file per ISO week and quotes duplicate/orphan/drift counts inside itself — counting
-// it would move the very numbers it reports, and on the run that follows writing it, the
-// vault it measured is no longer the vault it measures.
+// cover: symlinked ingest input and its compiled digests.
 var excludedPrefixes = []string{
 	"raw/", "sources/", "_archive/", "archive/", "reports/", "moc/weekly/",
 }
@@ -117,11 +103,7 @@ var excludedNames = map[string]bool{
 	"CLAUDE.md": true, "README.md": true, "lint-report.md": true,
 }
 
-// hubNames are hand-maintained root-level hubs. They are walked into the link graph —
-// graph.isRootLocation already classifies them as roots, and their outbound links are what
-// keep the notes they point at off the orphan list — but they carry no frontmatter and are
-// not expected to. migrate_vault.py's NON_NOTE_FILES leaves them exactly where they are,
-// so the two definitions of "note" have to differ here rather than be forced together.
+// hubNames are hand-maintained root-level hubs.
 var hubNames = map[string]bool{"index.md": true, "log.md": true}
 
 // IsContentNote reports whether a vault-relative path is a node in the link graph.
@@ -137,16 +119,7 @@ func IsContentNote(rel string) bool {
 	return true
 }
 
-// IsContractNote reports whether a path is subject to the note contract. Every contract
-// note is a content note; the hubs are the gap between the two.
-//
-// moc/ is on the hub side of that gap, and the schema is what decides it: `type` admits
-// exactly the seven values of schema.yaml, and none of them is "moc". A map of content is
-// not a note about a thing, it is a way in — so it belongs in the link graph, where
-// graph.isRootLocation already treats it as a root and its outbound links keep the notes
-// it points at off the orphan list, and nowhere near the contract. Phase 2b writes
-// moc/codebase.md; without this it would be one more invalid note, authored by the tool
-// whose job is to count them.
+// IsContractNote reports whether a path is subject to the note contract.
 func IsContractNote(rel string) bool {
 	return IsContentNote(rel) && !hubNames[rel] && !strings.HasPrefix(rel, "moc/")
 }

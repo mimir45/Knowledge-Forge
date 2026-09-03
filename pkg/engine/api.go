@@ -8,13 +8,7 @@ import (
 	"net/http"
 )
 
-// API is the real-HTTP tier. RoundTripper is always injected — pkg/engine never dials a
-// live network in a test, and select.go/api.go together are the only places in this
-// binary allowed to make a model call at all (main.go's doc-comment names the exception).
-//
-// API also serves the "local" alias (select.go): a Local config with Enabled and a
-// non-empty BaseURL resolves to an API value with Provider "ollama", the shape a locally
-// hosted model server speaks.
+// API is the real-HTTP tier.
 type API struct {
 	RoundTripper http.RoundTripper
 	Provider     string // anthropic | openai | openrouter | ollama
@@ -24,10 +18,6 @@ type API struct {
 }
 
 // envelope is the uniform response contract this package reads regardless of provider.
-// No pricing table lives in this repo (cfg.Engines carries no $/token rates for any
-// provider), so cost is read verbatim from the server's response rather than invented
-// client-side — the caller (a real provider, or a test's httptest.Server) states its own
-// price. Request *payload* shape still varies per provider; only the response is uniform.
 type envelope struct {
 	Output  string  `json:"output"`
 	Tokens  int     `json:"tokens"`

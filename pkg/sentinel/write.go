@@ -6,10 +6,7 @@ import (
 	"strings"
 )
 
-// writeFile skips the write when the rendered content already matches what's on disk —
-// an identical rewrite still bumps mtime, the same reason cmd/forge's own writers compare
-// before they write. That comparison is what makes Upsert idempotent on disk, not merely
-// in content.
+// writeFile skips the write when the rendered content already matches what's on disk.
 func writeFile(path string, lines []string) error {
 	content := render(lines)
 	if old, err := os.ReadFile(path); err == nil && string(old) == content {

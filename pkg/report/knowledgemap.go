@@ -5,20 +5,8 @@ import (
 	"strings"
 )
 
-// RenderKnowledgeMap produces docs/knowledge-map.md — per docs/ARCHITECTURE.md §10 — for
-// the *code* repo rather than the vault, so a reader who starts from the code (not Obsidian)
-// can still find what's written about it. It is the same module→notes join as moc/codebase.md,
-// minus the churn and owner columns that belong to the weekly pass, not to a file a code
-// reviewer will read next to the source tree.
-//
-// Groups with no notes are omitted rather than listed as empty: a knowledge map is an
-// index of what exists, and CodebaseInput.Uncovered / reports/coverage.md already carry
-// the "nothing written here yet" signal for the vault-side audience.
-//
-// DependsOn is populated by cmd/forge/check_codebase_deps.go, but it
-// stays out of this render on purpose: moc/codebase.md is the report that already carries
-// it, and this map is deliberately the notes join minus everything else that report adds
-// (churn, owners) — adding the dependency graph back here would just duplicate that one.
+// RenderKnowledgeMap produces docs/knowledge-map.md — per docs/ARCHITECTURE.md §10 —
+// for the *code* repo rather than the vault, so a reader who starts from the code.
 func RenderKnowledgeMap(groups []CodeGroup) []byte {
 	var b strings.Builder
 	b.WriteString("# Knowledge map\n\n")

@@ -13,9 +13,7 @@ import (
 var javaPublicClassRe = regexp.MustCompile(`public\s+(?:final\s+|abstract\s+)?(?:class|interface|enum)\s+(\w+)`)
 
 // compileJava runs javac in a throwaway temp dir with no classpath beyond the JDK
-// itself: no Maven/Gradle resolution, no network, ever (compile.go's doc comment). A
-// missing library (e.g. Spring on the classpath) yields "package ... does not exist" or
-// "cannot find symbol" — unresolved, not a defect in the snippet.
+// itself: no Maven/Gradle resolution, no network, ever (compile.go's doc comment).
 func compileJava(ctx context.Context, src []byte) CompileResult {
 	if _, err := exec.LookPath("javac"); err != nil {
 		return toolchainMissing("javac")

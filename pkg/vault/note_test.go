@@ -2,9 +2,8 @@ package vault
 
 import "testing"
 
-// The classification of generated output is the one that fails silently. forge check writes
-// nine reports and a MOC into the vault it just measured; if those come back as notes, the
-// first run is correct and every run after it is quietly wrong.
+// The classification of generated output is the one that fails silently. forge check
+// writes nine reports and a MOC into the vault it just measured.
 func TestGeneratedOutputIsNotACountedNote(t *testing.T) {
 	for _, rel := range []string{"reports/duplicates.md", "reports/orphans.md"} {
 		if IsContentNote(rel) {
@@ -14,9 +13,8 @@ func TestGeneratedOutputIsNotACountedNote(t *testing.T) {
 	}
 }
 
-// moc/ is a content note but never a contract note: `type` admits seven values and none is
-// "moc". It stays in the link graph — that is what a map of content is for — while staying
-// out of the validity denominator.
+// moc/ is a content note but never a contract note: `type` admits seven values and none
+// is "moc".
 func TestMOCIsAGraphNodeButNotContractBound(t *testing.T) {
 	const rel = "moc/codebase.md"
 	if !IsContentNote(rel) {

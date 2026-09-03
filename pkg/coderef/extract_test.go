@@ -3,8 +3,7 @@ package coderef
 import "testing"
 
 // The span classifier is the whole reason the unresolved count means anything: if it
-// admits `mvn test` and `spring.datasource.url` as citations, every report downstream
-// reads as a vault full of broken code references when it is a vault full of prose.
+// admits `mvn test` and `spring.datasource.url` as citations.
 func TestParseSpanClassification(t *testing.T) {
 	cases := []struct {
 		in   string

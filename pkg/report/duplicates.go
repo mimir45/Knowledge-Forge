@@ -22,10 +22,8 @@ type DuplicatesInput struct {
 // references/duplicate-spec.md, which is what the code follows where the two disagree.
 const specThreshold = 0.85
 
-// TopDuplicatePair returns the highest-scoring pair that clears the 0.85 spec threshold —
-// the same bar duplicates.md's header and weekly.go's Act now section use, not the lower
-// operating threshold pairs is otherwise filtered at. For check.ai_pass's merge-proposal
-// sub-task: pairs must already be sorted best-first, as similarity.Index.Pairs returns it.
+// TopDuplicatePair returns the highest-scoring pair that clears the 0.85 spec threshold
+// — the same bar duplicates.md's header and weekly.go's Act now section use.
 func TopDuplicatePair(pairs []similarity.Pair) (similarity.Pair, bool) {
 	for _, p := range pairs {
 		if p.Score >= specThreshold {
@@ -36,12 +34,6 @@ func TopDuplicatePair(pairs []similarity.Pair) (similarity.Pair, bool) {
 }
 
 // RenderDuplicates produces duplicates.md.
-//
-// The header states outright that nothing in the vault crosses §B.4's 0.85. That is the
-// honest headline rather than a footnote: a reader who knows the spec would otherwise see
-// a list of 0.4-scoring pairs and assume the threshold in the doc was met. It was not, and
-// no shingle width makes it met — 0.85 is a copy-paste detector and these notes are not
-// copy-paste, they are the same behaviour written up twice, months apart, in other words.
 func RenderDuplicates(in DuplicatesInput) []byte {
 	var b strings.Builder
 	header(&b, "Duplicates", duplicatesSummary(in), in.Now)

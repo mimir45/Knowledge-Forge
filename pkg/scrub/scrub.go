@@ -1,8 +1,5 @@
 // Package scrub redacts personal and secret content from an Obsidian vault before it is
-// published — Phase 6's `examples/vault/` and, later, Phase 6b's `--anonymize` both
-// build on this. It never mutates its input: Scrub reads srcDir and writes a redacted
-// copy to dstDir, and it fails closed — any note it cannot scrub and re-validate aborts
-// the whole run before anything is written.
+// published — Phase 6's `examples/vault/` and, later.
 package scrub
 
 import (
@@ -27,8 +24,7 @@ type file struct {
 }
 
 // Scrub walks srcDir as a vault, redacts every note, and writes the result under dstDir
-// with the same relative layout. On any note's failure it returns an error and writes
-// nothing at all.
+// with the same relative layout.
 func Scrub(srcDir, dstDir string) (Report, error) {
 	schema, err := vault.LoadSchema()
 	if err != nil {

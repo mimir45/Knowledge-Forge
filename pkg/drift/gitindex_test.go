@@ -12,11 +12,8 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/coderef"
 )
 
-// TestNameMapOrdersDeclarationsWithinOneFile is the bug drift.md showed on the real vault:
-// its verdict count flipped between 9 and 10 notes across runs on an unchanged tree. One
-// Java file declares both `Order.Builder` and `OrderItem.Builder`, the short-name hits tied
-// on (repo, path), and sort.Slice settled the tie by map iteration order. Find must pick
-// the same declaration every time or a verdict is not a function of the tree.
+// TestNameMapOrdersDeclarationsWithinOneFile is the bug drift.md showed on the real
+// vault.
 func TestNameMapOrdersDeclarationsWithinOneFile(t *testing.T) {
 	want := []loc{
 		{"a", "src/Order.java", codeindex.Symbol{Name: "Order.Builder", Start: 10}},
@@ -35,13 +32,7 @@ func TestNameMapOrdersDeclarationsWithinOneFile(t *testing.T) {
 }
 
 // TestResolveAtFindsFileDeletedFromHistory is the real-git twin of
-// TestUnresolvedPathFallback: everything in that test answers ResolveAt by map
-// membership, which cannot fail the way production code can. Only GitSource.registryAt
-// exercises coderef.ScanRepo against real git objects at a past revision, so this test
-// writes an actual .java file, deletes it, and confirms ResolveAt tells the two revisions
-// apart — and that registryAt memoises rather than rescanning per call. It needs no
-// codeindex.Available() guard: ResolveAt never touches codeindex, so it must pass
-// identically on both build lanes.
+// TestUnresolvedPathFallback.
 func TestResolveAtFindsFileDeletedFromHistory(t *testing.T) {
 	repo := t.TempDir()
 	writeRepo(t, repo, orderV1)
@@ -68,9 +59,7 @@ func assertResolveAt(t *testing.T, gs *GitSource, ref coderef.Ref, asOf string,
 	}
 }
 
-// commitDated is commit (rollback_test.go), sharing its ensureGitRepo setup, but with an
-// explicit commit date, needed here so a "verified at" asOf can land strictly between the
-// add and the delete regardless of when the test itself runs.
+// commitDated is commit (rollback_test.go), sharing its ensureGitRepo setup.
 func commitDated(t *testing.T, root, msg, date string) string {
 	t.Helper()
 	ensureGitRepo(t, root)
@@ -95,10 +84,8 @@ func sameOrder(got, want []loc) bool {
 	return true
 }
 
-// TestGitSourceRebuildsFromScratchOnStaleExtractor is the cache-invalidation
-// check, over the real hook path rather than codeindex.Load in isolation: a cache file
-// stamped by an older Extractor must make GitSource.build take the full-rebuild branch,
-// not Patch the bogus stale entry forward as if it still described the tree.
+// TestGitSourceRebuildsFromScratchOnStaleExtractor is the cache-invalidation check,
+// over the real hook path rather than codeindex.Load in isolation.
 func TestGitSourceRebuildsFromScratchOnStaleExtractor(t *testing.T) {
 	if !codeindex.Available() {
 		t.Skip("built without cgo: no symbol table to rebuild")

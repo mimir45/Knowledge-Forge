@@ -11,20 +11,7 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/recall"
 )
 
-// This is the neighbour floor's derivation harness. It exists as a test rather than as
-// numbers in a commit message for one reason: any change to the scoring blend's
-// denominator shifts every score, so the floor has to be re-derivable against whatever
-// scale the scorer produces, not pinned against one snapshot of it. A sweep that lives in
-// prose cannot be re-run; this one can, with -update, and the diff is the review surface.
-//
-// It deliberately does not route through calibration.golden. The floor is a property of
-// Thresholds.Neighbours, so the sweep constructs Thresholds directly per candidate value
-// and never touches Decide, which the floor must not influence.
-//
-// The sweep scores via RankPool and filters recall.NeighbourPool(pool[i]) per floor —
-// the same wider pool (NeighbourWindow, wider than TopN) Thresholds.ResultFrom uses in
-// production — rather than the old TopN=10-truncated Rank output. Rank itself is still
-// untouched by this file.
+// This is the neighbour floor's derivation harness.
 
 const (
 	labelsPath      = "testdata/neighbour-labels.txt"
@@ -39,10 +26,7 @@ type labelledQuery struct {
 }
 
 // TestNeighbourFloorSweep reports precision, recall and link volume at each candidate
-// floor. It asserts nothing about which floor is best — that argument is a separate
-// design judgment, made by a human reading this table. What it asserts is that the
-// argument stays reproducible: a scorer change that moves the sweep fails here until it
-// is re-recorded.
+// floor.
 func TestNeighbourFloorSweep(t *testing.T) {
 	got := sweepTable(t)
 	if *updateGolden {
@@ -61,9 +45,7 @@ func TestNeighbourFloorSweep(t *testing.T) {
 	}
 }
 
-// sweepFloors are the candidate values. The band is >= Neighbour && < Update, so 0.55 is
-// excluded: at the update threshold itself the band is empty and emits nothing, which
-// validate.go:126 permits but no derivation would choose.
+// sweepFloors are the candidate values.
 func sweepFloors() []float64 {
 	var out []float64
 	for v := 0.100; v < 0.5001; v += 0.025 {
@@ -72,9 +54,7 @@ func sweepFloors() []float64 {
 	return out
 }
 
-// sweepTable scores the fifteen labelled queries once, then re-filters the same candidate
-// lists at each floor. Scoring once is not just speed: it makes every row a function of
-// one ranking, so a difference between rows is the floor and nothing else.
+// sweepTable scores the fifteen labelled queries once.
 func sweepTable(t *testing.T) string {
 	docs := calibrationCorpus(t)
 	queries := loadNeighbourLabels(t)
@@ -172,9 +152,7 @@ func wantTotal(queries []labelledQuery) int {
 	return n
 }
 
-// loadNeighbourLabels parses testdata/neighbour-labels.txt. The format is deliberately
-// not YAML or JSON: the file is read by humans deciding whether a label is honest, and a
-// "Q:" line followed by "- slug" lines is the shape that survives review.
+// loadNeighbourLabels parses testdata/neighbour-labels.txt.
 func loadNeighbourLabels(t *testing.T) []labelledQuery {
 	t.Helper()
 	f, err := os.Open(labelsPath)

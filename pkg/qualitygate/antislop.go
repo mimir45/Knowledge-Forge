@@ -10,16 +10,10 @@ import (
 	"github.com/mimir45/Knowledge-Forge/references"
 )
 
-// antislopGate parses references/writing-rules.md at run time rather than hardcoding the
-// phrase list — see that file's own doc comment: the list grows from _inbox/ reject
-// history without a recompile. cfg is accepted for symmetry with the other six gates and
-// because a future config toggle (e.g. verify.antislop: off) is the obvious next knob;
-// nothing in pkg/config defines one yet, so this gate always runs.
+// antislopGate parses references/writing-rules.md at run time rather than hardcoding
+// the phrase list — see that file's own doc comment.
 func antislopGate(cfg *config.Config, draft *vault.Note) Outcome {
 	_ = cfg
-	// Fences stripped first: "leverage" inside a Java snippet is someone's variable
-	// name, not filler prose. Same rationale as vault.Wikilinks stripping fences
-	// before it scans for [[links]] — code is not prose.
 	body := strings.ToLower(string(vault.StripCode(draft.Body)))
 	for _, phrase := range bannedPhrases() {
 		if strings.Contains(body, phrase) {
@@ -33,9 +27,7 @@ func antislopGate(cfg *config.Config, draft *vault.Note) Outcome {
 	return Outcome{Gate: "antislop", Verdict: Pass}
 }
 
-// structuralFail checks writing-rules.md's one Go-enforced structural rule: howto/api
-// notes need a demonstration, not just a claim. See that file's Structural requirements
-// section for why the other five types are exempt.
+// structuralFail checks writing-rules.md's one Go-enforced structural rule.
 func structuralFail(draft *vault.Note) (Outcome, bool) {
 	if draft.FM == nil {
 		return Outcome{}, false

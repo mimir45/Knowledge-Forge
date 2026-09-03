@@ -16,9 +16,7 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
-// gitVault stages the fixture and commits it, because two of the reports read history:
-// churn.md is the vault's own commits, and a vault that is not a repo must degrade to a
-// skipped file rather than a failed run.
+// gitVault stages the fixture and commits it, because two of the reports read history.
 func gitVault(t *testing.T) string {
 	t.Helper()
 	root := fixtureCopy(t)
@@ -36,9 +34,8 @@ func gitVault(t *testing.T) string {
 	return root
 }
 
-// TestCheckWritesTheVaultReports: without --repo there is nothing to check code against,
-// so the run must produce the nine vault reports and skip drift.md and the codebase map
-// rather than writing them empty.
+// TestCheckWritesTheVaultReports: without --repo there is nothing to check code
+// against.
 func TestCheckWritesTheVaultReports(t *testing.T) {
 	root := gitVault(t)
 	if code := cmdCheck([]string{"--vault", root, "--offline"}); code != 0 {
@@ -57,9 +54,8 @@ func TestCheckWritesTheVaultReports(t *testing.T) {
 	}
 }
 
-// TestCheckIsIdempotentOnDisk: the headers carry a date, not a timestamp, so a second run
-// on the same day must leave every byte and every mtime alone — a vault that rewrites its
-// own reports every run buries real changes in its git diff.
+// TestCheckIsIdempotentOnDisk: the headers carry a date, not a timestamp, so a second
+// run on the same day must leave every byte and every mtime alone.
 func TestCheckIsIdempotentOnDisk(t *testing.T) {
 	root := gitVault(t)
 	cmdCheck([]string{"--vault", root, "--offline"})
@@ -73,10 +69,8 @@ func TestCheckIsIdempotentOnDisk(t *testing.T) {
 	}
 }
 
-// TestWeeklyIsIdempotentOnDisk: TestCheckIsIdempotentOnDisk only looks under reports/, so
-// the weekly file — outside that directory — needs its own check. The interesting input
-// is Prev: run 2 has already Record-ed this week's snapshot, and a naive "diff against the
-// last saved snapshot" would make run 2 diff against itself instead of the prior week.
+// TestWeeklyIsIdempotentOnDisk: TestCheckIsIdempotentOnDisk only looks under reports/,
+// so the weekly file — outside that directory — needs its own check.
 func TestWeeklyIsIdempotentOnDisk(t *testing.T) {
 	root := gitVault(t)
 	cmdCheck([]string{"--vault", root, "--offline"})
@@ -177,8 +171,7 @@ func TestTypeOf(t *testing.T) {
 }
 
 // TestNotesAndEntriesDifferByExactlyTheNonContractNotes is the crisp check on the two
-// populations: everything the graph counts, minus the maps and hubs the schema does not
-// judge, is what coverage.md and staleness.md are allowed to divide by.
+// populations: everything the graph counts.
 func TestNotesAndEntriesDifferByExactlyTheNonContractNotes(t *testing.T) {
 	root := gitVault(t)
 	d, err := collectVault(checkCfg{vault: root, offline: true}, root)
@@ -255,9 +248,7 @@ func TestCachedOnlyKeepsTheDenominator(t *testing.T) {
 	}
 }
 
-// TestUncoveredOfThresholds: section B.5 asks for high churn and real size. A file touched
-// once is not churning, a short symbol is not a documentation gap, and a cited file is
-// covered whatever its symbols look like.
+// TestUncoveredOfThresholds: section B.5 asks for high churn and real size.
 func TestUncoveredOfThresholds(t *testing.T) {
 	big := codeindex.Symbol{Name: "Big", Start: 1, End: minSymbolLOC}
 	small := codeindex.Symbol{Name: "Small", Start: 1, End: 3}
@@ -287,10 +278,7 @@ func (s symbolSource) Find(name, asOf string) (string, string, codeindex.Symbol,
 
 func (s symbolSource) Index(repo, rev string) codeindex.Index { return codeindex.Index{} }
 
-// TestSymbolCitationCoversItsFile is the defect the first real run produced: leprecoin's
-// map listed SignUpPage as "0 notes" in the same run where drift.md named two notes citing
-// it. Most of the vault cites a class and no path, and coderef gives those no RepoPath, so
-// coverage has to reach the symbol table the way drift does.
+// TestSymbolCitationCoversItsFile is the defect the first real run produced.
 func TestSymbolCitationCoversItsFile(t *testing.T) {
 	rg := coderef.NewRegistry(nil)
 	src := symbolSource{"SignUpPage": "src/app/SignUpPage.tsx"}

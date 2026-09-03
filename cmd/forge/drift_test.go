@@ -2,9 +2,7 @@ package main
 
 import "testing"
 
-// A sha no repository can resolve must not read as "nothing changed". Both produce zero
-// findings, but the hook path never prints, so a fail-open gate is drift silently never
-// running — the one failure mode this command cannot signal any other way.
+// A sha no repository can resolve must not read as "nothing changed".
 func TestGateFailsClosedOnUnresolvableAnchor(t *testing.T) {
 	cfg := driftCfg{
 		since: "0000000000000000000000000000000000000000",

@@ -10,8 +10,7 @@ import (
 )
 
 // TestSessionContextPrintsIndexAndProfile is the happy path: both files exist, both
-// appear in the output, separated by the "---" the SessionStart transcript needs to
-// tell the two sections apart.
+// appear in the output.
 func TestSessionContextPrintsIndexAndProfile(t *testing.T) {
 	root := fixtureCopy(t)
 	runIndex(root, "_index.md", 4096, false)
@@ -28,8 +27,7 @@ func TestSessionContextPrintsIndexAndProfile(t *testing.T) {
 }
 
 // TestSessionContextSkipsMissingProfileSilently: no profile ever exists until `forge
-// init` runs (plan's known gap — no per-project profile format yet). The index must
-// still print, and the miss goes to the log, never to stdout/stderr.
+// init` runs (plan's known gap — no per-project profile format yet).
 func TestSessionContextSkipsMissingProfileSilently(t *testing.T) {
 	root := fixtureCopy(t)
 	runIndex(root, "_index.md", 4096, false)

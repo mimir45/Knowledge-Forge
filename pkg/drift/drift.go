@@ -1,20 +1,5 @@
 // Package drift answers one question per note: does the code this note cites still say
 // what the note says it says?
-//
-// Two design rules from the original spec shape everything here.
-//
-// Git-anchored. Drift runs from post-commit / post-merge / post-checkout hooks against
-// `--since-commit <sha>`, never on file save and never against the uncommitted working
-// tree. `git diff --name-status <sha>..HEAD` is the cheap gate (Changed); symbol
-// comparison touches only the files it reports touched, a deleted-path citation
-// verdicts BROKEN immediately from the paths it reports deleted, and the vault is never
-// re-scanned.
-//
-// Verdicts are a pure function of (note refs, tree state). Nothing here consults a
-// stored hash from a previous run, which is why a revert restores a demoted note
-// automatically: at the restored HEAD the symbol is back, so the verdict is OK again,
-// with no undo log to replay. The only thing .forge/ persists is the confidence value a
-// note held *before* demotion — a restore target, never a verdict input.
 package drift
 
 import (
@@ -50,14 +35,10 @@ type Finding struct {
 	NowLine int     `json:"now_line,omitempty"`
 }
 
-// Demoting reports whether this verdict costs the note its confidence. Only BROKEN
-// does: SUSPECT flags and pins, it does not demote, because "the body changed" is a
-// prompt to re-read, not evidence the note is wrong.
+// Demoting reports whether this verdict costs the note its confidence.
 func (f Finding) Demoting() bool { return f.Verdict == Broken }
 
-// Source is what drift needs from a repository. Keeping it an interface is what lets
-// this package stay pure Go while pkg/codeindex carries the cgo: the concrete
-// implementation is wired in cmd/forge, and drift itself never imports a C library.
+// Source is what drift needs from a repository.
 type Source interface {
 	// At returns the symbol table for one file at one revision. ok is false when the
 	// file does not exist at that revision.
@@ -68,32 +49,21 @@ type Source interface {
 	// Head returns the revision drift is evaluating.
 	Head(repo string) string
 	// Find locates a declaration by name across every registered repository. asOf is ""
-	// for HEAD, or a YYYY-MM-DD date, in which case each repository is searched at its
-	// last commit on or before it. A citation that names a class and no file — the shape
-	// most of this vault's references take — has nothing else to resolve through.
+	// for HEAD, or a YYYY-MM-DD date.
 	Find(name, asOf string) (repo, path string, sym codeindex.Symbol, ok bool)
 	// ResolveAt resolves a path-shaped citation against one repository's file list as it
 	// stood at asOf ("" for HEAD, else a YYYY-MM-DD date). Mirrors Find's asOf contract.
 	ResolveAt(ref coderef.Ref, asOf string) coderef.Resolution
 }
 
-// Changed is the cheap gate's output. Touched is the flat, non-repo-qualified set of
-// repo-relative paths git reported between the anchor sha and HEAD — over-inclusive
-// across repos is the safe direction, since its only job is keeping work off the hook
-// path. Deleted is the subset git reported gone, mapped to the repo that reported it:
-// same-commit evidence that lets an Unresolved citation verdict BROKEN immediately
-// instead of waiting for the next full sweep.
+// Changed is the cheap gate's output.
 type Changed struct {
 	Touched map[string]bool
 	Deleted map[string]string // repo-relative path -> repo name
 }
 
 // Opts carries the one behavioural switch, which exists because the two callers have
-// budgets two orders of magnitude apart. `forge drift` runs on the git-hook path with
-// 100ms and checks symbol-only citations against HEAD alone. `forge check` runs weekly
-// with 10s and can afford to re-index a repository at the note's verified-era revision
-// to prove a missing symbol was once present — the difference between "this class is
-// gone" and "this class is java.util.ArrayList".
+// budgets two orders of magnitude apart.
 type Opts struct{ Deep bool }
 
 // Note is the vault side of the input: a note's citations plus the date its claims were
@@ -105,8 +75,7 @@ type Note struct {
 }
 
 // Check evaluates every citation of every note. changed is the cheap gate's output; a
-// nil changed means "evaluate everything", which is what `forge check` does weekly and
-// what the hook path must never do.
+// nil changed means "evaluate everything".
 func Check(notes []Note, rg *coderef.Registry, src Source, changed *Changed,
 	opts Opts) []Finding {
 
@@ -142,12 +111,7 @@ func checkRef(n Note, ref coderef.Ref, rg *coderef.Registry, src Source,
 	return checkPath(f, n, ref, src), true
 }
 
-// checkUnresolvedPath is the Unresolved dispatch checkRef delegates to. On the hook path
-// (changed != nil), same-commit deletion evidence already sits in changed.Deleted, so a
-// match verdicts BROKEN immediately and a miss produces no finding at all — never
-// SKIPPED, because a note whose citations produced no findings reads as "not looked at",
-// and Apply must never confuse that with "not broken" (see apply.go's Apply doc comment).
-// changed == nil means a true full sweep, which is unresolvedPath's own case to decide.
+// checkUnresolvedPath is the Unresolved dispatch checkRef delegates to.
 func checkUnresolvedPath(f Finding, n Note, ref coderef.Ref, src Source,
 	changed *Changed, opts Opts) (Finding, bool) {
 

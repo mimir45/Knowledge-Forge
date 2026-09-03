@@ -45,9 +45,7 @@ not a failure.
 
 `
 
-// selectResult is forge engine select --json's shape. Engine carries the literal winning
-// name ("local" included) so a caller can tell that case apart from a plain "api"; Tier is
-// the narrowed value forge engine run actually dispatches on.
+// selectResult is forge engine select --json's shape.
 type selectResult struct {
 	Stage       string `json:"stage"`
 	Engine      string `json:"engine"`
@@ -76,9 +74,7 @@ func runEngineSelect(vaultDir string, cfg *config.Config, stage string, asJSON b
 	return printSelect(res, asJSON)
 }
 
-// resolveResult calls Resolve and Select rather than duplicating either's logic — both are
-// pure reads against the same (cfg, ledger, clock), so calling twice costs nothing a caller
-// would notice and keeps tierOf's mapping (e.g. "local"->api) out of cmd/forge entirely.
+// resolveResult calls Resolve and Select rather than duplicating either's logic.
 func resolveResult(cfg *config.Config, ledger engine.Ledger, stage string) (selectResult, error) {
 	name, reason, err := engine.Resolve(cfg, ledger, time.Now, stage)
 	if err != nil {

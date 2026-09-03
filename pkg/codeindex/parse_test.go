@@ -24,9 +24,7 @@ export class AccountsLoader {
 }
 `
 
-// The idiom the vault actually cites. `export function` is rare in the TypeScript
-// corpus; `const X: FC = () => {}` is how components and hooks are written, and until
-// the extractor recorded it every leprecoin citation resolved to nothing.
+// The idiom the vault actually cites.
 const arrowSrc = `const LoginPage: FC = (): ReactElement => {
   return null;
 };
@@ -86,9 +84,7 @@ func TestParseTypeScript(t *testing.T) {
 	}
 }
 
-// A reformat must not read as a body change. SUSPECT means "the behaviour this note
-// describes may have moved"; gofmt-equivalent churn does not qualify, and if it did
-// every note in the vault would go SUSPECT on the first repo-wide format.
+// A reformat must not read as a body change.
 func TestBodyHashIgnoresWhitespace(t *testing.T) {
 	requireCgo(t)
 	a, _ := Parse("A.java", []byte(javaSrc))
@@ -139,9 +135,8 @@ export function LoginPage() {
 }
 `
 
-// A re-export (`export ... from`) is a real dependency edge — it is exactly how a barrel
-// file works — but a plain `export function` declares nothing to resolve and must not
-// show up as an import of itself.
+// A re-export (`export ... from`) is a real dependency edge — it is exactly how a
+// barrel file works.
 func TestParseTypeScriptImports(t *testing.T) {
 	requireCgo(t)
 	f, err := Parse("src/pages/LoginPage.tsx", []byte(tsImportSrc))

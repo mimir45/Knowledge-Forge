@@ -13,11 +13,7 @@ import (
 const ForgeVersion = "2.0.0"
 
 // Fix rewrites a note's frontmatter into contract shape and returns the full file
-// content. It only ever touches frontmatter: Body is copied through byte-for-byte, which
-// is what makes --fix and the migration safe to run on notes nobody has reviewed.
-//
-// Fix does not invent meaning. It will not guess `type`, `stack`, `tags` or `title`
-// content — those stay missing and stay reported by Validate.
+// content.
 func Fix(n *Note, s *Schema) ([]byte, []string, error) {
 	if n.FMErr != nil && n.FMErr != ErrNoFrontmatter {
 		return nil, nil, n.FMErr
@@ -32,8 +28,7 @@ func Fix(n *Note, s *Schema) ([]byte, []string, error) {
 }
 
 // RenderNote emits frontmatter in schema key order followed by body, byte-for-byte the
-// same as Fix's own render step. Exported for pkg/vault/quarantine.go, which builds a
-// fresh Frontmatter for an _inbox/ draft rather than fixing an existing note.
+// same as Fix's own render step.
 func RenderNote(fm *Frontmatter, s *Schema, body []byte) ([]byte, error) {
 	return render(fm, s, body)
 }
@@ -99,11 +94,8 @@ func backfillDates(n *Note, fm *Frontmatter) []string {
 	return changes
 }
 
-// carryLegacySource converts the v1 `source:` key into one `sources` entry before render
-// drops it. 63 of the real vault's 93 notes carry it, and it is the only provenance those
-// notes have: dropping it would silently destroy their citation. The value is copied verbatim
-// — schema.yaml's `url` accepts both an http(s) URL and a vault-relative path precisely
-// because this key holds both.
+// carryLegacySource converts the v1 `source:` key into one `sources` entry before
+// render drops it.
 func carryLegacySource(fm *Frontmatter) []string {
 	src := strings.Trim(fm.Str("source"), `"' `)
 	if src == "" || len(fm.List("sources")) > 0 {
@@ -166,8 +158,7 @@ func defaultScalar(fm *Frontmatter, key, val string) []string {
 }
 
 // setScalar writes a value with an empty tag so the encoder infers the YAML type from
-// the text. Forcing !!str would emit dates and integers as quoted strings, which is
-// valid YAML but reads as a machine artefact in a file a human is meant to edit.
+// the text.
 func setScalar(fm *Frontmatter, key, val string) {
 	if !fm.Has(key) {
 		fm.Keys = append(fm.Keys, key)
@@ -202,8 +193,6 @@ func wasOutOfOrder(fm *Frontmatter, s *Schema) bool {
 }
 
 // render emits frontmatter in schema key order, followed by the untouched body.
-// Keys the schema does not define are dropped — `status` and `date` are the two the
-// migration retires, and taxonomy.md §5 records why.
 func render(fm *Frontmatter, s *Schema, body []byte) ([]byte, error) {
 	m := &yaml.Node{Kind: yaml.MappingNode, Tag: "!!map"}
 	for _, key := range s.KeyOrder {

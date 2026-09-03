@@ -10,38 +10,11 @@ import (
 )
 
 // This is the measurement harness for whether raising or removing BodyPassSize ever
-// moves a verdict, measured at scale rather than spot-checked on one row. It changes
-// nothing shipped — RankPool still
-// calls RankPoolWithBodyPass(..., BodyPassSize) and pkg/recall's
-// TestRankPoolWithBodyPassMatchesRankPoolAtShippedSize pins that delegation — this file
-// only compares today's capped window against an uncapped one and records what differs.
-// It deliberately does not raise BodyPassSize, does not touch sortByScore's
-// path tie-break, and does not pick a tie-break replacement. Question (b) — what the
-// tie-break should favor instead of path, if this measurement shows the cap ever binds —
-// stays fully open.
-//
-// Query set: calibration_test.go's 9 calibrationQueries plus the 15 question texts from
-// testdata/neighbour-labels.txt (loadNeighbourLabels, .question only — the file's
-// ground-truth "- slug" labels are never read here, since this is a diff measurement, not
-// a relevance judgment, and needs no new human labelling). No overlap between the two
-// sets. Corpus and clock are calibrationCorpus(t) / calibrationNow, reused as-is.
-//
-// Two caveats that must travel with any reading of this golden, stated once here and
-// again in the golden's own header so a reader of just the table doesn't miss them:
-//   - the body channel is always active (bodyChannel sets Active: true unconditionally,
-//     pkg/recall/score.go), so opening a previously-unopened doc with no body-term hits
-//     dilutes its blended score rather than leaving it unchanged — widening the window is
-//     not one-directional, and "no change" is not the only outcome the mechanism predicts.
-//   - Thresholds.ResultFrom only populates Neighbours on a CREATE verdict, so a
-//     capped-CREATE -> uncapped-UPDATE flip shows up as a neighbours change for a verdict
-//     reason, not a neighbour-band reason. Both verdict columns are in the row so the two
-//     are distinguishable, but a "neighbours changed" count alone conflates them.
+// moves a verdict, measured at scale rather than spot-checked on one row.
 const bodyPassGoldenPath = "testdata/bodypass-window.golden"
 
 // TestBodyPassWindowEffect asserts nothing about which window size is correct — that
 // argument, if this measurement shows one is needed, is a separate design judgment.
-// What it asserts is that the measurement stays reproducible: a scorer change
-// that moves it fails here until it is re-recorded with -update.
 func TestBodyPassWindowEffect(t *testing.T) {
 	got := bodyPassTable(t)
 	if *updateGolden {
@@ -62,8 +35,6 @@ func TestBodyPassWindowEffect(t *testing.T) {
 
 // bodyPassQueries returns the 9 calibration queries plus neighbour-labels.txt's 15
 // question texts — 24 distinct queries, wider than calibration.golden alone.
-// Ground-truth neighbour labels are discarded; only .question is
-// read.
 func bodyPassQueries(t *testing.T) []string {
 	qs := append([]string{}, calibrationQueries...)
 	for _, lq := range loadNeighbourLabels(t) {

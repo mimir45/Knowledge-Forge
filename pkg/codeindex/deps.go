@@ -8,9 +8,7 @@ import (
 )
 
 // Deps reads the declared dependency versions from whichever build manifests the repo
-// has. Drift's fifth verdict — "declared dep version bumped, the note may describe old
-// behaviour" — is a comparison between two of these maps, so the map is the unit, not
-// the individual file.
+// has.
 func Deps(root string) map[string]string {
 	out := map[string]string{}
 	mergeMaven(out, filepath.Join(root, "pom.xml"))
@@ -20,9 +18,7 @@ func Deps(root string) map[string]string {
 	return out
 }
 
-// Maven dependencies are read by regex, not by an XML model. The map only needs
-// groupId:artifactId -> version; parsing the full POM (profiles, parents, property
-// interpolation) is a resolver's job and this is a change detector.
+// Maven dependencies are read by regex, not by an XML model.
 var mavenDep = regexp.MustCompile(
 	`(?s)<dependency>.*?<groupId>([^<]+)</groupId>.*?<artifactId>([^<]+)</artifactId>` +
 		`(?:.*?<version>([^<]+)</version>)?.*?</dependency>`)

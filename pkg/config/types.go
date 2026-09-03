@@ -1,12 +1,5 @@
-// Package config loads the four-layer configuration chain and exposes it
-// as one typed value. The schema is the union of the engine/config blocks and
-// the pipeline keys the config section never restated — see docs/ARCHITECTURE.md §4.
-//
-// This package is a leaf on purpose. It does not import pkg/vault, even though the
-// config file is frontmatter-only markdown and pkg/vault has a frontmatter parser: the
-// dependency has to run the other way round eventually (paths, freshness_days and the
-// recall thresholds are vault-shaped settings), and a cycle would be the result. The
-// forty lines of splitting duplicated in frontmatter.go are cheaper than that cycle.
+// Package config loads the four-layer configuration chain and exposes it as one typed
+// value.
 package config
 
 // Config is the merged chain. Every field is the union schema; nothing here is optional
@@ -30,9 +23,7 @@ type Config struct {
 	Dataset       Dataset          `yaml:"dataset"`
 	Telemetry     Telemetry        `yaml:"telemetry"`
 
-	// Layers are the files that contributed, lowest precedence first. Carried so an
-	// error can name the file a bad value came from, and so `forge init` can report
-	// what it is about to shadow.
+	// Layers are the files that contributed, lowest precedence first.
 	Layers []string `yaml:"-"`
 }
 
@@ -51,8 +42,7 @@ type Trigger struct {
 }
 
 // Recall is the decision tree scoring model, moved into the config chain from
-// compiled-in constants. Neighbour is pkg/recall's third threshold, and keeping all
-// three in one place (rather than split between code and config) avoids duplication.
+// compiled-in constants.
 type Recall struct {
 	Strategy          string  `yaml:"strategy"`
 	AnswerThreshold   float64 `yaml:"answer_threshold"`
@@ -90,9 +80,7 @@ type Local struct {
 	BaseURL string `yaml:"base_url"`
 }
 
-// Budget configures cost limits and behavior when exhausted. OnExhausted defaults to
-// queue (escalate to a lower tier). Budget counters live in SQLite and survive
-// forge reindex — the one exception to "SQLite is purely derived".
+// Budget configures cost limits and behavior when exhausted.
 type Budget struct {
 	AdvisorUSDPerDay float64 `yaml:"advisor_usd_per_day"`
 	APIUSDPerDay     float64 `yaml:"api_usd_per_day"`
@@ -103,9 +91,7 @@ type Routing struct {
 	AdvisorWhen AdvisorWhen `yaml:"advisor_when"`
 }
 
-// AdvisorWhen is the routing configuration for the advisor tier. It includes stack_in
-// to ensure the expensive critique tier fires for all relevant domains (security, auth,
-// payments) without requiring the router to infer them.
+// AdvisorWhen is the routing configuration for the advisor tier.
 type AdvisorWhen struct {
 	Type            []string `yaml:"type"`
 	ConfidenceBelow string   `yaml:"confidence_below"`
@@ -130,10 +116,7 @@ type Research struct {
 	ScanCodebase bool     `yaml:"scan_codebase"`
 }
 
-// Verify is verify-time policy — Phase 4's gate stage. DuplicateThreshold is deliberately
-// its own field, not a read of Check.DuplicateThreshold: a user lowering the weekly
-// report's threshold to see more pairs must not silently change what the write-time gate
-// trips on. See references/duplicate-spec.md §6.
+// Verify is verify-time policy — Phase 4's gate stage.
 type Verify struct {
 	RunCode            string   `yaml:"run_code"`
 	RequireCitationFor []string `yaml:"require_citation_for"`
@@ -155,16 +138,11 @@ type Static struct {
 	LinkCheck  LinkCheck `yaml:"linkcheck"`
 	LogBack    LogBack   `yaml:"logback"`
 
-	// CacheTTLDays is Phase 5's forge cache-source TTL for .forge/cache/<hash>.md
-	// entries. Zero means unset, not "expire immediately" — the command-level default
-	// (30) is applied at the call site, matching Check.ChurnDays' own pattern rather
-	// than baking a magic number into the config chain's zero value.
+	// CacheTTLDays is Phase 5's forge cache-source TTL for .forge/cache/<hash>.md entries.
 	CacheTTLDays int `yaml:"cache_ttl_days"`
 }
 
-// Drift configures the git-anchored drift detector. Trigger stays git — the invariant
-// is that drift never runs on file save and never reads the uncommitted tree, so this
-// key exists to be read, not to be widened.
+// Drift configures the git-anchored drift detector.
 type Drift struct {
 	Enabled               bool   `yaml:"enabled"`
 	Trigger               string `yaml:"trigger"`
@@ -179,9 +157,7 @@ type LinkCheck struct {
 	TimeoutS int  `yaml:"timeout_s"`
 }
 
-// LogBack configures logging knowledge back into code. InlineMarkers is opt-in and
-// defaults false: the invariant is that log-back never modifies code semantics,
-// comments and separate files only.
+// LogBack configures logging knowledge back into code.
 type LogBack struct {
 	KnowledgeMap     bool `yaml:"knowledge_map"`
 	ClaudeMDFragment bool `yaml:"claude_md_fragment"`

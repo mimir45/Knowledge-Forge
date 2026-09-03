@@ -8,10 +8,8 @@ func TestNewRunIDLength(t *testing.T) {
 	}
 }
 
-// TestNewRunIDIsUnique pins the one property NewRunID actually promises: identity, not a
-// counter or a timestamp. A run_id is minted fresh per forge recall call and joined by
-// exact match, so two calls producing the same id would silently merge two unrelated
-// routing decisions at export time.
+// TestNewRunIDIsUnique pins the one property NewRunID actually promises: identity, not
+// a counter or a timestamp.
 func TestNewRunIDIsUnique(t *testing.T) {
 	seen := map[string]bool{}
 	for i := 0; i < 1000; i++ {

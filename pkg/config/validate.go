@@ -6,18 +6,9 @@ import (
 )
 
 // LockedStages are the pipeline stages that accept engine `none` and nothing else.
-//
-// The invariant is stated in four different docs and it is not a preference: recall,
-// write and index are the T0 static core. A model call in recall makes the dedup engine
-// non-deterministic, one in write makes markdown stop being the source of truth, one in
-// index makes `forge reindex` unable to rebuild the cache. On a config that says
-// otherwise the rule is **refuse to start with a clear error** — never silently override,
-// because a user who wrote `engine: host` and got `none` anyway has been lied to.
 var LockedStages = []string{"recall", "write", "index"}
 
-// LockedStageError names the stage, the value, and the file the value came from. All
-// three are needed: the merged config is not a file anyone can open, so an error that
-// only says "recall must be none" leaves the user grepping four layers for it.
+// LockedStageError names the stage, the value, and the file the value came from.
 type LockedStageError struct {
 	Stage, Engine, Source string
 }
@@ -38,10 +29,7 @@ func validate(c *Config, layers []layer) error {
 	return validateThresholds(c)
 }
 
-// validateLockedStages runs on the *merged* config, not per layer. A packaged default of
-// none plus a project override of host must fail — checking layers in isolation would
-// pass both. A stage absent from every layer is not a violation: absence is the default,
-// and only an explicit non-none value is a claim about what should happen.
+// validateLockedStages runs on the *merged* config, not per layer.
 func validateLockedStages(c *Config, layers []layer) error {
 	for _, name := range LockedStages {
 		st, ok := c.Pipeline[name]
@@ -112,11 +100,7 @@ func oneOf(key, got string, allowed []string) error {
 	return fmt.Errorf("%s: %q is not one of %s", key, got, strings.Join(allowed, ", "))
 }
 
-// validateThresholds enforces the ordering that the decision tree assumes. It does
-// not enforce the *values* — 0.85 / 0.55 are the packaged defaults and a user may
-// move them for their own vault. Moving them to paper over a recall scoring defect is a
-// different matter: that argument belongs in a re-derivation of the calibration table,
-// not a config edit.
+// validateThresholds enforces the ordering that the decision tree assumes.
 func validateThresholds(c *Config) error {
 	r := c.Recall
 	if r.AnswerThreshold < r.UpdateThreshold {
