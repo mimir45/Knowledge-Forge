@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Knowledge Forge — OG banner</title>
+<!-- COMPOSITION PATTERN: BIG OBJECT (blueprint's native pattern).
+     Scene: you are looking at an engineer's cyanotype drawing of a forge anvil,
+     sheet KF-001. The hero value (0 model calls) is the workpiece resting on the
+     anvil face; every support element is drafting annotation on the same sheet. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+img, svg { display: block; max-width: 100%; }
+
+:root {
+  --canvas-w: 1200px; --canvas-h: 630px;
+  --bg:#123A66; --bg-2:#0D3054;
+  --line:#D8E8F8; --line-soft:rgb(216 232 248 / 0.45);
+  --ink:#EAF2FB; --ink-muted:#9FB8D4;
+  --chart-1:#3E9BD6; --chart-2:#B8860B; --chart-3:#C75B9B; --chart-4:#6F9436;
+  --de-emphasis:#2A537F;
+  --space-1:8px; --space-2:16px; --space-3:24px; --space-4:40px; --space-5:56px;
+  --font-display:'Saira Condensed',sans-serif; --font-body:'IBM Plex Mono',monospace;
+  --radius:0;
+}
+
+html, body { background: var(--bg); }
+body { width: var(--canvas-w); font-family: var(--font-body); color: var(--ink); }
+
+.canvas {
+  position: relative;
+  width: var(--canvas-w); height: var(--canvas-h);
+  overflow: hidden; background: var(--bg);
+}
+
+/* --- the sheet: grid paper, vignette, double-rule frame --- */
+.grid-bg {
+  position:absolute; inset:0;
+  background-image:
+    linear-gradient(var(--line-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
+  background-size:40px 40px;
+  opacity:.30;
+}
+.vignette {
+  position:absolute; inset:0;
+  background: radial-gradient(120% 90% at 50% 42%, transparent 45%, rgb(9 30 56 / .55) 100%);
+}
+.frame-outer { position:absolute; inset:14px; border:2px solid var(--line-soft); }
+.frame-inner { position:absolute; inset:20px; border:1px solid var(--line-soft); }
+
+h1,.display { font-family:var(--font-display); font-weight:700; text-transform:uppercase;
+              letter-spacing:.04em; line-height:.92; }
+.annotation { font:400 13px/1.5 var(--font-body); color:var(--ink-muted);
+              text-transform:uppercase; letter-spacing:.12em; }
+
+/* ============ LEFT COLUMN — the annotation column ============ */
+.kicker { position:absolute; left:60px; top:60px; width:520px;
+          font:500 13px/1.25 var(--font-body); text-transform:uppercase;
+          letter-spacing:.2em; color:var(--ink-muted); }
+
+h1 { position:absolute; left:58px; top:88px; width:540px; font-size:72px; color:var(--ink); }
+
+.rule { position:absolute; left:60px; top:306px; width:180px; height:2px;
+        background:var(--line); }
+
+.standfirst { position:absolute; left:60px; top:318px; width:540px;
+              font:400 15px/1.5 var(--font-body); color:var(--ink); }
+
+.gates-label { position:absolute; left:60px; top:362px; width:520px; }
+.gates-row   { position:absolute; left:60px; top:386px; width:520px; height:36px; }
+.gates-list-1{ position:absolute; left:60px; top:430px; width:520px;
+               font:400 13px/1.45 var(--font-body); color:var(--ink-muted); }
+.gates-list-2{ position:absolute; left:60px; top:449px; width:520px;
+               font:400 13px/1.45 var(--font-body); color:var(--ink-muted); }
+
+.tiers-label { position:absolute; left:60px; top:490px; width:540px; }
+.tiers-strip { position:absolute; left:60px; top:512px; width:540px; height:32px; }
+
+/* ============ RIGHT COLUMN — the drawing ============ */
+.drawing { position:absolute; left:596px; top:36px; width:580px; height:500px; }
+
+/* The hero is the numeral AND its unit as one measured object, so the
+   emphasis check sees the whole forged workpiece, not just the glyph. */
+.hero { position:absolute; left:824px; top:84px;
+        display:flex; align-items:flex-end; gap:28px; }
+
+.hero-num { font-family:var(--font-display); font-weight:700; font-size:350px;
+            line-height:.70; letter-spacing:0; color:var(--chart-2); }
+
+.hero-unit { width:150px; padding-bottom:22px;
+             font-family:var(--font-display); font-weight:600; font-size:40px;
+             line-height:1.02; text-transform:uppercase; letter-spacing:.05em;
+             color:var(--ink); }
+
+.drawing-note { position:absolute; left:690px; top:506px; width:470px;
+                font:400 13px/1.4 var(--font-body); color:var(--ink-muted);
+                text-transform:uppercase; letter-spacing:.08em; }
+
+/* ============ FOOTER — the stamped title block ============ */
+.titleblock { position:absolute; left:40px; top:556px; width:1120px; height:46px;
+              background:var(--bg-2); border:2px solid var(--line);
+              display:flex; align-items:stretch; }
+.tb-cell { display:flex; align-items:center; padding:0 16px;
+           font:500 13px/1.2 var(--font-body); letter-spacing:.06em;
+           text-transform:uppercase; color:var(--ink-muted);
+           border-right:1px solid var(--line-soft); }
+.tb-cell:last-child { border-right:0; }
+.tb-1 { width:300px; color:var(--ink); }
+.tb-2 { width:400px; }
+.tb-3 { width:416px; text-transform:none; letter-spacing:.02em; }
+.tb-2 b, .tb-1 b { font-weight:600; color:var(--ink); }
+</style>
+</head>
+<body>
+<div class="canvas">
+
+  <div class="grid-bg"></div>
+
+  <!-- ===================== THE DRAWING (BIG OBJECT) ===================== -->
+  <svg class="drawing" viewBox="0 0 580 500" fill="none">
+    <defs>
+      <pattern id="hatch" width="9" height="9" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+        <line x1="0" y1="0" x2="0" y2="9" stroke="#3E9BD6" stroke-width="1.6"/>
+      </pattern>
+      <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0 0 L10 5 L0 10 z" fill="#D8E8F8"/>
+      </marker>
+    </defs>
+
+    <!-- swing arc: the story path — hammer travels in, arrow lands on the workpiece -->
+    <path d="M40 232 A 176 176 0 0 1 214 136" stroke="#D8E8F8" stroke-width="1.25"
+          stroke-dasharray="7 7" opacity=".75" marker-end="url(#arw)"/>
+
+    <!-- hammer at the end of the swing: head down-right, onto the workpiece -->
+    <g transform="translate(90,76) rotate(135 96 42)" stroke="#D8E8F8"
+       stroke-width="2.5" stroke-linejoin="round">
+      <rect x="44" y="20" width="104" height="44"/>
+      <line x1="69" y1="20" x2="69" y2="64" stroke-width="1.25"/>
+      <line x1="123" y1="20" x2="123" y2="64" stroke-width="1.25"/>
+      <path d="M81 64 h30 v128 h-30 z"/>
+      <line x1="96" y1="78" x2="96" y2="184" stroke-width="1.25" stroke-dasharray="5 6"/>
+    </g>
+
+    <!-- sparks off the strike point -->
+    <g stroke="#B8860B" stroke-width="2" stroke-linecap="round">
+      <line x1="214" y1="62" x2="200" y2="38"/>
+      <line x1="232" y1="54" x2="234" y2="26"/>
+      <line x1="250" y1="58" x2="266" y2="34"/>
+      <line x1="198" y1="76" x2="172" y2="66"/>
+      <line x1="266" y1="72" x2="292" y2="58"/>
+    </g>
+    <g fill="#B8860B">
+      <circle cx="188" cy="34" r="2.6"/><circle cx="276" cy="18" r="2.2"/>
+      <circle cx="158" cy="44" r="2"/><circle cx="308" cy="46" r="2.6"/>
+    </g>
+
+    <!-- THE ANVIL: pure linework, no fill (blueprint rule) -->
+    <path d="M16 322 C 54 302, 96 294, 132 294 H 470 V 336 H 414
+             C 402 366, 380 380, 352 388 V 402 H 406 V 434 H 168 V 402 H 222 V 388
+             C 194 380, 172 366, 162 336 H 132 C 96 336, 54 330, 16 322 Z"
+          stroke="#D8E8F8" stroke-width="2.5" stroke-linejoin="round"/>
+    <!-- face seam, hardy + pritchel holes, plinth line, cast ground -->
+    <line x1="132" y1="300" x2="470" y2="300" stroke="#D8E8F8" stroke-width="1.25" opacity=".75"/>
+    <rect x="424" y="304" width="20" height="9" stroke="#D8E8F8" stroke-width="1.25"/>
+    <circle cx="404" cy="309" r="4" stroke="#D8E8F8" stroke-width="1.25"/>
+    <line x1="168" y1="420" x2="406" y2="420" stroke="#D8E8F8" stroke-width="1.25" opacity=".75"/>
+    <ellipse cx="287" cy="446" rx="150" ry="7" fill="#0D3054" opacity=".7"/>
+
+    <!-- leader off the anvil face, naming the part -->
+    <path d="M168 296 L 108 252 H 56" stroke="#D8E8F8" stroke-width="1" opacity=".9"/>
+    <circle cx="168" cy="296" r="3" fill="#D8E8F8"/>
+    <text x="56" y="243" font-family="IBM Plex Mono, monospace" font-size="13"
+          font-weight="500" letter-spacing="1.4" fill="#9FB8D4">T0 STATIC CORE</text>
+
+    <!-- caption rule tying the note to the drawing -->
+    <line x1="94" y1="458" x2="500" y2="458" stroke="#D8E8F8" stroke-width="1" opacity=".45"/>
+
+    <!-- registration crosses -->
+    <g stroke="#D8E8F8" stroke-width="1" opacity=".55">
+      <path d="M552 14 h16 M560 6 v16"/>
+      <path d="M552 470 h16 M560 462 v16"/>
+    </g>
+  </svg>
+
+  <!-- HERO: the forged workpiece resting on the anvil face -->
+  <div class="hero" data-hero>
+    <div class="hero-num">0</div>
+    <div class="hero-unit">Model<br>calls</div>
+  </div>
+
+  <div class="drawing-note">Markdown is the only source of truth</div>
+
+  <!-- ===================== LEFT: ANNOTATION COLUMN ===================== -->
+  <div class="kicker">Knowledge Forge · Claude Code plugin · v0.1.2</div>
+  <h1>Forged,<br>not<br>prompted.</h1>
+  <div class="rule"></div>
+  <div class="standfirst">A Go core does recall, drift and seven gates — no API key.</div>
+
+  <div class="gates-label annotation">Quality gates · all seven run locally</div>
+  <svg class="gates-row" viewBox="0 0 520 36" fill="none">
+    <g transform="translate(0,0)">
+      <rect x="1" y="1" width="34" height="34" fill="url(#hatch)" stroke="#D8E8F8" stroke-width="2"/>
+      <path d="M9 19 l6 7 l11 -14" fill="none" stroke="#D8E8F8" stroke-width="2.6" stroke-linecap="square"/>
+    </g>
+    <g transform="translate(52,0)">
+      <rect x="1" y="1" width="34" height="34" fill="url(#hatch)" stroke="#D8E8F8" stroke-width="2"/>
+      <path d="M9 19 l6 7 l11 -14" fill="none" stroke="#D8E8F8" stroke-width="2.6" stroke-linecap="square"/>
+    </g>
+    <g transform="translate(104,0)">
+      <rect x="1" y="1" width="34" height="34" fill="url(#hatch)" stroke="#D8E8F8" stroke-width="2"/>
+      <path d="M9 19 l6 7 l11 -14" fill="none" stroke="#D8E8F8" stroke-width="2.6" stroke-linecap="square"/>
+    </g>
+    <g transform="translate(156,0)">
+      <rect x="1" y="1" width="34" height="34" fill="url(#hatch)" stroke="#D8E8F8" stroke-width="2"/>
+      <path d="M9 19 l6 7 l11 -14" fill="none" stroke="#D8E8F8" stroke-width="2.6" stroke-linecap="square"/>
+    </g>
+    <g transform="translate(208,0)">
+      <rect x="1" y="1" width="34" height="34" fill="url(#hatch)" stroke="#D8E8F8" stroke-width="2"/>
+      <path d="M9 19 l6 7 l11 -14" fill="none" stroke="#D8E8F8" stroke-width="2.6" stroke-linecap="square"/>
+    </g>
+    <g transform="translate(260,0)">
+      <rect x="1" y="1" width="34" height="34" fill="url(#hatch)" stroke="#D8E8F8" stroke-width="2"/>
+      <path d="M9 19 l6 7 l11 -14" fill="none" stroke="#D8E8F8" stroke-width="2.6" stroke-linecap="square"/>
+    </g>
+    <g transform="translate(312,0)">
+      <rect x="1" y="1" width="34" height="34" fill="url(#hatch)" stroke="#D8E8F8" stroke-width="2"/>
+      <path d="M9 19 l6 7 l11 -14" fill="none" stroke="#D8E8F8" stroke-width="2.6" stroke-linecap="square"/>
+    </g>
+    <g stroke="#D8E8F8" stroke-width="1" opacity=".8">
+      <line x1="360" y1="18" x2="396" y2="18" marker-start="url(#arw)"/>
+      <line x1="360" y1="8" x2="360" y2="28"/>
+    </g>
+    <text x="402" y="26" font-family="Saira Condensed, sans-serif" font-size="30"
+          font-weight="700" fill="#D8E8F8">7</text>
+  </svg>
+  <div class="gates-list-1">schema · citation · freshness · antislop</div>
+  <div class="gates-list-2">link · duplicate · code</div>
+
+  <div class="tiers-label annotation">Engine tiers · none is default · rest optional per stage</div>
+  <svg class="tiers-strip" viewBox="0 0 540 32" fill="none">
+    <rect x="1" y="1" width="110" height="30" fill="url(#hatch)" stroke="#D8E8F8" stroke-width="2"/>
+    <text x="56" y="21" text-anchor="middle" font-family="IBM Plex Mono, monospace"
+          font-size="14" font-weight="600" fill="#EAF2FB">none</text>
+
+    <path d="M118 16 h20" stroke="#D8E8F8" stroke-width="1.25" marker-end="url(#arw)"/>
+    <rect x="145" y="1" width="110" height="30" stroke="#9FB8D4" stroke-width="1.25"/>
+    <text x="200" y="21" text-anchor="middle" font-family="IBM Plex Mono, monospace"
+          font-size="14" fill="#9FB8D4">host</text>
+
+    <path d="M262 16 h20" stroke="#D8E8F8" stroke-width="1.25" marker-end="url(#arw)"/>
+    <rect x="289" y="1" width="110" height="30" stroke="#9FB8D4" stroke-width="1.25"/>
+    <text x="344" y="21" text-anchor="middle" font-family="IBM Plex Mono, monospace"
+          font-size="14" fill="#9FB8D4">api</text>
+
+    <path d="M406 16 h20" stroke="#D8E8F8" stroke-width="1.25" marker-end="url(#arw)"/>
+    <rect x="433" y="1" width="106" height="30" stroke="#9FB8D4" stroke-width="1.25"/>
+    <text x="486" y="21" text-anchor="middle" font-family="IBM Plex Mono, monospace"
+          font-size="14" fill="#9FB8D4">advisor</text>
+  </svg>
+
+  <!-- ===================== STAMPED TITLE BLOCK ===================== -->
+  <div class="titleblock">
+    <div class="tb-cell tb-1">Knowledge Forge · dwg. KF-001</div>
+    <div class="tb-cell tb-2"><b>18</b>&nbsp;packages · <b>23</b>&nbsp;commands · <b>426</b>&nbsp;tests</div>
+    <div class="tb-cell tb-3">MIT · github.com/mimir45/Knowledge-Forge</div>
+  </div>
+
+  <div class="vignette"></div>
+  <div class="frame-outer"></div>
+  <div class="frame-inner"></div>
+</div>
+</body>
+</html>
