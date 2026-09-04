@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.png" alt="Knowledge Forge" width="200">
+  <img src="assets/og-banner.png" alt="Knowledge Forge — forged, not prompted. Zero model calls." width="100%">
 </p>
 
 # Knowledge Forge
