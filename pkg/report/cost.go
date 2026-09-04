@@ -7,14 +7,12 @@ import (
 	"time"
 )
 
-// CostInput is what cost.md renders from.
-// pkg/report stays config-free, matching every other report here: cmd/forge/check_collect.go
-// reduces the SQLite budget table and cfg.Pipeline/cfg.Engines down to these primitives.
+// CostInput is what cost.md renders from. pkg/report stays config-free, matching every
+// other report here.
 type CostInput struct {
 	SpentToday map[string]float64 // tier ("api"/"advisor") -> USD spent today
 	// CapPerDay: pkg/engine's availableMetered treats a cap of 0 as exhausted (remaining =
-	// cap - spent <= 0), not unmetered — a stage wired to that tier can never resolve to
-	// it, so cost.md must not call it "unmetered" either.
+	// cap - spent <= 0), not unmetered.
 	CapPerDay   map[string]float64 // tier -> configured daily cap
 	OnExhausted string             // "degrade" | "queue" | "stop"
 	StageEngine map[string]string  // pipeline stage -> the engine that would win today
@@ -23,9 +21,7 @@ type CostInput struct {
 }
 
 // RenderCost produces cost.md — where the money goes, and what today's config would do
-// about a stage that runs out of it. The three sections answer three different questions
-// (spend so far, what each stage is actually wired to, what is waiting) and are kept apart
-// for the same reason coverage.md keeps "missing" apart from gaps.md and codebase.md.
+// about a stage that runs out of it.
 func RenderCost(in CostInput) []byte {
 	var b strings.Builder
 	header(&b, "Cost", costSummary(in), in.Now)
@@ -57,10 +53,7 @@ func writeSpend(b *strings.Builder, in CostInput) {
 }
 
 // writeTierSpend prints one tier's line. pkg/engine's availableMetered reads cap 0 as
-// "budget exhausted for today" (remaining <= 0), so a stage wired to this tier can never
-// actually resolve to it — offline and claude-only both ship cap 0 on the tiers their
-// presets don't use, and the report has to say "unavailable", not "$0.00 of $0.00" (which
-// reads as merely maxed out) or "unmetered" (which claims the opposite of what happens).
+// "budget exhausted for today" (remaining <= 0).
 func writeTierSpend(b *strings.Builder, tier string, spent, cap float64) {
 	if cap == 0 {
 		fmt.Fprintf(b, "- **%s** — $%.2f spent, cap $0.00: unavailable, not routed here\n", tier, spent)
@@ -69,9 +62,7 @@ func writeTierSpend(b *strings.Builder, tier string, spent, cap float64) {
 	fmt.Fprintf(b, "- **%s** — $%.2f of $%.2f\n", tier, spent, cap)
 }
 
-// writeStageEngine is the only place in these nine (now ten) reports that shows the whole
-// pipeline's routing decision at once — recall/write/index always read "none" here, which
-// is the T0 lock made visible rather than merely enforced.
+// writeStageEngine is the only place in these nine.
 func writeStageEngine(b *strings.Builder, in CostInput) {
 	b.WriteString("\n## Per-stage engine\n\n")
 	stages := make([]string, 0, len(in.StageEngine))

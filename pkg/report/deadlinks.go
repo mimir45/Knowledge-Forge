@@ -17,11 +17,6 @@ type Citation struct {
 }
 
 // DeadlinksInput is what deadlinks.md renders from.
-//
-// FirstParty counts the citations this report cannot check: the schema admits a
-// vault-relative path for a first-party source, and an HTTP checker has nothing to do with
-// one. It is carried so the summary can say "0 of 0 URLs, and 63 first-party citations"
-// instead of "0 of 0", which reads as an uncited vault.
 type DeadlinksInput struct {
 	Citations  []Citation
 	FirstParty int
@@ -30,13 +25,6 @@ type DeadlinksInput struct {
 }
 
 // RenderDeadlinks produces deadlinks.md — citations that have rotted.
-//
-// Unreachable is counted and listed separately from dead, and that separation is the whole
-// point of the report being trustworthy. Dead means a server answered and said no.
-// Unreachable means we got no answer — DNS, TLS, a timeout, an aeroplane — and folding the
-// two together would let one offline run produce a report claiming every source in the
-// vault is gone. A reader who cannot tell those apart has to re-check the list by hand,
-// which is the work the report was supposed to do.
 func RenderDeadlinks(in DeadlinksInput) []byte {
 	dead := withVerdict(in.Citations, linkcheck.Dead)
 	unreachable := withVerdict(in.Citations, linkcheck.Unreachable)

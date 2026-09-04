@@ -20,8 +20,7 @@ func TestD4EnabledRequiresTheD4Tag(t *testing.T) {
 }
 
 // TestTiersAreDistinct guards the registry against the copy-paste it exists to prevent:
-// six entries, six tags, five distinct non-empty paths (D6 is derived and has none), no
-// two tags sharing either.
+// six entries, six tags, five distinct non-empty paths (D6 is derived and has none).
 func TestTiersAreDistinct(t *testing.T) {
 	tags, paths := map[string]bool{}, map[string]bool{}
 	for _, tier := range Tiers() {
@@ -93,8 +92,7 @@ func TestSaveAndTakePreviousDraftRoundTrips(t *testing.T) {
 }
 
 // TestTakePreviousDraftConsumesOnce pins the "exactly once" join guarantee: a second
-// --previous-draft pointing at an already-consumed path must fail loudly, not silently
-// re-pair or return stale content.
+// --previous-draft pointing at an already-consumed path must fail loudly.
 func TestTakePreviousDraftConsumesOnce(t *testing.T) {
 	root := t.TempDir()
 	path, _ := SaveFailingDraft(root, "slug", []byte("d"), []byte("e"))

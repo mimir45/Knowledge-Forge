@@ -27,8 +27,7 @@ func TestSessionCaptureWritesStub(t *testing.T) {
 }
 
 // TestSessionCaptureDedupesOnRefire pins the resume-safety contract: SessionEnd can
-// re-fire for the same session (--continue/--resume), so a second call against the same
-// transcript and session id must not duplicate the stub.
+// re-fire for the same session (--continue/--resume).
 func TestSessionCaptureDedupesOnRefire(t *testing.T) {
 	root := fixtureCopy(t)
 	tp := writeTranscript(t, root, "We concluded that drift must stay git-anchored.")

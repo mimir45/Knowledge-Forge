@@ -1,10 +1,5 @@
-// Package engine is the execution layer over the four tiers pkg/config already
-// names: none, host, api, advisor. pkg/config decides *what* a pipeline stage should use;
-// this package is the only place that acts on that decision — the one part of this binary
-// that actually makes a model call, as main.go's doc-comment also names it.
-//
-// "local" is not a fifth implementation. It is select.go's routing alias for the api
-// backend pointed at engines.local.base_url — see select.go's doc-comment.
+// Package engine is the execution layer over the four tiers pkg/config already names:
+// none, host, api, advisor. pkg/config decides *what* a pipeline stage should use.
 package engine
 
 import "fmt"
@@ -19,9 +14,7 @@ const (
 	TierAdvisor Tier = "advisor"
 )
 
-// Request is one pipeline stage's ask. Context and Constraints are separate because a
-// stage's constraints (e.g. "cite every claim") are not part of what gets asked, they are
-// part of how the answer is judged — host.go serializes both for the skill to apply.
+// Request is one pipeline stage's ask.
 type Request struct {
 	Stage       string
 	Prompt      string

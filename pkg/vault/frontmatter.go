@@ -15,8 +15,6 @@ var ErrNoFrontmatter = errors.New("no YAML frontmatter")
 var fence = []byte("---")
 
 // SplitFrontmatter separates a note into its raw YAML block and the body that follows.
-// The body is returned byte-identical, including its leading newline behaviour, because
-// the migration is required never to reorder or rewrite body content.
 func SplitFrontmatter(src []byte) (yamlSrc, body []byte, err error) {
 	rest, ok := bytes.CutPrefix(normalizeEOL(src), append(fence, '\n'))
 	if !ok {
@@ -41,8 +39,7 @@ func normalizeEOL(b []byte) []byte {
 }
 
 // Frontmatter is a parsed YAML mapping that remembers the order its keys were written
-// in. Order matters because `forge validate --fix` normalizes it, and knowing the
-// original is what lets --fix report the change rather than silently reflowing a file.
+// in.
 type Frontmatter struct {
 	Keys []string
 	Vals map[string]*yaml.Node
@@ -80,10 +77,7 @@ func fromMapping(root *yaml.Node) *Frontmatter {
 func (f *Frontmatter) Has(k string) bool { _, ok := f.Vals[k]; return ok }
 
 // SetScalar stages a key=val write in memory, without touching disk — the counterpart
-// callers outside this package need before handing a Note to WriteToInbox (e.g. a
-// supersedes-style back-pointer on an UPDATE-mode quarantine draft; see quarantine.go's
-// doc comment). fix.go's unexported setScalar delegates here so the node-construction
-// logic exists in exactly one place.
+// callers outside this package need before handing a Note to WriteToInbox.
 func (f *Frontmatter) SetScalar(k, val string) { setScalar(f, k, val) }
 
 // Str returns a scalar value as a string, or "" if absent or not a scalar.

@@ -11,16 +11,7 @@ import (
 )
 
 // duplicateGate scores the draft's body against every existing note in the same
-// directory-group, mirroring cmd/forge/check_collect.go's typeOf grouping exactly — a
-// pair only ever compares within one group, so this gate has to agree with how the
-// weekly checker groups or it would flag pairs the report never would (or miss ones it
-// does). Threshold is cfg.Verify.DuplicateThreshold, deliberately not cfg.Check's: see
-// references/duplicate-spec.md §6 — a write-time trigger and a passive report threshold
-// are asymmetric uses of the same number, not one config value in two places.
-//
-// SwitchToUpdate is a routing recommendation, not a vault mutation: it never sets
-// Quarantine's Fail path to something the CLI is forced to honour, because the skill may
-// have a stated reason to publish two notes on the same topic anyway.
+// directory-group, mirroring cmd/forge/check_collect.go's typeOf grouping exactly.
 func duplicateGate(cfg *config.Config, vaultRoot string, draft *vault.Note) Outcome {
 	rels, err := vault.Walk(vaultRoot)
 	if err != nil {
@@ -28,9 +19,6 @@ func duplicateGate(cfg *config.Config, vaultRoot string, draft *vault.Note) Outc
 	}
 	ix := similarity.NewIndex()
 	for _, rel := range rels {
-		// _inbox/ holds quarantine drafts, not published content — without this a
-		// draft that gets re-quarantined on retry would score as a near-duplicate of
-		// its own previous _inbox/ copy (different path, same body) every time.
 		if rel == draft.Rel || !vault.IsContentNote(rel) || strings.HasPrefix(rel, "_inbox/") {
 			continue
 		}
@@ -61,9 +49,7 @@ func duplicateGate(cfg *config.Config, vaultRoot string, draft *vault.Note) Outc
 		Detail: fmt.Sprintf("near-duplicate of %s", strings.Join(hits, ", "))}
 }
 
-// gateTypeOf mirrors cmd/forge/check_collect.go's typeOf: directory, not frontmatter,
-// because that is what duplicate scoping has to agree with on disk. Duplicated rather
-// than imported — cmd/forge depends on pkg/qualitygate, not the other way around.
+// gateTypeOf mirrors cmd/forge/check_collect.go's typeOf: directory, not frontmatter.
 func gateTypeOf(rel string) string {
 	rest, ok := strings.CutPrefix(rel, "notes/")
 	if !ok {

@@ -176,17 +176,8 @@ func TestExportOfAnAbsentTierIsEmptyNotAnError(t *testing.T) {
 	}
 }
 
-// TestEveryTierRendersInEveryDefinedFormat is the exhaustiveness check the type switches
-// cannot give us at compile time: a tier added to Tiers() with no case in sftOf/loadTier
-// fails here rather than in someone's export.
 func TestEveryTierRendersInEveryDefinedFormat(t *testing.T) {
 	for _, tier := range Tiers() {
-		// D6 has no capture record to seed — seedVault's tier.Append would try to open a
-		// directory as a file, since a derived tier's Path is empty. Its own exhaustiveness
-		// coverage is TestD6RendersFromCodeIndexAndCitations below, over its real fixture
-		// shape (a code index cache plus a citing note) instead of a JSONL sample. A
-		// *second* derived tier would also skip here silently — it owes its own render
-		// test the same way D6 does, this loop cannot discover a missing one for it.
 		if tier.Derived {
 			continue
 		}
@@ -226,9 +217,6 @@ func sampleFor(t Tier) any {
 	return seeded
 }
 
-// TestDPOChoosesThePreferredSide guards the one thing a preference corpus cannot get
-// wrong: swapping chosen and rejected trains the model backwards and nothing downstream
-// would notice.
 func TestDPOChoosesThePreferredSide(t *testing.T) {
 	root := seedVault(t, D3, sampleFor(D3))
 	out := filepath.Join(t.TempDir(), "export")
@@ -238,12 +226,6 @@ func TestDPOChoosesThePreferredSide(t *testing.T) {
 	}
 }
 
-// TestAnonymizeDoesNotMutateItsInput pins the slice- and map-copying in anonymize.go. A
-// type switch copies the struct but not the arrays behind its slices, so an in-place
-// redaction would reach back into the record read off disk. Nothing depends on that
-// today — anonymizeAll discards the originals — which is exactly why it needs a test:
-// the first caller to compare a corpus before and after redaction would otherwise get
-// two identical tables and no clue why.
 func TestAnonymizeDoesNotMutateItsInput(t *testing.T) {
 	in := seeded
 	in.Stack = []string{"/Users/someone/sdk"}
@@ -282,9 +264,6 @@ func appendRaw(t *testing.T, path, line string) {
 	}
 }
 
-// TestD1ExportJoinsOutcomeByRunID is the export-side regression guard for outcome joining: a pair
-// whose run_id matches an outcome record renders that outcome; one that doesn't stays
-// unjoined, and the strict reader must not choke on either shape.
 func TestD1ExportJoinsOutcomeByRunID(t *testing.T) {
 	now := time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC)
 	joined := D1Pair{Kind: D1Kind, RunID: "run-joined", QHash: "aaa", Topic: "kafka",
@@ -320,10 +299,6 @@ func TestD1ExportJoinsOutcomeByRunID(t *testing.T) {
 	}
 }
 
-// TestD1ExportLastOutcomeWinsOnRepair pins joinD1Outcomes's documented last-wins rule:
-// a quarantine-then-repair sequence (forge gate --previous-draft, re-passing --run-id per
-// SKILL.md's Stage 4) writes two D1Outcome records sharing one RunID, and export must
-// report the later one — the retry's actual disposition, not the original quarantine.
 func TestD1ExportLastOutcomeWinsOnRepair(t *testing.T) {
 	now := time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC)
 	pair := D1Pair{Kind: D1Kind, RunID: "run-repaired", QHash: "ddd", Topic: "kafka",

@@ -11,33 +11,20 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/sentinel"
 )
 
-// markerStyles is deliberately narrower than sentinel's Style set: codeindex.Lang only
-// parses Java and TypeScript (documented on codeindex.Lang
-// itself), so a Python entry here would gate markers on a language this binary can never
-// find symbols in. Extending codeindex's grammars extends this table too.
+// markerStyles is deliberately narrower than sentinel's Style set.
 var markerStyles = map[string]sentinel.Style{
 	"java":       sentinel.Slash,
 	"typescript": sentinel.Slash,
 }
 
-// marker is one symbol-shaped citation resolved to a place in the target repo. Only
-// symbol citations get an inline marker — a file/path-only ref has no line to anchor to
-// and is already covered by docs/knowledge-map.md and the module's CLAUDE.md fragment.
+// marker is one symbol-shaped citation resolved to a place in the target repo.
 type marker struct {
 	path  string
 	sym   codeindex.Symbol
 	slugs []string
 }
 
-// resolveMarkers folds every note's symbol-shaped refs into one marker per (path, symbol),
-// merging slugs when more than one note cites the same symbol so a shared symbol gets one
-// marker, not a stack of them. It keys off ref.Symbol rather than ref.Kind == KindSymbol:
-// the canonical `code_refs:` form is path-shaped *and* carries a symbol
-// ("app:Order.java#Order.place", Kind == KindPath), and that is the common case a note
-// actually writes — filtering to bare-symbol citations only would skip nearly every real
-// one. For each ref it looks the symbol up in the live symbol table (src, at HEAD — the
-// same lookup locate() uses for coverage) and keeps only the ones that land in this
-// repository.
+// resolveMarkers folds every note's symbol-shaped refs into one marker per.
 func resolveMarkers(rels []noteRef, src symbolFinder, repoName string) []marker {
 	byKey := map[string]*marker{}
 	var order []string
@@ -107,9 +94,8 @@ func markerBody(slugs []string) string {
 	return "forge: " + strings.Join(links, " ")
 }
 
-// writeInlineMarkers is opt-in (static.logback.inline_markers) and degrades cleanly on a
-// CGO_ENABLED=0 build: no symbol table means no anchor line, so it reports skipped rather
-// than erroring the whole run.
+// writeInlineMarkers is opt-in (static.logback.inline_markers) and degrades cleanly on
+// a CGO_ENABLED=0 build: no symbol table means no anchor line.
 func writeInlineMarkers(vaultRoot string, r drift.Repo, src symbolFinder, dryRun bool) bool {
 	return applyMarkers(vaultRoot, r, src, dryRun, "inline markers", "written",
 		func(abs, id string, style sentinel.Style, m marker) error {
@@ -117,9 +103,7 @@ func writeInlineMarkers(vaultRoot string, r drift.Repo, src symbolFinder, dryRun
 		})
 }
 
-// removeMarkers strips every marker forge logback could have written, independent of the
-// current inline_markers config — --remove-markers is meant to work even after the config
-// gate was turned back off, which is when a leftover marker is most likely to be found.
+// removeMarkers strips every marker forge logback could have written.
 func removeMarkers(vaultRoot string, r drift.Repo, src symbolFinder, dryRun bool) bool {
 	return applyMarkers(vaultRoot, r, src, dryRun, "--remove-markers", "removed",
 		func(abs, id string, style sentinel.Style, m marker) error {
@@ -127,9 +111,7 @@ func removeMarkers(vaultRoot string, r drift.Repo, src symbolFinder, dryRun bool
 		})
 }
 
-// applyMarkers is the walk writeInlineMarkers and removeMarkers share: resolve every
-// symbol citation in this repo to a marker, then apply one sentinel operation to each.
-// errLabel, verb and apply are the only things that differ between a write and a remove.
+// applyMarkers is the walk writeInlineMarkers and removeMarkers share.
 func applyMarkers(vaultRoot string, r drift.Repo, src symbolFinder, dryRun bool,
 	errLabel, verb string, apply func(abs, id string, style sentinel.Style, m marker) error) bool {
 	if !codeindex.Available() {
@@ -150,9 +132,7 @@ func applyMarkers(vaultRoot string, r drift.Repo, src symbolFinder, dryRun bool,
 	return ok
 }
 
-// applyOneMarker applies (or dry-run announces) one marker, skipping languages
-// markerStyles doesn't cover. It reports false only on a real apply error — an unknown
-// language or a dry run both count as "nothing to fail."
+// applyOneMarker applies (or dry-run announces) one marker.
 func applyOneMarker(r drift.Repo, m marker, dryRun bool, verb string,
 	apply func(abs, id string, style sentinel.Style, m marker) error) bool {
 	style, known := markerStyles[codeindex.Lang(m.path)]

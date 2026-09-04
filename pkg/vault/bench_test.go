@@ -8,9 +8,7 @@ import (
 	"testing"
 )
 
-// benchNote is a note of roughly the real vault's shape: a full schema frontmatter block
-// and about 3 KB of body carrying the wikilinks and code spans the graph and drift passes
-// both read back out.
+// benchNote is a note of roughly the real vault's shape.
 func benchNote() []byte {
 	var b strings.Builder
 	b.WriteString("---\ntitle: Spring Boot 4 OpenAPI codegen\ntype: concept\n" +
@@ -25,9 +23,7 @@ func benchNote() []byte {
 	return []byte(b.String())
 }
 
-// BenchmarkParseNote is the frontmatter half: fence split plus YAML. It is separate from
-// the link scan because the two are paid by different callers — `forge validate` never
-// walks the body, and folding them into one number hid that the scan is the larger cost.
+// BenchmarkParseNote is the frontmatter half: fence split plus YAML.
 func BenchmarkParseNote(b *testing.B) {
 	src := benchNote()
 	b.SetBytes(int64(len(src)))

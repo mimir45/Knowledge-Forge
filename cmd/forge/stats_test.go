@@ -12,9 +12,7 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/report"
 )
 
-// writeStatsAskLog writes .forge/log.jsonl with one "ask" line per (topic, count) pair —
-// the same event shape countAskTopics (check_asklog.go) scans for. Named distinctly from
-// check_asklog_test.go's own writeAskLog (different signature, same package).
+// writeStatsAskLog writes .forge/log.jsonl with one "ask" line per (topic, count) pair.
 func writeStatsAskLog(t *testing.T, root string, topics map[string]int) {
 	t.Helper()
 	dir := filepath.Join(root, ".forge")
@@ -106,9 +104,8 @@ func TestRunStatsWeeklyTrend(t *testing.T) {
 	}
 }
 
-// TestCmdStatsExitsNonzeroOnMissingVault: unlike the fail-silent hook subcommands, forge
-// stats is a direct user command — a bad --vault must surface a nonzero exit via
-// vaultOrExit's existing error path, not swallow it.
+// TestCmdStatsExitsNonzeroOnMissingVault: unlike the fail-silent hook subcommands,
+// forge stats is a direct user command.
 func TestCmdStatsExitsNonzeroOnMissingVault(t *testing.T) {
 	bad := filepath.Join(t.TempDir(), "does-not-exist")
 	if code := cmdStats([]string{"--vault", bad}); code == 0 {

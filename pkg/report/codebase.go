@@ -28,11 +28,6 @@ type Uncovered struct {
 }
 
 // CodebaseInput is what moc/codebase.md renders from.
-//
-// The types here are local rather than pkg/codeindex's on purpose. codeindex is the one
-// package that needs cgo for go-tree-sitter, and importing it would drag that requirement
-// into pkg/report and from there into everything that renders a file. The caller in
-// cmd/forge does the projection, which is where the cgo boundary already sits.
 type CodebaseInput struct {
 	Repo      string
 	Groups    []CodeGroup
@@ -42,12 +37,6 @@ type CodebaseInput struct {
 }
 
 // RenderCodebase produces moc/codebase.md — the map from code to the notes about it.
-//
-// It is written into moc/ rather than reports/ because it is a map of content: a way into
-// the vault organised by the shape of the system rather than by note type. That has a
-// consequence the vault contract has to allow for — moc/ is in the link graph, so the
-// wikilinks below genuinely de-orphan the notes they point at, which is what a MOC is for,
-// and moc/ is exempt from the note contract because `type:` has no value for a map.
 func RenderCodebase(in CodebaseInput) []byte {
 	var b strings.Builder
 	fmt.Fprintf(&b, "# Codebase map — %s — %s\n\n", in.Repo, in.Now.Format("2006-01-02"))
@@ -104,12 +93,7 @@ func writeGroupNotes(b *strings.Builder, g CodeGroup) {
 	fmt.Fprintf(b, "Notes: %s\n", strings.Join(links, " · "))
 }
 
-// writeUndocumented ranks by commits first and size second: code that changes often is code
-// whose behaviour is not settled, and undocumented churn is what actually costs a team.
-// A large file nobody has touched in a year is not urgent, whatever its line count.
-//
-// The name keeps its distance from coverage.go's writeUncovered on purpose: that one lists
-// stacks the wiki never mentions, this one lists symbols that move. Two different absences.
+// writeUndocumented ranks by commits first and size second.
 func writeUndocumented(b *strings.Builder, in CodebaseInput) {
 	u := append([]Uncovered(nil), in.Uncovered...)
 	sortUncovered(u)
@@ -137,16 +121,12 @@ func sortUncovered(u []Uncovered) {
 		if u[i].Symbol != u[j].Symbol {
 			return u[i].Symbol < u[j].Symbol
 		}
-		// The path has to come last, not be left out: a symbol name is not unique in a
-		// tree. Two files declaring `Builder` at the same size and churn tie on everything
-		// above, and sort.Slice is not stable, so the order would come from the map.
 		return u[i].Path < u[j].Path
 	})
 }
 
 // TopUncovered is sortUncovered's ranking, exported for the check.ai_pass ADR-stub
-// sub-task: the same "which undocumented module is most urgent" question this file
-// already answers for moc/codebase.md, not redefined a second way outside this package.
+// sub-task.
 func TopUncovered(u []Uncovered) (Uncovered, bool) {
 	if len(u) == 0 {
 		return Uncovered{}, false

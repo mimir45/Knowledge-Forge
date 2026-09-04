@@ -25,14 +25,6 @@ type GapsInput struct {
 const minAsks = 2
 
 // RenderGaps produces gaps.md — the personal curriculum.
-//
-// Asks comes from `.forge/log.jsonl`, written by `forge recall` when telemetry is
-// enabled (pkg/telemetry) — never by the D3 capture hook, which harvests written notes,
-// not questions asked. On a vault with telemetry off, or one that predates it, the log is
-// empty and the report says so rather than inventing a substitute: filling this page from
-// some other signal — unlinked mentions, say — would produce a plausible list of topics
-// that nobody actually asked about, which is worse than an empty page because it cannot
-// be told apart from a real one.
 func RenderGaps(in GapsInput) []byte {
 	gaps := unwritten(in.Asks)
 	var b strings.Builder

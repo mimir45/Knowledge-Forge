@@ -1,6 +1,4 @@
-// Command forge is the Knowledge Forge static core. Every subcommand here runs with
-// zero model calls except `forge engine`, Phase 3b's execution layer over the four
-// tiers pkg/config names; the LLM tiers otherwise sit above this binary, never inside it.
+// Command forge is the Knowledge Forge static core.
 package main
 
 import (

@@ -7,12 +7,8 @@ import (
 	"time"
 )
 
-// Demotion is what .forge/ remembers about a note drift knocked down: the confidence the
-// note held before, and the sha at which it lost it.
-//
-// This file is a restore target, never an input to a verdict. Check never reads it, which
-// is exactly why a revert restores a note on tree state alone — and why deleting .forge/
-// costs at most the memory of what a note's confidence used to be, not a wrong answer.
+// Demotion is what .forge/ remembers about a note drift knocked down: the confidence
+// the note held before, and the sha at which it lost it.
 type Demotion struct {
 	Note       string `json:"note"` // vault-relative path
 	Slug       string `json:"slug"`
@@ -23,10 +19,7 @@ type Demotion struct {
 	At         string `json:"at"` // YYYY-MM-DD
 }
 
-// Store persists demotions under .forge/. It is keyed by slug — the original spec says
-// "slug+sha keyed", and the sha rides in the record rather than the key so a restore is
-// one lookup instead of a scan: at restore time the demoting sha is precisely what the
-// caller does not know.
+// Store persists demotions under .forge/.
 type Store struct {
 	Notes map[string]Demotion `json:"notes"`
 

@@ -10,16 +10,14 @@ import (
 )
 
 // WeekKey formats t's ISO week as "YYYY-Www", zero-padded so plain string comparison
-// sorts weeks correctly — including across a year boundary, where ISOWeek's own returned
-// year (not t.Year()) is what keys a week that spans two calendar years.
+// sorts weeks correctly — including across a year boundary.
 func WeekKey(t time.Time) string {
 	y, w := t.ISOWeek()
 	return fmt.Sprintf("%04d-W%02d", y, w)
 }
 
 // WeeklyStore persists one VaultStats snapshot per ISO week under .forge/, so weekly.md
-// can show a week-over-week delta without recomputing history. Mirrors
-// pkg/drift/demotions.go's Store/OpenStore/Save shape.
+// can show a week-over-week delta without recomputing history.
 type WeeklyStore struct {
 	Weeks map[string]VaultStats `json:"weeks"`
 
@@ -40,8 +38,7 @@ func OpenWeeklyStore(dir string) *WeeklyStore {
 }
 
 // Prev returns the stats for the most recent week strictly before key, or nil if none —
-// a second run in the same week must neither zero the delta nor duplicate a snapshot, so
-// "most recent prior week" is deliberately not "the last run".
+// a second run in the same week must neither zero the delta nor duplicate a snapshot.
 func (s *WeeklyStore) Prev(key string) *VaultStats {
 	best := ""
 	for k := range s.Weeks {

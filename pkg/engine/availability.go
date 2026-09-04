@@ -39,10 +39,7 @@ func availableLocal(cfg *config.Config) (bool, string) {
 	return true, "local model server configured"
 }
 
-// availableMetered fails open (true) when ledger is nil — cmd/forge/engine_cmd.go always
-// passes a real one; a nil ledger only reaches here from a caller that has not opened a
-// budget store, and pkg/engine cannot itself tell the difference between "budget already
-// checked upstream" and "forgot to open the store", so it does not pretend to.
+// availableMetered fails open (true) when ledger is nil.
 func availableMetered(ledger Ledger, clock func() time.Time, tier string, capUSD float64) (bool, string) {
 	if ledger == nil {
 		return true, tier + " budget not checked (no ledger)"

@@ -20,10 +20,6 @@ type OrphansInput struct {
 }
 
 // RenderOrphans produces orphans.md — notes nothing links to.
-//
-// An orphan is not a bad note. It is a note the vault cannot surface: it will never appear
-// in a backlink pane, never be reached by following a thread, and so exists only for
-// whoever remembers its name. The fix is a link from somewhere, not a rewrite.
 func RenderOrphans(in OrphansInput) []byte {
 	var b strings.Builder
 	header(&b, "Orphans", orphansSummary(in), in.Now)
@@ -73,10 +69,6 @@ type GraphHealthInput struct {
 }
 
 // RenderGraphHealth produces graph-health.md — is this one wiki or fifteen notebooks?
-//
-// The number that answers it is the largest component's share. One big component with a
-// tail of pairs is a wiki; fifteen components of equal size is fifteen unrelated notebooks
-// that happen to share a folder, and no amount of per-note quality fixes that.
 func RenderGraphHealth(in GraphHealthInput) []byte {
 	var b strings.Builder
 	header(&b, "Graph health", graphSummary(in), in.Now)
@@ -92,9 +84,7 @@ func graphSummary(in GraphHealthInput) string {
 		in.Total, share)
 }
 
-// writeIslands names the components with no root. Those are the real finding: none of
-// their members is an orphan — they link to each other — and there is still no way to
-// reach them from the vault's front door.
+// writeIslands names the components with no root.
 func writeIslands(b *strings.Builder, in GraphHealthInput) {
 	islands := rootless(in.Components)
 	fmt.Fprintf(b, "\n## Unreachable clusters — %d\n", len(islands))

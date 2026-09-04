@@ -11,10 +11,8 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/store"
 )
 
-// TestEngineRunHitsRealHTTPAndBooksSpend is the api tier's one real-network exercise: an
-// httptest.Server stands in for a provider, and runEngineRun's buildEngine wires
-// http.DefaultTransport straight to it — no injected RoundTripper needed, because a
-// listener on localhost is real HTTP, not the network call pkg/engine's tests must avoid.
+// TestEngineRunHitsRealHTTPAndBooksSpend is the api tier's one real-network exercise:
+// an httptest.Server stands in for a provider.
 func TestEngineRunHitsRealHTTPAndBooksSpend(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(costingHandler))
 	defer srv.Close()
@@ -28,8 +26,7 @@ func TestEngineRunHitsRealHTTPAndBooksSpend(t *testing.T) {
 }
 
 // TestOnExhaustedStopDoesNotFireWhenBudgetAvailable guards the exhaustion check itself:
-// "stop" must never halt a stage that can actually run, only one that has degraded to
-// none for lack of budget.
+// "stop" must never halt a stage that can actually run.
 func TestOnExhaustedStopDoesNotFireWhenBudgetAvailable(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(costingHandler))
 	defer srv.Close()

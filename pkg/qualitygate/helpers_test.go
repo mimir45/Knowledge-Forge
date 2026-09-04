@@ -9,9 +9,7 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
-// goodNote mirrors pkg/vault/validate_test.go's fixture (not importable across
-// packages) — a contract-shaped note that passes schema, freshness, and antislop
-// outright, so each gate test only has to break the one thing it's testing.
+// goodNote mirrors pkg/vault/validate_test.go's fixture.
 const goodNote = `---
 title: "Kafka consumer group rebalancing"
 slug: kafka-consumer-group-rebalancing
@@ -38,8 +36,7 @@ origin: ask
 `
 
 // noteFrom writes src under a fresh temp dir and loads it as a draft at the given
-// vault-relative path — Run and every gate need Rel set even for a CREATE draft that
-// doesn't exist under vaultRoot yet.
+// vault-relative path.
 func noteFrom(t *testing.T, src, rel string) *vault.Note {
 	t.Helper()
 	dir := t.TempDir()
@@ -63,9 +60,7 @@ func testSchema(t *testing.T) *vault.Schema {
 	return s
 }
 
-// testConfig loads the packaged defaults in isolation from the real environment — no
-// ~/.forge/forge.config.md, no .forge.config.md, no $FORGE_CONFIG — so a gate test's
-// result never depends on whoever's machine it runs on.
+// testConfig loads the packaged defaults in isolation from the real environment.
 func testConfig(t *testing.T) *config.Config {
 	t.Helper()
 	c, err := config.Load(config.Options{ProjectDir: t.TempDir(), HomeDir: t.TempDir()})

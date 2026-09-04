@@ -26,11 +26,7 @@ Fail-silent: every error goes to <vault>/.forge/session-context.log and the exit
 is always 0. A hook must never be able to break a session.
 `
 
-// cmdSessionContext is Phase 5's SessionStart hook: print the vault index and the
-// developer profile into the session's context, budget-capped, and never fail the
-// session — every problem goes to .forge/session-context.log, exit is always 0. Claude
-// Code replays a saved transcript on --continue/--resume rather than re-running hooks
-// mid-session, so nothing here needs to be time-sensitive.
+// cmdSessionContext is Phase 5's SessionStart hook.
 func cmdSessionContext(args []string) int {
 	fs := flag.NewFlagSet("forge session-context", flag.ContinueOnError)
 	vaultDir := fs.String("vault", "", "vault root; defaults to config vault_path, then .")

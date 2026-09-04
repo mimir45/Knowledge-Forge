@@ -7,9 +7,7 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/coderef"
 )
 
-// fakeSource stands in for git so the ladder can be tested one rung at a time. Every
-// verdict below is a pure function of what this map says at two revisions, which is the
-// same contract GitSource honours against real objects.
+// fakeSource stands in for git so the ladder can be tested one rung at a time.
 type fakeSource struct {
 	files map[string]codeindex.File // "repo@rev@path"
 	revs  map[string]string         // "repo@date"
@@ -146,25 +144,18 @@ func TestSymbolOnlyCitations(t *testing.T) {
 	})
 }
 
-// p2 is a second path, never registered by registry(), so a citation naming it always
-// resolves Unresolved against the registry — the routing bug's trigger condition — while
-// still being locatable in a fakeSource's own files/revs for the ResolveAt fallback.
+// p2 is a second path, never registered by registry().
 const p2 = "src/main/java/OldOrder.java"
 
 func p2Ref() coderef.Ref { return coderef.Ref{Raw: p2, Kind: coderef.KindPath, Path: p2} }
 
 // TestUnresolvedPathFallback covers unresolvedPath's shallow/deep, gate-ordering and
-// no-baseline branches. Every case resolves Unresolved against registry() (p2 is not
-// registered); what varies is whether the deep-sweep fallback then finds p2 in history.
+// no-baseline branches.
 func TestUnresolvedPathFallback(t *testing.T) {
 	wasP2 := file(p2, sym("OldOrder.cancel", 5, "h1"))
 	deleted := src(codeindex.File{}, wasP2) // gone at HEAD, present at the verified date
 	n := Note{Rel: "notes/a.md", Verified: "2026-01-01", Refs: []coderef.Ref{p2Ref()}}
 
-	// (a) regression test for the gate-ordering bug: a partial run (changed != nil, and
-	// its Deleted set does not name p2) must produce no finding at all, not SKIPPED —
-	// SKIPPED would let Apply's restore path flip the note back up on an unrelated later
-	// commit, which is exactly the regression the hook-path deletion fix must not reintroduce.
 	t.Run("partial run produces no finding outside its own deletion evidence", func(t *testing.T) {
 		got := Check([]Note{n}, registry(), deleted,
 			&Changed{Touched: map[string]bool{"other/File.java": true}}, Opts{Deep: true})
@@ -200,9 +191,8 @@ func TestUnresolvedPathFallback(t *testing.T) {
 	})
 }
 
-// TestUnresolvedPathSameCommitDeletion covers same-commit deletion detection: the hook path (changed != nil,
-// Deep == false) now gets same-commit deletion evidence straight from the gate, with no
-// historical registry scan and no wait for the next full sweep.
+// TestUnresolvedPathSameCommitDeletion covers same-commit deletion detection: the hook
+// path.
 func TestUnresolvedPathSameCommitDeletion(t *testing.T) {
 	n := Note{Rel: "notes/a.md", Refs: []coderef.Ref{p2Ref()}}
 	shallow := src(codeindex.File{}, codeindex.File{}) // no historical baseline needed

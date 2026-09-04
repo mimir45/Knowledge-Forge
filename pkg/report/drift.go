@@ -20,14 +20,7 @@ type DriftInput struct {
 }
 
 // RenderDrift produces drift.md — the report that answers "which of my notes are now
-// lying". It is the only report whose subject is truth rather than tidiness: an orphan is
-// merely hard to find, but a note describing a method that no longer exists is worse than
-// no note, because a reader will believe it.
-//
-// The two verdicts are kept apart on purpose and BROKEN is listed first. BROKEN means the
-// file or symbol is gone and the note cannot be right; SUSPECT means the code is still
-// there and no longer says the same thing, which is a prompt to re-read rather than
-// evidence of an error. Only BROKEN costs a note its confidence — see drift.Finding.Demoting.
+// lying".
 func RenderDrift(in DriftInput) []byte {
 	var b strings.Builder
 	counts := countVerdicts(in.Findings)
@@ -46,13 +39,7 @@ func countVerdicts(fs []drift.Finding) map[drift.Verdict]int {
 	return counts
 }
 
-// driftSummary leads with the number the user asked for: how many notes, not how many
-// references. A note with nine broken citations is one note to fix.
-//
-// The headline is the union of the two verdicts, not their sum. A note can hold both a
-// broken and a suspect reference — in this vault one already does — and adding the two
-// lists would report it as two notes to fix. The per-verdict counts below it still overlap,
-// which is correct: that note does need fixing on both counts.
+// driftSummary leads with the number the user asked for: how many notes.
 func driftSummary(counts map[drift.Verdict]int, fs []drift.Finding) string {
 	broken, suspect := notesWith(fs, drift.Broken), notesWith(fs, drift.Suspect)
 	affected := len(notesWith(fs, drift.Broken, drift.Suspect))
@@ -83,9 +70,7 @@ func notesWith(fs []drift.Finding, vs ...drift.Verdict) []string {
 	return out
 }
 
-// AffectedByDrift is notesWith's count, exported for weekly.md's collector: the same
-// "distinct notes carrying any of these verdicts" question drift.md already answers
-// internally, without redefining it a second way outside this package.
+// AffectedByDrift is notesWith's count, exported for weekly.md's collector.
 func AffectedByDrift(fs []drift.Finding, vs ...drift.Verdict) int {
 	return len(notesWith(fs, vs...))
 }
@@ -118,18 +103,13 @@ func groupByNote(fs []drift.Finding, v drift.Verdict) map[string][]drift.Finding
 			if out[rel][i].Ref != out[rel][j].Ref {
 				return out[rel][i].Ref < out[rel][j].Ref
 			}
-			// One note can cite one ref twice and get two reasons; the ref alone does not
-			// separate them, and an unbroken tie is settled by map order rather than by
-			// anything about the vault.
 			return out[rel][i].Reason < out[rel][j].Reason
 		})
 	}
 	return out
 }
 
-// writeSkipped reports the blind spot rather than hiding it. A skipped citation is one
-// nothing on this machine could adjudicate — a repo that is not cloned here, most often —
-// and a reader who does not know how many there were cannot judge the rest of the numbers.
+// writeSkipped reports the blind spot rather than hiding it.
 func writeSkipped(b *strings.Builder, counts map[drift.Verdict]int) {
 	if counts[drift.Skipped] == 0 {
 		return

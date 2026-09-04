@@ -17,8 +17,7 @@ func mustLoad(t *testing.T, o Options) *Config {
 }
 
 // marshalForTest renders a preset overlay back to YAML so it can be written as a layer
-// file. This is the same round trip `forge init` performs, which is the point: the test
-// fails if what init writes is not what Load can read.
+// file.
 func marshalForTest(t *testing.T, m map[string]any) string {
 	t.Helper()
 	b, err := yaml.Marshal(m)
@@ -29,9 +28,7 @@ func marshalForTest(t *testing.T, m map[string]any) string {
 }
 
 // assertLockedNone checks the invariant directly on the merged result rather than
-// trusting that validate ran. A preset that assigned a model engine to a locked stage
-// would already have failed Load, but a preset that deleted one would not — and a
-// missing stage is just as broken as a wrong one.
+// trusting that validate ran.
 func assertLockedNone(t *testing.T, c *Config) {
 	t.Helper()
 	for _, stage := range LockedStages {

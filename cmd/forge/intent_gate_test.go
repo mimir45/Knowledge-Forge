@@ -11,13 +11,7 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/recall"
 )
 
-// This is the derivation behind intent.go's gate, and the reason the literal there is
-// defended by a test rather than by a config key. Promoting it to config.Recall was
-// considered and rejected because printIntent runs on
-// UserPromptSubmit under a 50ms budget and loads no config today, so wiring the chain in
-// buys a knob nobody turns at the cost of the one budget in the tree that is tight.
-//
-// A number in a comment rots. A number pinned to labelled prompts fails when it rots.
+// This is the derivation behind intent.go's gate.
 
 const (
 	intentLabelsPath = "testdata/intent-gate-labels.txt"
@@ -30,25 +24,11 @@ type intentPrompt struct {
 	fire bool
 }
 
-// minFireAdmitted is the recall floor, and it is set to exactly what intentGate measures
-// today rather than to a comfortable value below it. That is deliberate: the failure this
-// pins is the one that already happened once, when 0.7 decayed to admitting 3 of 10 as
-// a recall scoring change moved the scale under it and nothing failed. A tripwire with
-// slack in it would have let that happen again more slowly. Any loss of recall stops the build and gets
-// argued about; that is the whole job.
-//
-// Rescaled 8 -> 16 when
-// intent-gate-labels.txt widened 10 FIRE prompts -> 20. This is a proportional rescale,
-// not a loosened bar: the widened set measures 16/20 admitted, the same 80% the original
-// 8/10 measured, so 16 pins exactly what's true today, the same way 8 did. Leaving 8 in
-// place would have turned the tripwire into slack — 16 of 20 admitted would have passed
-// against a floor meant for 10, silently tolerating a real regression down to 8/20 (40%).
+// minFireAdmitted is the recall floor.
 const minFireAdmitted = 16
 
 // TestIntentGateSeparation asserts the two properties the gate promises, in the
-// asymmetric shape intent.go argues for: no QUIET prompt is ever admitted — that is the
-// never-disturb contract and it is absolute — and at least minFireAdmitted FIRE prompts
-// are, which is a floor rather than a target.
+// asymmetric shape intent.go argues for: no QUIET prompt is ever admitted.
 func TestIntentGateSeparation(t *testing.T) {
 	scored := scoreIntentPrompts(t)
 	fired := 0
@@ -75,9 +55,7 @@ type scoredPrompt struct {
 	score  float64
 }
 
-// scoreIntentPrompts ranks every labelled prompt against the calibration corpus. It uses
-// calibrationNow for the same reason the calibration harness does: a wall-clock run would
-// let staleness move a score and rot the record on a calendar.
+// scoreIntentPrompts ranks every labelled prompt against the calibration corpus.
 func scoreIntentPrompts(t *testing.T) []scoredPrompt {
 	docs := calibrationCorpus(t)
 	prompts := loadIntentPrompts(t)
@@ -92,9 +70,7 @@ func scoreIntentPrompts(t *testing.T) []scoredPrompt {
 	return out
 }
 
-// intentTable renders the two classes sorted by score, which is the shape the derivation
-// argument reads off: the bottom of FIRE and the top of QUIET are the two numbers the
-// gate has to sit between.
+// intentTable renders the two classes sorted by score.
 func intentTable(scored []scoredPrompt) string {
 	sorted := append([]scoredPrompt(nil), scored...)
 	sort.SliceStable(sorted, func(i, j int) bool { return sorted[i].score > sorted[j].score })
@@ -117,12 +93,7 @@ func intentClass(fire bool) string {
 	return "QUIET"
 }
 
-// intentMargin states where the two classes actually part. It is recorded rather than
-// asserted because it is the number that shows the labels cannot pick the gate: at 0.005
-// wide, every value from the separating point up to the old 0.7 has zero false positives
-// on this set, so intent.go chooses above it on an argument, not on this measurement.
-// A margin that goes negative is a different finding — the classes would have overlapped
-// and no threshold would work at all.
+// intentMargin states where the two classes actually part.
 func intentMargin(sorted []scoredPrompt) string {
 	lowFire, highQuiet := 1.0, 0.0
 	for _, s := range sorted {

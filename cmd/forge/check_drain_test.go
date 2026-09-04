@@ -16,9 +16,7 @@ import (
 )
 
 // TestDrainAdvisorQueueClearsFlagAndBooksSpend is drain's happy path: a real (httptest)
-// advisor call succeeds, so the flag comes off and the spend lands in the same store
-// spentToday reads — mirroring TestEngineRunHitsRealHTTPAndBooksSpend's approach for the
-// api tier.
+// advisor call succeeds.
 func TestDrainAdvisorQueueClearsFlagAndBooksSpend(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(critiqueHandler))
 	defer srv.Close()
@@ -76,11 +74,7 @@ func TestDrainAdvisorQueueRequiresBothGates(t *testing.T) {
 }
 
 // TestDrainAdvisorQueueStopsWhenAlreadyExhausted is the regression test for the bug the
-// advisor review caught: drainOne always dispatches to the advisor tier regardless of
-// pipeline.synthesize's configured engine, so the budget guard must check the advisor
-// ledger directly. This config mirrors the packaged default's pipeline.synthesize:{engine:
-// host} — under the old engine.Exhausted(cfg, st, clock, "synthesize") guard, "host" isn't
-// api/advisor, so the chain walk would have found nothing metered and never stopped.
+// advisor review caught.
 func TestDrainAdvisorQueueStopsWhenAlreadyExhausted(t *testing.T) {
 	root := fixtureCopy(t)
 	rel := "concepts/hibernate.md"

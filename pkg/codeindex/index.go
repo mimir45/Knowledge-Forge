@@ -1,16 +1,4 @@
 // Package codeindex turns source files into a symbol table drift can compare against.
-//
-// It is the only package in the tree that needs cgo, because go-tree-sitter is a C
-// library. The cgo surface is confined here by build tag: with CGO_ENABLED=1 the
-// tree-sitter parser is compiled in; with CGO_ENABLED=0 the package still builds and
-// Parse returns ErrUnavailable, so `CGO_ENABLED=0 go build ./...` keeps working and
-// every downstream package — pkg/drift in particular — stays pure Go and stays
-// cross-compilable. Release builds set CGO_ENABLED=1.
-//
-// Language coverage is Java and TypeScript. STACK §10 left this open ("start with Java
-// + Kotlin only") and a file-count check settled it: the vault's reference corpus is
-// 42 Java files, 308 TypeScript, and *zero* Kotlin. Shipping a Kotlin grammar would add
-// a C dependency for a language nothing cites.
 package codeindex
 
 import (
@@ -39,20 +27,12 @@ type File struct {
 	Lang    string   `json:"lang"`
 	Symbols []Symbol `json:"symbols"`
 	// Imports is each import/re-export this file declares, in the source language's own
-	// shape — a dotted Java package+class name, or a TypeScript module specifier exactly
-	// as written (relative, bare, or aliased). Resolving one to a repo path is a whole-
-	// repo question this package cannot answer per file, so it is left raw: the caller
-	// building CodeGroup.DependsOn (cmd/forge) is where the resolution happens.
+	// shape — a dotted Java package+class name.
 	Imports []string `json:"imports,omitempty"`
 }
 
-// Extractor doubles as this cache's format version: Load rejects any
-// stamp but this, treating a mismatch as a cache miss rather than a bad parse. Bump it
-// whenever declKinds or kindOf changes (an older extractor holds fewer symbols, and a
-// missing symbol is exactly what drift reads as BROKEN) — but also whenever Symbol or
-// File's serialized shape changes, even if extraction logic itself doesn't. Go's
-// json.Unmarshal is lenient about missing/added fields, so a shape change alone would
-// otherwise unmarshal an old cache "successfully" into a struct it was never written for.
+// Extractor doubles as this cache's format version; Load treats any other stamp as a
+// miss. Bump it whenever declKinds, kindOf, or Symbol/File's serialized shape changes.
 const Extractor = 3
 
 // Index is the serialized form Save writes. One Index describes one repo at one commit;
@@ -77,9 +57,7 @@ func Lang(path string) string {
 	return ""
 }
 
-// Lookup finds a symbol by exact qualified name, then by its trailing member. Notes
-// cite `receive` as often as `OrderConsumer.receive`, and demanding the qualified form
-// would report a symbol that plainly exists as missing.
+// Lookup finds a symbol by exact qualified name, then by its trailing member.
 func (f File) Lookup(name string) (Symbol, bool) {
 	for _, s := range f.Symbols {
 		if s.Name == name {
@@ -95,8 +73,7 @@ func (f File) Lookup(name string) (Symbol, bool) {
 }
 
 // FindSymbol searches the whole index for a symbol, returning the file that declares
-// it. A citation that names only a class has no path to resolve through, so this is
-// how pkg/drift decides whether it still exists.
+// it.
 func (ix Index) FindSymbol(name string) (string, Symbol, bool) {
 	for path, f := range ix.Files {
 		if s, ok := f.Lookup(name); ok {
@@ -106,9 +83,7 @@ func (ix Index) FindSymbol(name string) (string, Symbol, bool) {
 	return "", Symbol{}, false
 }
 
-// hashBody collapses every run of whitespace to one space before hashing, so a
-// reformat, a re-indent or a line ending change is not reported as a body change.
-// SUSPECT means "the behaviour this note describes may have moved"; gofmt does not.
+// hashBody collapses every run of whitespace to one space before hashing.
 func hashBody(src []byte) string {
 	h := fnv.New64a()
 	h.Write([]byte(strings.Join(strings.Fields(string(src)), " ")))

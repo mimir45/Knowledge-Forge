@@ -89,9 +89,7 @@ func runGate(a gateArgs) int {
 	return reportAndQuarantine(root, cfg, draft, s, rep, m, a)
 }
 
-// resolveGateInputs validates --file/--rel are both set and parses --mode, since a typo
-// there must not be allowed to silently fall through to create (gate.go's own doc
-// comment on qualitygate.Mode says the same about the package-level type).
+// resolveGateInputs validates --file/--rel are both set and parses --mode.
 func resolveGateInputs(a gateArgs) (root string, mode qualitygate.Mode, code int) {
 	if a.file == "" || a.rel == "" {
 		fmt.Fprintln(os.Stderr, "forge gate: --file and --rel are both required")
@@ -151,12 +149,8 @@ func reportAndQuarantine(root string, cfg *config.Config, draft *vault.Note, s *
 	return reindexAfterQuarantine(root, cfg.Paths.Index)
 }
 
-// captureD1Outcome joins a --run-id passed back from the recall call that
-// led to this write to a D1Outcome record, so export can later join a routing decision
-// to whether the note it led to was actually published. Gated on D1's own tier switch,
-// not a new consent surface — an outcome with no corresponding pair (D1 capture off) is
-// dead weight no export can ever join. An empty runID (the normal case for any write that
-// did not originate from a recall call) is a silent no-op, not an error.
+// captureD1Outcome joins a --run-id passed back from the recall call that led to this
+// write to a D1Outcome record.
 func captureD1Outcome(cfg *config.Config, root, runID string, published bool) {
 	if runID == "" || cfg == nil || !dataset.D1.Enabled(cfg.Dataset) {
 		return
@@ -168,12 +162,7 @@ func captureD1Outcome(cfg *config.Config, root, runID string, published bool) {
 	}
 }
 
-// captureRepairIfRetry closes the loop --previous-draft opened: this run just passed, so
-// a caller pointing back at an earlier failure has a (failing, error, fixed) triple for
-// D4. The saved draft is always consumed (best-effort) so .forge/drafts/ doesn't
-// accumulate stale files even when D4 capture is off; only the dataset write itself is
-// gated on config, same posture as callAndSpend's captureD2 — a capture error is a side
-// channel, never a reason to fail an otherwise-successful gate run.
+// captureRepairIfRetry closes the loop --previous-draft opened: this run just passed.
 func captureRepairIfRetry(cfg *config.Config, root string, draft *vault.Note, previousDraft string) {
 	if previousDraft == "" {
 		return
@@ -193,10 +182,8 @@ func captureRepairIfRetry(cfg *config.Config, root string, draft *vault.Note, pr
 	}
 }
 
-// saveForRetry persists the failing draft under .forge/drafts/ so a fix-and-retry run can
-// join back to it via --previous-draft — see dataset.SaveFailingDraft's doc comment for
-// why this is an explicit path, not slug-based auto-pairing. Best-effort: a save failure
-// only costs the D4 training signal, not the quarantine write that already succeeded.
+// saveForRetry persists the failing draft under .forge/drafts/ so a fix-and-retry run
+// can join back to it via --previous-draft.
 func saveForRetry(root string, draft *vault.Note, openQuestions []string) {
 	path, err := dataset.SaveFailingDraft(root, draftSlug(draft), draft.Body,
 		[]byte(strings.Join(openQuestions, "\n")))
@@ -207,9 +194,7 @@ func saveForRetry(root string, draft *vault.Note, openQuestions []string) {
 	fmt.Fprintf(os.Stderr, "forge gate: retry with --previous-draft %s\n", path)
 }
 
-// draftSlug prefers the frontmatter slug (a CREATE draft that reached this point without
-// one would already have failed the schema gate); falls back to the file's base name so a
-// frontmatter-less draft still gets a stable, filesystem-safe retry path.
+// draftSlug prefers the frontmatter slug.
 func draftSlug(draft *vault.Note) string {
 	if draft.FM != nil {
 		if s := draft.FM.Str("slug"); s != "" {

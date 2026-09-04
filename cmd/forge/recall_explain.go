@@ -10,8 +10,6 @@ import (
 )
 
 // printExplain writes the score breakdown to stderr so stdout stays parseable JSON.
-// Its job is to make a surprising verdict debuggable without a rebuild: which channels
-// were active, what each contributed, and what the renormalizing denominator was.
 func printExplain(w io.Writer, q recall.Query, res recall.Result) {
 	fmt.Fprintf(w, "query terms: %s\n", strings.Join(recall.Terms(q.Question), ", "))
 	if len(q.Stack) > 0 {
@@ -59,11 +57,7 @@ func staleMark(stale bool) string {
 	return ""
 }
 
-// weightList renders a channel's per-term IDF and the document frequency behind it,
-// sorted so the line is byte-stable. df is printed because a weight is ambiguous at zero:
-// a term every note carries and a term no note carries both weigh nothing, and only the
-// second is evidence about the vault. Distinguishing the two by hand — counting df
-// manually — is exactly what this column exists to make unnecessary.
+// weightList renders a channel's per-term IDF and the document frequency behind it.
 func weightList(terms map[string]float64, df map[string]int) string {
 	keys := make([]string, 0, len(terms))
 	for t := range terms {

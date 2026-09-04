@@ -8,9 +8,7 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/config"
 )
 
-// The chain is read once per process. Every subcommand needs it and none of them may
-// see a different answer than another: a run where `check` used one vault_path and the
-// `drift` it invokes used another would produce reports about two different vaults.
+// The chain is read once per process.
 var (
 	cfgOnce sync.Once
 	cfgVal  *config.Config
@@ -22,13 +20,7 @@ func loadConfig() (*config.Config, error) {
 	return cfgVal, cfgErr
 }
 
-// resolveVault applies the flag-over-config-over-cwd order. An explicit --vault always
-// wins, because a user who typed a path is answering the question directly.
-//
-// The error path matters more than the happy one: a config that assigns a model engine
-// to recall, write or index fails here, before any command does work. That is the
-// invariant's enforcement point for the whole binary — refuse to start, never silently
-// override.
+// resolveVault applies the flag-over-config-over-cwd order.
 func resolveVault(flagVal string) (string, error) {
 	if flagVal != "" {
 		return flagVal, nil

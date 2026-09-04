@@ -2,11 +2,7 @@ package gitsig
 
 import "sort"
 
-// CouplingCap is the largest commit that contributes to co-change coupling. A commit
-// touching n files contributes n*(n-1)/2 pairs, so one 400-file reformat or dependency bump
-// contributes ~80000 — more than the rest of the history combined, and it says nothing about
-// which files belong together. Commits above the cap still count toward churn and ownership,
-// where their size is honest.
+// CouplingCap is the largest commit that contributes to co-change coupling.
 const CouplingCap = 25
 
 // Stats are the per-file signals derived from a commit range.
@@ -56,10 +52,6 @@ func (s *Stats) countPairs(files []string) {
 }
 
 // Owner returns the author of the most commits touching a file and their share of them.
-//
-// This is ownership by commit count, not by `git blame` line count. Blame is one subprocess
-// per file and its answer is dominated by whoever last reformatted; commit count answers the
-// question the report actually asks — who to ask about this file.
 func (s *Stats) Owner(file string) (string, float64) {
 	by := s.Authors[file]
 	if len(by) == 0 {

@@ -47,10 +47,7 @@ func initTargets(vault string) (cfgPath, profPath string, err error) {
 		filepath.Join(vault, "profiles", "me.md"), nil
 }
 
-// configDelta composes the two preset overlays and then the five answers on top. Only
-// the delta is written: the packaged layer stays underneath and keeps supplying
-// everything the user did not decide, so upgrading the binary delivers new defaults
-// instead of being shadowed by a full copy of the old ones.
+// configDelta composes the two preset overlays and then the five answers on top.
 func configDelta(o initOpts) (map[string]any, error) {
 	d := map[string]any{}
 	for _, name := range []string{o.enginePreset, o.stackPreset} {
@@ -80,8 +77,7 @@ func answers(o initOpts) map[string]any {
 }
 
 // indexableLanguages maps the primary-language answer onto what pkg/codeindex can
-// actually parse. Listing a language with no grammar would promise AST-level drift the
-// binary cannot deliver, so an unknown answer yields nothing rather than itself.
+// actually parse.
 func indexableLanguages(lang string) []string {
 	switch strings.ToLower(strings.TrimSpace(lang)) {
 	case "java", "kotlin":
@@ -102,8 +98,7 @@ func render(o initOpts, delta map[string]any) (cfg, prof []byte, err error) {
 }
 
 // renderConfig wraps the delta as frontmatter-only markdown so the file is readable in
-// Obsidian. yaml.Marshal sorts map keys, so re-running init
-// with the same answers produces a byte-identical file.
+// Obsidian. yaml.Marshal sorts map keys.
 func renderConfig(delta map[string]any) ([]byte, error) {
 	body, err := yaml.Marshal(delta)
 	if err != nil {
@@ -134,9 +129,6 @@ func writeInit(o initOpts, cfgPath string, cfg []byte, profPath string, prof []b
 		path string
 		data []byte
 	}{{cfgPath, cfg}, {profPath, prof}}
-	// Both guards run before either write. Interleaving them means a run that stops on
-	// the profile still leaves a new config behind, so the retry the error asks for
-	// starts from a half-configured machine.
 	for _, f := range files {
 		if err := guardExisting(f.path, o.force); err != nil {
 			return err
@@ -153,9 +145,7 @@ func writeInit(o initOpts, cfgPath string, cfg []byte, profPath string, prof []b
 	return nil
 }
 
-// guardExisting is why --force exists. Both targets are files a user edits by hand after
-// the first run; silently replacing an edited profile would destroy the one part of this
-// system that is genuinely theirs.
+// guardExisting is why --force exists.
 func guardExisting(path string, force bool) error {
 	if force {
 		return nil

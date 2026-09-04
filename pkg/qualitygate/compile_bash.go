@@ -7,8 +7,7 @@ import (
 )
 
 // compileBash runs `bash -n` — a syntax check that never executes a single line of the
-// script. bash -n has no concept of an unresolved dependency (there is no linking step),
-// so every diagnostic it emits is a syntax error: always kindSyntax, never kindUnresolved.
+// script. bash -n has no concept of an unresolved dependency.
 func compileBash(ctx context.Context, src []byte) CompileResult {
 	if _, err := exec.LookPath("bash"); err != nil {
 		return toolchainMissing("bash")

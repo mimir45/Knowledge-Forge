@@ -12,9 +12,7 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/config"
 )
 
-// Issue is one validation failure. Code is stable and machine-greppable; Msg is the
-// actionable half. Fixable marks the ones `forge validate --fix` can repair mechanically
-// — never a judgement call, only date backfill, key order, case, and alias rewriting.
+// Issue is one validation failure.
 type Issue struct {
 	Rel     string
 	Key     string
@@ -82,9 +80,7 @@ func checkPresence(n *Note, s *Schema) []Issue {
 }
 
 // backfillable is isBackfillable plus the one constraint that is not a property of the
-// key alone: freshness_days has no single default, only a per-type one, so on a note
-// whose type is missing or unrecognised there is nothing mechanical to write. Marking it
-// [--fix] there would promise a repair that `forge validate --fix` cannot deliver.
+// key alone: freshness_days has no single default, only a per-type one.
 func backfillable(n *Note, s *Schema, key string) bool {
 	if key == "freshness_days" {
 		return s.FreshnessDefault(n.FM.Str("type")) > 0
@@ -292,9 +288,7 @@ func checkSourcesArity(n *Note, s *Schema) []Issue {
 		fmt.Sprintf("type %q requires at least %d source", n.FM.Str("type"), min), false}}
 }
 
-// checkEngineTrail enforces the T0 invariant at the data layer: recall, write and index
-// are static-core stages and may never record a model-backed engine. This is a schema
-// error, not a warning — see CLAUDE.md, "Invariants".
+// checkEngineTrail enforces the T0 invariant at the data layer: recall.
 func checkEngineTrail(n *Note) []Issue {
 	var out []Issue
 	for _, e := range n.FM.List("engine_trail") {

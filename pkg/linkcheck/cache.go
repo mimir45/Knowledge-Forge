@@ -39,10 +39,6 @@ func LoadCache(dir string) *Cache {
 }
 
 // Get returns a cached verdict if it is younger than ttl.
-//
-// Unreachable is never cached back: it is not a fact about the URL, it is a fact about the
-// network at one moment, and holding it for a week would mean one offline run poisons the
-// report until the TTL expires.
 func (c *Cache) Get(url string, ttl time.Duration) (Status, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()

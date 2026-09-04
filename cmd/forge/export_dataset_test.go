@@ -30,9 +30,7 @@ func seedD1(t *testing.T, lines ...string) string {
 const goodD1 = `{"kind":"d1-routing","q_hash":"a","topic":"t","decision":"CREATE_NEW",` +
 	`"recall_top_score":0.2,"candidates":1,"captured_at":"2026-08-01T12:00:00Z"}`
 
-// TestExportExitCodesDistinguishUsageFromFailure. Exit 3 carries a promise — "a real
-// attempt was made, --out is untouched" — that must not be spent on a request that was
-// rejected before anything was read.
+// TestExportExitCodesDistinguishUsageFromFailure.
 func TestExportExitCodesDistinguishUsageFromFailure(t *testing.T) {
 	root := seedD1(t, goodD1)
 	out := filepath.Join(t.TempDir(), "export")
@@ -51,10 +49,6 @@ func TestExportExitCodesDistinguishUsageFromFailure(t *testing.T) {
 	}
 }
 
-// TestExportDatasetD6RefusesSinceAndAnonymize is the CLI-level half of
-// refuseDerivedOptions' guard: both refusals happen before loadTier ever runs, so an
-// empty vault (no code index, no notes) is enough to exercise the exit code — the
-// pkg/dataset tests cover the guard's own logic and the --out-untouched property.
 func TestExportDatasetD6RefusesSinceAndAnonymize(t *testing.T) {
 	root := t.TempDir()
 	out := filepath.Join(t.TempDir(), "export")

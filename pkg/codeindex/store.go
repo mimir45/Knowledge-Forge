@@ -6,9 +6,7 @@ import (
 	"path/filepath"
 )
 
-// Save writes the index to path. The caller owns the filename — pkg/drift writes one file
-// per configured repo — so this package names no path of its own. Like every other file
-// under .forge/ it is a derived cache: deleting it costs a rebuild and nothing else.
+// Save writes the index to path.
 func Save(path string, ix Index) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
@@ -38,19 +36,8 @@ func Load(path string) (Index, bool) {
 	return ix, true
 }
 
-// Patch brings a persisted index forward to a newer revision by re-parsing only the files
-// git reports as changed. This is the hook path's entire performance story: the brief's
-// cheap gate is `git diff --name-only`, and honouring it here is what keeps `forge drift`
-// inside 100ms on a repository whose full index takes seconds to build.
-//
-// It stays a pure function of tree state because every re-parsed blob is read at rev — the
-// patched index is byte-identical to a full build at that revision.
-//
-// Patch trusts ix's untouched Files wholesale and re-stamps Extractor unconditionally —
-// that is only safe because Patch has one caller (GitSource.build), which reaches it only
-// through a Load that already rejected any ix.Extractor != Extractor. Patch itself does
-// not re-check, so a second caller that skipped Load's gate would carry a stale extractor's
-// entries forward under today's stamp.
+// Patch brings a persisted index forward to a newer revision by re-parsing only the
+// files git reports as changed.
 func Patch(ix Index, root, rev string, changed []string) (Index, error) {
 	out := Index{Repo: ix.Repo, Commit: rev, Extractor: Extractor,
 		Files: map[string]File{}, Deps: Deps(root)}

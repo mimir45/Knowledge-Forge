@@ -5,9 +5,7 @@ import (
 	"testing"
 )
 
-// Two islands: a triangle reachable from a root, and a pair reachable from nothing. The
-// pair is what graph-health.md exists to surface — neither note is an orphan, both have
-// inbound links, and there is still no way to reach them.
+// Two islands: a triangle reachable from a root, and a pair reachable from nothing.
 func islands() []Node {
 	return []Node{
 		{Rel: "index.md", Outbound: []string{"notes/concept/a.md"}},

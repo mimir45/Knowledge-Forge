@@ -31,11 +31,7 @@ func findBlock(lines []string, style Style, id string) (begin, end int, ok bool)
 	return begin, end, begin >= 0 && end >= 0
 }
 
-// renderBlock comments out the body for a line-comment Style (Close == "") — a marker
-// dropped into a Java or Python file must stay a comment on every line, not just its
-// begin/end pair, or Upsert would insert a line of uncommented prose into source code. A
-// block-comment Style like Markdown wraps the body as-is; the open/close pair alone
-// already comments the whole span.
+// renderBlock comments out the body for a line-comment Style (Close == "").
 func renderBlock(style Style, id, body string) []string {
 	block := []string{style.begin(id)}
 	for _, l := range splitLines([]byte(body)) {

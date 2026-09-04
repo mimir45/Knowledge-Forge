@@ -5,9 +5,8 @@ import (
 	"testing"
 )
 
-// TestScanStrictRejectsAnOverlongLine is the case bufio.Scanner reports as a plain error
-// and every tolerant reader in this tree silently treats as end-of-file. On the export
-// path that would truncate a corpus at the first oversized record and call it a success.
+// TestScanStrictRejectsAnOverlongLine is the case bufio.Scanner reports as a plain
+// error and every tolerant reader in this tree silently treats as end-of-file.
 func TestScanStrictRejectsAnOverlongLine(t *testing.T) {
 	huge := `{"kind":"d2","draft":"` + strings.Repeat("x", exportLineCap+1) + `"}`
 	_, err := scanStrict[D2Pair](strings.NewReader(huge), "d2.jsonl")

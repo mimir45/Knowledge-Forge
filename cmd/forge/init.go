@@ -8,13 +8,6 @@ import (
 )
 
 // initOpts is the wizard's five answers plus the two preset choices derived from them.
-// This command is the ONLY writer of ~/.forge/forge.config.md and
-// <vault>/profiles/me.md. skills/forge-init/ asks the questions and shells out to here;
-// it writes nothing itself, so there is exactly one implementation of the file format.
-//
-// Nothing here prompts. A TTY loop inside this binary would be a second writer wearing a
-// different hat: the skill could no longer be the thing that asks, and a scripted install
-// would have no way in.
 type initOpts struct {
 	vault        string
 	language     string
@@ -84,9 +77,7 @@ Both are yours to edit afterwards. This command refuses to overwrite either with
 flags:
 `
 
-// normalize fills what the wizard did not ask and rejects what it cannot fix. The five
-// questions are language, frameworks, infra, seniority and trigger; depth and the
-// assume/never lists are derived here so the wizard stays at five.
+// normalize fills what the wizard did not ask and rejects what it cannot fix.
 func (o *initOpts) normalize() error {
 	if o.vault == "" {
 		return fmt.Errorf("--vault is required")
@@ -104,9 +95,7 @@ func (o *initOpts) normalize() error {
 	return checkVault(o.vault)
 }
 
-// depthFor maps seniority onto the profile's default_depth. A junior gets fewer sections
-// each carrying a worked example; a senior gets more sections and no worked examples for
-// the basics. An unrecognised value lands on the default of 3.
+// depthFor maps seniority onto the profile's default_depth.
 func depthFor(seniority string) int {
 	switch seniority {
 	case "junior":

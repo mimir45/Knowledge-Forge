@@ -18,10 +18,7 @@ type (
 		ID         string `json:"id,omitempty"`
 		Prompt     string `json:"prompt"`
 		Completion string `json:"completion"`
-		// Outcome is D1-only: nil for every other tier, omitted from
-		// their JSON, and nil for a D1 pair whose run_id never joined a gate outcome —
-		// see D1Pair.Outcome's doc comment for why nil and false both meaning
-		// something different has to stay observable.
+		// Outcome is D1-only: nil for every other tier, omitted from their JSON.
 		Outcome *bool `json:"outcome,omitempty"`
 	}
 	dpoLine struct {
@@ -33,11 +30,7 @@ type (
 	}
 )
 
-// idOf gives a rendered line a stable handle back to the record it came from, which is
-// how a reviewer spot-checks an export against the capture log. It is also the only place
-// a structural field reaches the output at all: the prompt/completion halves are free
-// text, so without this the path hashing and SHA blanking in anonymize.go would be
-// unobservable in every format and could rot without a test noticing.
+// idOf gives a rendered line a stable handle back to the record it came from.
 func idOf(rec any) string {
 	switch p := rec.(type) {
 	case D1Pair:
@@ -52,10 +45,7 @@ func idOf(rec any) string {
 	return ""
 }
 
-// d6ID has no single natural key the way the other tiers do — Note alone is not unique,
-// since one note documents many symbols. repo:path is unique per module-level pair;
-// #symbol disambiguates the symbol-level pairs a module citation and a symbol citation
-// of the same file would otherwise collide on.
+// d6ID has no single natural key the way the other tiers do — Note alone is not unique.
 func d6ID(p D6Pair) string {
 	if p.Symbol == "" {
 		return p.Repo + ":" + p.Path
@@ -126,18 +116,14 @@ func dpoOf(t Tier, rec any) (any, error) {
 	return l, nil
 }
 
-// d1Prompt renders the routing features as the lines a small model reads. Plain key: value
-// rather than JSON because the completion is a bare label — the whole point of D1 is a
-// classifier small enough that prompt tokens matter.
+// d1Prompt renders the routing features as the lines a small model reads.
 func d1Prompt(p D1Pair) string {
 	return fields("topic", p.Topic, "stack", strings.Join(p.Stack, ", "),
 		"top_score", strconv.FormatFloat(p.RecallTopScore, 'f', 3, 64),
 		"candidates", strconv.Itoa(p.Candidates))
 }
 
-// d6Prompt renders the code side of the pair as a retrieval query; Completion is the
-// note's vault-relative path — a retrieval target, not generated text, suited for
-// retrieval or RAG evaluation rather than the drafting shape D1-D5's prompts share.
+// d6Prompt renders the code side of the pair as a retrieval query.
 func d6Prompt(p D6Pair) string {
 	return fields("repo", p.Repo, "path", p.Path, "symbol", p.Symbol)
 }
@@ -195,9 +181,7 @@ func csvRow(p D1Pair) []string {
 		strconv.Itoa(p.Candidates), p.Decision, outcomeStr(p.Outcome)}
 }
 
-// outcomeStr spells out the three states a CSV cell can't leave to a null: never joined
-// (empty — no run_id, or a gate call that never received one), joined and published,
-// joined and quarantined.
+// outcomeStr spells out the three states a CSV cell can't leave to a null.
 func outcomeStr(o *bool) string {
 	switch {
 	case o == nil:
@@ -210,8 +194,7 @@ func outcomeStr(o *bool) string {
 }
 
 // summarize fills the report's descriptive half from the records that will actually be
-// written — after --since and after redaction, so the numbers describe the export rather
-// than the capture log it came from.
+// written — after --since and after redaction.
 func summarize(rep ExportReport, recs []any, o ExportOptions) ExportReport {
 	rep.Records = len(recs)
 	rep.From, rep.To = span(recs)
@@ -284,10 +267,7 @@ func stacksOf(rec any) []string {
 	return nil
 }
 
-// trailOf reports which engine tiers produced a record. Only D3 carries engine_trail —
-// it is copied off the generated note's frontmatter — so the other four contribute
-// nothing and the datasheet prints "not recorded for this tier" rather than an empty
-// table that reads as "no engines were used".
+// trailOf reports which engine tiers produced a record.
 func trailOf(rec any) []string {
 	if p, ok := rec.(Pair); ok {
 		return p.EngineTrail

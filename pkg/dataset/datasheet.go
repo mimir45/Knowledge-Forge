@@ -6,10 +6,7 @@ import (
 	"strings"
 )
 
-// renderDatasheet writes the datasheet document beside every export: counts,
-// date range, engine-trail and stack distribution, and known biases. The section that
-// earns its place is the last one — a datasheet that lists only what a corpus contains,
-// and not what it systematically misses, is a marketing document.
+// renderDatasheet writes the datasheet document beside every export: counts.
 func renderDatasheet(rep ExportReport) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "# Datasheet — %s (%s)\n\n", rep.Kind, rep.Format)
@@ -43,9 +40,7 @@ func dateRange(rep ExportReport) string {
 	return rep.From.Format("2006-01-02") + " → " + rep.To.Format("2006-01-02")
 }
 
-// anonLabel's d6 branch says "raw text", not "raw captured text" — d6 is derived, and
-// its own Limitations entry above already makes that distinction; this table row would
-// otherwise be the one place in a d6 datasheet that quietly contradicts it.
+// anonLabel's d6 branch says "raw text", not "raw captured text" — d6 is derived.
 func anonLabel(rep ExportReport) string {
 	if rep.Anonymized {
 		return fmt.Sprintf("yes, %d redactions", rep.Redactions)
@@ -80,9 +75,7 @@ func share(n, total int) string {
 	return fmt.Sprintf("%d%%", n*100/total)
 }
 
-// writeLimitations is the section that must not be trimmed. Each entry is a thing this
-// corpus systematically does not contain, discovered while building the capture path
-// rather than guessed at afterwards.
+// writeLimitations is the section that must not be trimmed.
 func writeLimitations(b *strings.Builder, rep ExportReport) {
 	b.WriteString("\n## Limitations\n\n")
 	for _, l := range append(commonLimits(rep), tierLimits(rep)...) {
@@ -107,10 +100,7 @@ func commonLimits(rep ExportReport) []string {
 	return out
 }
 
-// accumulationLimit is D6's one structural difference from every other common limit: it
-// does not accumulate, so the usual "forward-only" framing would misdescribe it — a
-// second export can emit *fewer* pairs than the first, if a citation stops resolving or
-// a repo's cached index goes stale, which no D1-D5 tier can do.
+// accumulationLimit is D6's one structural difference from every other common limit.
 func accumulationLimit(set string) string {
 	if set == D6Tag {
 		return "This is a point-in-time derivation over `forge logback`'s map, not a " +
@@ -196,9 +186,7 @@ func rankedKeys(m map[string]int) []string {
 	return out
 }
 
-// sortedKeys keeps every rendered table deterministic — an export re-run on unchanged
-// input must produce a byte-identical datasheet, the same property forge check's reports
-// are held to.
+// sortedKeys keeps every rendered table deterministic.
 func sortedKeys[V any](m map[string]V) []string {
 	out := make([]string, 0, len(m))
 	for k := range m {

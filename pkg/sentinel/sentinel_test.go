@@ -120,9 +120,7 @@ func TestRemoveIsANoOpWithoutAFileOrAnUnwrittenID(t *testing.T) {
 	}
 }
 
-// seed writes a test fixture file. A failed setup write makes every assertion below it
-// meaningless, so it aborts rather than letting the test report a byte comparison against
-// a file that was never created.
+// seed writes a test fixture file.
 func seed(t *testing.T, path, body string) {
 	t.Helper()
 	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {

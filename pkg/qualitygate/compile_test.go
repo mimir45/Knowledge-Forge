@@ -28,9 +28,7 @@ func TestCompileUnsupportedLangIsSkipped(t *testing.T) {
 }
 
 // TestCompileJavaSyntaxDominatesUnresolvedImport pins the ordering invariant this
-// package is built around: a genuine syntax error (missing closing brace) must fail
-// the gate even when the same file also has an unresolved import — fail dominates
-// skipped, never the reverse.
+// package is built around: a genuine syntax error.
 func TestCompileJavaSyntaxDominatesUnresolvedImport(t *testing.T) {
 	if _, err := exec.LookPath("javac"); err != nil {
 		t.Skip("javac not installed")

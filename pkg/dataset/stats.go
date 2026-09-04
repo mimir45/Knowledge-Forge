@@ -2,10 +2,7 @@ package dataset
 
 import "time"
 
-// TierStats is one tier's accumulated volume. Err carries a read failure rather than
-// aborting the whole report: dataset-stats is a read-only look at five independent files
-// and one torn tier should not hide the other four. The strict reader's message already
-// names the file and line, so it is worth printing as-is.
+// TierStats is one tier's accumulated volume.
 type TierStats struct {
 	Tag      string
 	Kind     string
@@ -14,9 +11,7 @@ type TierStats struct {
 	Err      string
 }
 
-// Stats reports every tier's volume and date range. It reuses the export path's strict
-// reader on purpose — a line dataset-stats counts but export would refuse is a number
-// that lies about what you can actually export.
+// Stats reports every tier's volume and date range.
 func Stats(vaultRoot string) []TierStats {
 	out := make([]TierStats, 0, len(Tiers()))
 	for _, t := range Tiers() {

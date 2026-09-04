@@ -16,11 +16,7 @@ func testRegistry() *Registry {
 	}})
 }
 
-// NF-4's exact failure, verbatim from the audit: the note writes
-// "common-domain/valueobject/Money.java" and the file is
-// "common-domain/src/main/java/com/food/domain/valueobject/Money.java". The citation is
-// not a suffix of the path — the build-layout segments sit in the middle — so suffix
-// matching resolves it to nothing. Ordered subsequence matching resolves it.
+// NF-4's exact failure, verbatim from the audit.
 func TestResolveNF4Shorthand(t *testing.T) {
 	res := testRegistry().Resolve(Ref{Kind: KindPath, Path: "common-domain/valueobject/Money.java"})
 	if res.Status != Resolved ||
@@ -33,8 +29,7 @@ func TestResolveNF4Shorthand(t *testing.T) {
 }
 
 // Both files match "domain/valueobject/Money.java" as a subsequence, but the
-// common-domain path spends fewer unstated segments getting there, so it wins outright
-// rather than being reported as an ambiguity the user has to adjudicate.
+// common-domain path spends fewer unstated segments getting there.
 func TestResolvePrefersTightestMatch(t *testing.T) {
 	res := testRegistry().Resolve(Ref{Kind: KindPath, Path: "domain/valueobject/Money.java"})
 	if res.Status != Resolved ||

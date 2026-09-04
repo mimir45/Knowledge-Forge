@@ -86,10 +86,7 @@ func runEngineRun(vaultDir string, cfg *config.Config, stage, prompt, rel string
 }
 
 // onExhausted applies on_exhausted's configured meaning once Resolve has already
-// degraded stage to "none" for lack of budget: "queue" stamps
-// pending_advisor and lets the run fall through to none as before; "stop" halts with a
-// real non-zero exit instead of none's usual quiet refusal; "degrade" (or anything else
-// the validator accepts) is today's silent fallthrough, deliberately unchanged.
+// degraded stage to "none" for lack of budget.
 func onExhausted(cfg *config.Config, root, stage, rel string) (code int, halt bool) {
 	switch cfg.Engines.Budget.OnExhausted {
 	case "queue":
@@ -108,9 +105,7 @@ func onExhausted(cfg *config.Config, root, stage, rel string) (code int, halt bo
 	return 0, false
 }
 
-// queueNote stamps pending_advisor: true via the same frontmatter writer engine record
-// uses. The run still falls through to none below —
-// queuing records that today's advisor call was deferred, it does not retry it inline.
+// queueNote stamps pending_advisor.
 func queueNote(root, rel string) error {
 	n, s, err := loadNoteAndSchema(root, rel)
 	if err != nil {
@@ -144,14 +139,7 @@ func callAndSpend(cfg *config.Config, st *store.Store, root, name, stage, prompt
 	return emitResult(res)
 }
 
-// captureD2 logs the critique verbatim (the D2 advisor-distillation dataset) when the
-// config chain has opted in. It never fails the run — a dataset write error is a side
-// channel, not the
-// command's job, the same posture the D3 post-commit hook takes toward its own writes.
-//
-// D2.Enabled now checks dataset.enabled as well as the capture list, which this call site
-// never did: `{enabled: false, capture: [d2]}` used to capture anyway. The packaged layer
-// sets enabled: true, so no default behaviour changes.
+// captureD2 logs the critique verbatim.
 func captureD2(cfg *config.Config, root, stage, draft, critique string) {
 	if !dataset.D2.Enabled(cfg.Dataset) {
 		return
@@ -163,9 +151,7 @@ func captureD2(cfg *config.Config, root, stage, draft, critique string) {
 	}
 }
 
-// buildEngine constructs the real Engine value for name. "local" still returns an API
-// (api.go's doc-comment): Provider "ollama", pointed at engines.local.base_url — it is a
-// routing alias, not a fifth Engine implementation.
+// buildEngine constructs the real Engine value for name.
 func buildEngine(cfg *config.Config, name string) engine.Engine {
 	switch name {
 	case "host":
@@ -182,8 +168,7 @@ func buildEngine(cfg *config.Config, name string) engine.Engine {
 }
 
 // apiFor shares engines.api's provider/base_url/key_env between the api tier and the
-// advisor tier, which the config schema gives no connection block of its own — advisor is
-// a critique wrapper over the same backend, with its own model (see pkg/engine/advisor.go).
+// advisor tier, which the config schema gives no connection block of its own.
 func apiFor(a config.API, model string) engine.API {
 	return engine.API{
 		RoundTripper: http.DefaultTransport,

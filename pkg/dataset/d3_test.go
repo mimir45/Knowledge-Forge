@@ -113,8 +113,7 @@ func TestCapturesHumanEditOfAGeneratedNote(t *testing.T) {
 }
 
 // TestSkipsImportedNotes: the Phase 1 migration stamped origin: import on all 91
-// pre-existing notes. Nothing about them is model output, so editing one is not a
-// correction of forge and must not be trained on as if it were.
+// pre-existing notes.
 func TestSkipsImportedNotes(t *testing.T) {
 	r := seed(t)
 	r.write("notes/concept/legacy.md", note("import", "Legacy", "hand-edited text"))
@@ -137,9 +136,8 @@ func TestSkipsEditsOutsideTheWindow(t *testing.T) {
 	}
 }
 
-// TestSkipsEditsThatPredateGeneration: clock skew on a synced vault, or grafted history,
-// can date the edit commit before the add commit. That pair would put the older text on
-// the preferred side — inverted signal, worse than no pair at all.
+// TestSkipsEditsThatPredateGeneration: clock skew on a synced vault, or grafted
+// history, can date the edit commit before the add commit.
 func TestSkipsEditsThatPredateGeneration(t *testing.T) {
 	r := newRepo(t)
 	r.write("notes/concept/t.md", note("ask", "T", "generated text"))
@@ -153,8 +151,7 @@ func TestSkipsEditsThatPredateGeneration(t *testing.T) {
 }
 
 // TestFollowsRenameAndEditInOneCommit: the realistic human move is a single commit that
-// retitles the note, renames the file to match, and rewrites the body. Whether git reports
-// that as M or as R decides whether the pair survives.
+// retitles the note, renames the file to match, and rewrites the body.
 func TestFollowsRenameAndEditInOneCommit(t *testing.T) {
 	r := seed(t)
 	r.git("mv", "notes/concept/goroutines.md", "notes/concept/goroutine-basics.md")
@@ -180,8 +177,7 @@ func TestSkipsTheCommitThatCreatedTheNote(t *testing.T) {
 }
 
 // TestSkipsForgeAuthoredCommits guards the Phase 4 failure mode: once forge-librarian
-// commits notes it wrote, those commits would otherwise enter D3 as (model, model) pairs
-// masquerading as human preferences.
+// commits notes it wrote, those commits would otherwise enter D3 as.
 func TestSkipsForgeAuthoredCommits(t *testing.T) {
 	r := seed(t)
 	r.write("notes/concept/goroutines.md", note("ask", "Goroutines", "rewritten by forge"))
@@ -225,8 +221,7 @@ func TestFollowsRenames(t *testing.T) {
 }
 
 // TestWindowIsGitAnchoredNotFrontmatter: `created:` is a mutable field that --fix
-// backfills, so a note whose frontmatter claims an old date must still be judged by when
-// git first saw it. Same anchoring rule drift follows.
+// backfills.
 func TestWindowIsGitAnchoredNotFrontmatter(t *testing.T) {
 	r := newRepo(t)
 	stale := "---\ntitle: T\ntype: concept\norigin: ask\ncreated: 2020-01-01\n---\n\nv1\n"
@@ -270,9 +265,8 @@ func countLines(t *testing.T, path string) int {
 	return len(strings.Split(strings.TrimSpace(string(b)), "\n"))
 }
 
-// TestNoPairsOnTodaysVault is the honest statement of what this hook does right now: every
-// note in the real vault carries origin: import, so it captures nothing until Phase 4
-// starts generating notes. That is correct, not a bug — the value accrues forward.
+// TestNoPairsOnTodaysVault is the honest statement of what this hook does right now:
+// every note in the real vault carries origin: import.
 func TestNoPairsOnTodaysVault(t *testing.T) {
 	r := newRepo(t)
 	for _, name := range []string{"a", "b", "c"} {

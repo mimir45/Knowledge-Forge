@@ -141,9 +141,8 @@ func TestRunDuplicateNearMatchFailsButDoesNotBlockWrite(t *testing.T) {
 	}
 }
 
-// TestRunDeterminism pins this codebase's determinism convention: two runs on byte-identical inputs must
-// produce byte-identical Outcomes, in the same order, so a retry's open-questions bullets
-// never drift for reasons unrelated to the draft itself.
+// TestRunDeterminism pins this codebase's determinism convention: two runs on
+// byte-identical inputs must produce byte-identical Outcomes, in the same order.
 func TestRunDeterminism(t *testing.T) {
 	root := emptyVault(t)
 	draft1 := noteFrom(t, goodNote, "notes/concept/kafka-consumer-group-rebalancing.md")

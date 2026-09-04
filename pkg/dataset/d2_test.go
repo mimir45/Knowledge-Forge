@@ -27,9 +27,7 @@ func TestEnabledRequiresTheD2Tag(t *testing.T) {
 	}
 }
 
-// TestEnabledHonoursTheMasterSwitch pins the gate this phase added. Through Phase 6 both
-// call sites read cfg.Dataset.Capture alone, so dataset.enabled: false captured anyway —
-// a master switch that switched nothing.
+// TestEnabledHonoursTheMasterSwitch pins the gate this phase added.
 func TestEnabledHonoursTheMasterSwitch(t *testing.T) {
 	off := config.Dataset{Enabled: false, Capture: []string{"d1", "d2", "d3", "d4", "d5"}}
 	for _, tier := range Tiers() {

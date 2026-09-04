@@ -7,9 +7,7 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
-// scrubOne redacts one note. A note with no frontmatter block at all (the pre-migration
-// shape a few real notes are still in) is redacted body-only; anything else with
-// unparseable frontmatter fails closed rather than guessing at its shape.
+// scrubOne redacts one note.
 func scrubOne(srcDir, rel string, schema *vault.Schema) (data []byte, noFM bool, redactions int, err error) {
 	n, err := vault.Load(filepath.Join(srcDir, filepath.FromSlash(rel)), rel)
 	if err != nil {
@@ -25,9 +23,7 @@ func scrubOne(srcDir, rel string, schema *vault.Schema) (data []byte, noFM bool,
 	return scrubFrontmatterNote(n, schema)
 }
 
-// scrubFrontmatterNote redacts frontmatter values and body text, re-renders, and — only
-// for a note that was schema-valid before scrubbing — checks it still is. A note that
-// was already invalid is scrubbed best-effort; scrub is not the tool that fixes it.
+// scrubFrontmatterNote redacts frontmatter values and body text, re-renders, and.
 func scrubFrontmatterNote(n *vault.Note, schema *vault.Schema) ([]byte, bool, int, error) {
 	wasValid := len(vault.Validate(n, schema)) == 0
 	count := scrubFields(n.FM)

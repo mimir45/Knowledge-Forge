@@ -6,8 +6,7 @@ import (
 )
 
 // QHash one-way hashes a question so the log never carries raw question text, following
-// the security invariant. Truncated to 12 hex chars: enough to dedupe repeats across a single
-// vault's ask volume without keeping more of the question around than a topic needs.
+// the security invariant.
 func QHash(question string) string {
 	sum := sha256.Sum256([]byte(question))
 	return hex.EncodeToString(sum[:])[:12]

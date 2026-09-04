@@ -75,9 +75,7 @@ func runEngineRecord(vaultDir, rel, stage, tier string) int {
 	return 0
 }
 
-// isLockedStage is a third defense-in-depth check (config load, engine.Select, and this)
-// against a locked stage being recorded as if a model tier ran it — record has no config
-// to validate against, only the stage name it was handed.
+// isLockedStage is a third defense-in-depth check.
 func isLockedStage(stage string) bool {
 	for _, s := range engine.LockedStages {
 		if s == stage {

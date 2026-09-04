@@ -13,27 +13,18 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/recall"
 )
 
-// calibrationVault is the corpus recall-spec.md §3.1 is measured against.
-//
-// It is examples/vault, not a live personal vault, for a reason found the hard way
-// during an earlier recalibration: numbers measured against a live vault drift as the
-// vault itself changes, so a "before" column can never be re-derived and an "after"
-// compared against it would prove nothing. A git-tracked corpus makes both columns
-// products of the same run, and makes the table reproducible by anyone.
+// calibrationVault is the corpus recall-spec.md §3.1 is measured against. It is
+// examples/vault, not a live vault: a moving corpus makes the golden non-reproducible.
 const calibrationVault = "../../examples/vault"
 
 // calibrationDocs pins the corpus size. A vault edit that changes it must fail here
 // rather than silently re-base the golden.
 const calibrationDocs = 91
 
-// calibrationNow fixes the clock. Decide branches on Candidate.Stale above the answer
-// threshold (ANSWER_FROM_VAULT vs UPDATE(refresh)), so a wall-clock run would flip a
-// verdict as the corpus ages and the golden would rot on a calendar, not on a change.
+// calibrationNow fixes the clock.
 var calibrationNow = time.Date(2026, 8, 21, 0, 0, 0, 0, time.UTC)
 
-// calibrationQueries are recall-spec.md §3.1's nine adjacent-topic queries, verbatim and
-// in the order the table prints them. Adjacent-topic means a closely related note exists
-// and extending it is the right move — the band where the verdict is hardest.
+// calibrationQueries are recall-spec.md §3.1's nine adjacent-topic queries.
 var calibrationQueries = []string{
 	"Redis caching in Spring Boot",
 	"Spring Boot 4 configuration properties binding",
@@ -52,8 +43,7 @@ var updateGolden = flag.Bool("update", false,
 const goldenPath = "testdata/calibration.golden"
 
 // TestCalibration is the harness that makes the recall-spec.md calibration table
-// generated rather than hand-transcribed: the nine queries used to exist only as prose,
-// which is why the table went stale unnoticed. Run with -update to re-record.
+// generated rather than hand-transcribed: the nine queries used to exist only as prose.
 func TestCalibration(t *testing.T) {
 	got := calibrationTable(t)
 	if *updateGolden {
@@ -72,10 +62,7 @@ func TestCalibration(t *testing.T) {
 	}
 }
 
-// calibrationTable renders one row per query unconditionally. Iterating results instead
-// would drop the empty ones: nonZero (rank.go:40-47) truncates a candidate list at the
-// first zero score, so a query whose topic left the corpus returns [] and would vanish
-// from the table silently. An empty row is the record of a corpus difference.
+// calibrationTable renders one row per query unconditionally.
 func calibrationTable(t *testing.T) string {
 	docs := calibrationCorpus(t)
 	var b strings.Builder
@@ -87,15 +74,7 @@ func calibrationTable(t *testing.T) string {
 	return b.String()
 }
 
-// calibrationRow scores one query. The Top-1 slug column is the one §3.1's original table
-// lacked: it recorded what the winner scored but never which note won, so a fix that
-// changed the winner while holding the score would have read as a no-op.
-//
-// The Neighbours column tracks the neighbour floor's effect. The verdict says a note
-// gets created; this column says whether it gets created linked or orphaned, which is
-// the whole of what the neighbour floor controls. A floor change must move this column
-// and nothing else —
-// score and verdict are functions of Rank and Decide, which the floor does not enter.
+// calibrationRow scores one query.
 func calibrationRow(docs []recall.Doc, question string) string {
 	q := recall.Query{Question: question}
 	res := recall.DefaultThresholds.ResultFrom(q, recall.RankPool(q, docs, calibrationNow))
@@ -108,9 +87,7 @@ func calibrationRow(docs []recall.Doc, question string) string {
 		question, slug, score, res.Verdict, neighbourCell(res.Neighbours))
 }
 
-// neighbourCell renders the neighbour set as "n: slug, slug". The slugs travel with the
-// count because a floor that emits three links is only defensible if they are the right
-// three; a bare count would hide a floor that admits noise.
+// neighbourCell renders the neighbour set as "n: slug, slug".
 func neighbourCell(ns []recall.Candidate) string {
 	if len(ns) == 0 {
 		return "0"
@@ -122,10 +99,7 @@ func neighbourCell(ns []recall.Candidate) string {
 	return fmt.Sprintf("%d: %s", len(ns), strings.Join(slugs, ", "))
 }
 
-// calibrationCorpus stages the vault in a temp dir and loads it. Copying is not
-// fastidiousness: loadDocs opens a SQLite cache under <root>/.forge and writes re-parsed
-// rows back, so scoring examples/vault in place would mutate a git-tracked directory and
-// make the golden depend on whether the cache happened to be warm.
+// calibrationCorpus stages the vault in a temp dir and loads it.
 func calibrationCorpus(t *testing.T) []recall.Doc {
 	t.Helper()
 	docs, err := loadDocs(stageVault(t, calibrationVault))
@@ -139,10 +113,7 @@ func calibrationCorpus(t *testing.T) []recall.Doc {
 	return docs
 }
 
-// stageVault copies a vault tree into a temp dir. It is fixtureCopy generalised over its
-// source; fixtureCopy stays as it is because e2e_test.go's callers name testdata/vault
-// through it and its doc comment's warning about mutating that fixture in place is
-// specific to it.
+// stageVault copies a vault tree into a temp dir.
 func stageVault(t *testing.T, src string) string {
 	t.Helper()
 	dst := filepath.Join(t.TempDir(), "vault")

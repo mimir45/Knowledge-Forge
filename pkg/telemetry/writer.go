@@ -7,8 +7,7 @@ import (
 )
 
 // Append writes one JSON line to <vaultDir>/.forge/log.jsonl, creating the directory on
-// first use. Pure I/O — callers gate this on cfg.Telemetry.Enabled themselves, the same
-// posture engine_run.go's captureD2 takes toward pkg/dataset's own config check.
+// first use.
 func Append(vaultDir string, ev Event) error {
 	dir := filepath.Join(vaultDir, ".forge")
 	if err := os.MkdirAll(dir, 0o755); err != nil {

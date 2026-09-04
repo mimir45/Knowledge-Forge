@@ -11,14 +11,10 @@ import (
 )
 
 // logbackSentinelID names the managed block every logback-written fragment and inline
-// marker uses. One constant, not per-group, because sentinel finds a block by id *within
-// a file* — one CLAUDE.md, one logback block, is all a module needs.
+// marker uses.
 const logbackSentinelID = "logback"
 
-// writeClaudeFragments upserts one managed block per documented module's CLAUDE.md,
-// creating the file if the module has none. Groups with no notes are skipped, same as
-// the knowledge map: a fragment listing zero notes would tell a reader less than no
-// fragment at all.
+// writeClaudeFragments upserts one managed block per documented module's CLAUDE.md.
 func writeClaudeFragments(r drift.Repo, groups []report.CodeGroup, dryRun bool) bool {
 	ok := true
 	for _, g := range groups {

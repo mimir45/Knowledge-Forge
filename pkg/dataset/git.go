@@ -1,6 +1,5 @@
-// Package dataset builds offline training datasets from
-// what is already in the vault's git history. Nothing here calls a model; D3 is a pure
-// function of (commit, tree state), the same anchoring rule drift follows.
+// Package dataset builds offline training datasets from what is already in the vault's
+// git history.
 package dataset
 
 import (
@@ -10,10 +9,7 @@ import (
 	"time"
 )
 
-// Git is a minimal read-only shell over the git CLI, scoped to one repository. The D3
-// capture runs inside a git hook, so git is already on the path and already the process
-// that woke us; pulling go-git in for six plumbing reads would cost more than it buys.
-// The library dependency belongs in pkg/gitsig (Phase 2b), which needs blame and churn.
+// Git is a minimal read-only shell over the git CLI, scoped to one repository.
 type Git struct{ Dir string }
 
 func (g Git) run(args ...string) (string, error) {
@@ -25,9 +21,7 @@ func (g Git) run(args ...string) (string, error) {
 	return strings.TrimRight(string(out), "\n"), nil
 }
 
-// CommitMeta resolves a revision to its full sha and committer date. Committer date, not
-// author date: a rebase rewrites the former and leaves the latter, and the window we are
-// measuring is "how long the note sat in the repo before a human touched it".
+// CommitMeta resolves a revision to its full sha and committer date.
 func (g Git) CommitMeta(rev string) (sha string, when time.Time, err error) {
 	out, err := g.run("show", "-s", "--format=%H%x00%cI", rev)
 	if err != nil {
@@ -46,11 +40,8 @@ func (g Git) Trailers(rev string) (string, error) {
 	return g.run("show", "-s", "--format=%(trailers)", rev)
 }
 
-// ModifiedFiles lists paths a commit changed in the given ways ("M", "MR", …), reporting
-// the post-rename spelling. -M matters because the realistic human correction retitles the
-// note and renames the file in the same commit; without it git splits that into an add and
-// a delete and neither looks like an edit. A root commit has no parent to diff against, so
-// it reports nothing rather than erroring.
+// ModifiedFiles lists paths a commit changed in the given ways ("M", "MR", …),
+// reporting the post-rename spelling.
 func (g Git) ModifiedFiles(sha, filter string) ([]string, error) {
 	if _, err := g.run("rev-parse", "--verify", "--quiet", sha+"^"); err != nil {
 		return nil, nil
@@ -64,10 +55,7 @@ func (g Git) ModifiedFiles(sha, filter string) ([]string, error) {
 }
 
 // Origin locates the commit that introduced a path, following it across renames, and
-// reports the sha, the date, and the path as it was spelled back then. Following matters:
-// the Phase 1 migration moved every note, and without --follow every pre-existing note
-// would look like it was created that day. The old spelling matters for the same reason —
-// Show reads by (sha, path), and the post-rename path does not exist in that commit.
+// reports the sha, the date, and the path as it was spelled back then.
 type Origin struct {
 	SHA  string
 	Path string

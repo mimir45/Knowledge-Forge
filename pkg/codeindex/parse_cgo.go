@@ -27,9 +27,7 @@ func grammar(lang string) *sitter.Language {
 	return nil
 }
 
-// declKinds maps a tree-sitter node type to the Symbol.Kind we record. Anything not
-// listed is walked through but not recorded: drift compares declarations, and a note
-// does not cite an if-statement.
+// declKinds maps a tree-sitter node type to the Symbol.Kind we record.
 var declKinds = map[string]string{
 	"class_declaration":          "class",
 	"interface_declaration":      "interface",
@@ -44,8 +42,7 @@ var declKinds = map[string]string{
 }
 
 // arrowValues are the right-hand sides that make a `const` a declaration worth
-// recording. `const Login = () => {}` is how nearly every component and hook in the
-// TypeScript corpus is written, and a note citing `Login` is citing this.
+// recording.
 var arrowValues = map[string]bool{
 	"arrow_function": true, "function_expression": true, "function": true,
 }
@@ -103,9 +100,7 @@ func walk(n *sitter.Node, src []byte, prefix string, f *File) {
 	}
 }
 
-// importPathKinds are the node types that can name something a file depends on. Kept
-// separate from declKinds: those record what a file declares, this records what it
-// imports, and DependsOn (cmd/forge) is the only reader of the latter.
+// importPathKinds are the node types that can name something a file depends on.
 var importPathKinds = map[string]bool{
 	"import_declaration": true, // java: import [static] a.b.C[.*];
 	"import_statement":   true, // typescript: import ... from '...'
@@ -124,11 +119,7 @@ func importOf(n *sitter.Node, src []byte) (string, bool) {
 	return tsImportSource(n, src)
 }
 
-// javaImportPath reads the qualified name out of `import [static] <name>[.*];`. The
-// grammar's scoped_identifier already excludes both "static" and a trailing ".*" — a
-// wildcard import comes out as the bare package name, a class import as package+class,
-// and a static member import as package+class+member, all of which resolveJavaImport
-// (cmd/forge) handles by trimming from the right.
+// javaImportPath reads the qualified name out of `import [static] <name>[.*];`.
 func javaImportPath(n *sitter.Node, src []byte) (string, bool) {
 	for i := 0; i < int(n.NamedChildCount()); i++ {
 		c := n.NamedChild(i)
@@ -163,9 +154,7 @@ func symbolOf(n *sitter.Node, src []byte, name, kind string) Symbol {
 	}
 }
 
-// nameOf reads the declaration's name. TypeScript's method_definition and Java's
-// declarations all expose it as the "name" field; a computed or destructured name has
-// none, and an unnamed declaration is not something a note can cite.
+// nameOf reads the declaration's name.
 func nameOf(n *sitter.Node, src []byte) string {
 	f := n.ChildByFieldName("name")
 	if f == nil {

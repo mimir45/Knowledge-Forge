@@ -29,9 +29,7 @@ type IndexInput struct {
 
 const defaultBudget = 4096
 
-// RenderIndex produces _index.md. It is deterministic for a given (entries, day): the
-// header carries a date, not a timestamp, so running it twice in one day is a no-op on
-// disk. That is what "idempotent" has to mean for a file with a rebuild stamp in it.
+// RenderIndex produces _index.md.
 func RenderIndex(in IndexInput) []byte {
 	if in.MaxSize == 0 {
 		in.MaxSize = defaultBudget
@@ -143,11 +141,7 @@ func staleEntries(in IndexInput) []Entry {
 	return out
 }
 
-// sortByVerified needs the slug behind the date. `verified` is a date, not a timestamp, so
-// notes verified on the same day are the common case rather than a rare tie — and this list
-// is truncated to 15, so an unbroken tie does not merely reorder the report, it changes
-// which notes appear in it at all. The same defect in pkg/drift's name table made drift.md
-// oscillate between runs on an unchanged tree.
+// sortByVerified needs the slug behind the date.
 func sortByVerified(out []Entry) {
 	sort.Slice(out, func(i, j int) bool {
 		if !out[i].Verified.Equal(out[j].Verified) {
@@ -175,10 +169,8 @@ func head[T any](s []T, n int) []T {
 	return s
 }
 
-// Trim cuts at a line boundary and says so, rather than emitting a half-written
-// bullet that a SessionStart hook would feed to a model as if it were complete.
-// Exported for cmd/forge's session-context hook, which shares this exact 4KB-budget
-// contract for the profile it appends after the index.
+// Trim cuts at a line boundary and says so, rather than emitting a half-written bullet
+// that a SessionStart hook would feed to a model as if it were complete.
 func Trim(s string, max int) string {
 	if len(s) <= max {
 		return s

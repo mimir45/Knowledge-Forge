@@ -1,14 +1,5 @@
-// Package gitsig reads signals out of a repository's history: which files churn, who owns
-// them, and which files keep changing together. It feeds churn.md and moc/codebase.md.
-//
-// It shells out to git rather than using go-git, which STACK names. That is a deliberate
-// deviation and it is for consistency, not preference: pkg/coderef, pkg/drift, pkg/dataset
-// and pkg/codeindex all already shell out, they shipped in merged phases, and drift clears
-// its 100ms hook budget doing it. A second, differently-behaved git implementation in the
-// same binary would be a source of disagreements about what a revision means.
-//
-// Everything here reads committed history only. Like drift, it never looks at the working
-// tree — a half-finished edit is not churn.
+// Package gitsig reads signals out of a repository's history: which files churn, who
+// owns them, and which files keep changing together.
 package gitsig
 
 import (

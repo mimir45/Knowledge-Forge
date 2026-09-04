@@ -22,16 +22,8 @@ type Overdue struct {
 	Score       int // the ranking key actually used
 }
 
-// RenderStaleness produces staleness.md, ranked so the top line is the one note to fix today.
-//
-// The ranking is ask frequency x days overdue, and that product is what this implements.
-// It is not what this vault can currently rank by: every note carries `origin: import`, so
-// no note has ever been asked for, every ask count is 0, and the product is 0 for all of
-// them. Ranking then falls back to days overdue alone and the header says so.
-//
-// The fallback is conditional on the ask counts actually being empty rather than hardcoded.
-// Phase 4 starts recording asks; if this were wired to days-overdue permanently, that data
-// would land and the ranking would silently stay degenerate.
+// RenderStaleness produces staleness.md, ranked so the top line is the one note to fix
+// today.
 func RenderStaleness(in StalenessInput) []byte {
 	overdue := rankOverdue(in)
 	var b strings.Builder
@@ -95,9 +87,7 @@ func rankScore(daysOverdue, asks int, weighted bool) int {
 	return daysOverdue
 }
 
-// overdueBy returns how many days past its freshness window a note is. A note with no
-// freshness budget or no verification date is not stale, it is unmeasured — a different
-// problem, and coverage.md's, not this report's.
+// overdueBy returns how many days past its freshness window a note is.
 func overdueBy(e Entry, now time.Time) (int, bool) {
 	if e.FreshnessDays <= 0 || e.Verified.IsZero() {
 		return 0, false

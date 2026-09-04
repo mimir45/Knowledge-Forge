@@ -9,10 +9,7 @@ import (
 )
 
 // version and commit are stamped at link time by the Makefile and .goreleaser.yml via
-// -X main.version / -X main.buildSHA. They have to exist as package-level vars for that
-// to work: the Go linker silently ignores an -X flag naming a symbol that is not there,
-// which is exactly what happened before this file existed — every release binary was
-// built with the stamp and not one of them carried it.
+// -X main.version / -X main.buildSHA.
 var (
 	version  = "dev"
 	buildSHA = "none"

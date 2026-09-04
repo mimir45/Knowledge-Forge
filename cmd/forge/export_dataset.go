@@ -66,9 +66,7 @@ func cmdExportDataset(args []string) int {
 	return runExportDataset(root, o)
 }
 
-// exportOptions turns flags into an ExportOptions, resolving the anonymize default from
-// the config chain. Reading config here rather than in runExportDataset keeps the usage
-// errors above the vault resolution, so a typo'd --set fails on the typo.
+// exportOptions turns flags into an ExportOptions.
 func exportOptions(set, format, since, out string,
 	anon, noAnon bool) (dataset.ExportOptions, int) {
 	if set == "" || out == "" {
@@ -100,18 +98,7 @@ func parseSince(s string) (time.Time, error) {
 	return t, nil
 }
 
-// anonymizeChoice resolves the three inputs — the config default, --anonymize,
-// --no-anonymize — into one boolean, and is where this phase's most consequential
-// decision is spelled out. Turning anonymization off is a choice the user makes; a
-// scrubber that fails is not, and the two must never share a code path, because that is
-// exactly how a warning quietly becomes a raw export (AUDIT 8.4 D-6).
-//
-// It does not print the raw-export warning itself — runExportDataset does, and only
-// once dataset.Export has actually written something. Printing it here fired even when
-// the request went on to be refused for --since or an undefined format (a d6 --since
-// request that also passed --no-anonymize shouted "will contain captured text" about a
-// file that was never created), which is the same defect writeDistribution's own doc
-// comment names one layer down: describing content a file does not hold.
+// anonymizeChoice resolves the three inputs — the config default, --anonymize.
 func anonymizeChoice(cfg *config.Config, anon, noAnon bool) (bool, int) {
 	if anon && noAnon {
 		fmt.Fprintln(os.Stderr,
@@ -124,10 +111,8 @@ func anonymizeChoice(cfg *config.Config, anon, noAnon bool) (bool, int) {
 	return anon || cfg.Dataset.AnonymizeOnExport, 0
 }
 
-// warnRawExport describes what an unanonymized export of set actually holds. d6 gets its
-// own enumeration: a record is {repo, path, symbol, note}, never a note body, draft,
-// critique or URL, and unlike d1-d5 this is not a choice the flag made — --no-anonymize
-// is d6's only working path, so this fires on every successful d6 export.
+// warnRawExport describes what an unanonymized export of set actually holds. d6 gets
+// its own enumeration: a record is {repo, path, symbol, note}, never a note body.
 func warnRawExport(set string) {
 	fmt.Fprintln(os.Stderr, "forge export-dataset: WARNING --no-anonymize was given.")
 	if set == dataset.D6Tag {
@@ -164,10 +149,7 @@ func runExportDataset(root string, o dataset.ExportOptions) int {
 	return 0
 }
 
-// zeroRecordsMsg distinguishes d6's empty case from every other tier's. "Has captured
-// nothing yet" is the right read for a write path nobody has fired; d6 has no write
-// path, so an empty export more often means no repo has been indexed on this machine at
-// all — pointing the user at forge logback is the actionable version of that.
+// zeroRecordsMsg distinguishes d6's empty case from every other tier's.
 func zeroRecordsMsg(set string) string {
 	if set == dataset.D6Tag {
 		return "forge export-dataset: d6 resolved no citations against a cached code index; " +

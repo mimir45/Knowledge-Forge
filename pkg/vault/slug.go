@@ -5,9 +5,7 @@ import (
 	"unicode"
 )
 
-// Slug turns a title into a canonical kebab-case identifier. It is deterministic:
-// the same input always yields the same output, with no clock, map iteration, or
-// randomness involved. Callers that need vault-wide uniqueness use SlugUnique.
+// Slug turns a title into a canonical kebab-case identifier.
 func Slug(title string) string {
 	folded := foldRunes(title)
 	parts := strings.FieldsFunc(folded, func(r rune) bool { return r == '-' })
@@ -37,9 +35,7 @@ func foldRunes(s string) string {
 	return b.String()
 }
 
-// translit is intentionally explicit rather than a Unicode normalization pass: an
-// unlisted letter degrades to a separator, which is visible in the slug, instead of
-// silently vanishing.
+// translit is intentionally explicit rather than a Unicode normalization pass.
 var translit = map[rune]string{
 	'ç': "c", 'ğ': "g", 'ı': "i", 'ö': "o", 'ş': "s", 'ü': "u",
 	'á': "a", 'à': "a", 'â': "a", 'ä': "a", 'å': "a", 'ã': "a",

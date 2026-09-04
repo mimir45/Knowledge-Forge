@@ -1,10 +1,4 @@
-// Package linkcheck asks whether a note's sources still resolve. It feeds deadlinks.md.
-//
-// Two things it deliberately does not do. It does not treat a transport failure as a dead
-// link: a user on a plane must not get a report claiming every source in the vault is gone,
-// so unreachable is its own verdict and deadlinks.md counts it separately. And it does not
-// re-check a URL it checked recently — the weekly pass would otherwise hammer the same
-// hosts every run, which is both rude and the fastest way to earn a rate-limit block.
+// Package linkcheck asks whether a note's sources still resolve.
 package linkcheck
 
 import (

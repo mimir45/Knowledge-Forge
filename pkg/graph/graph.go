@@ -23,9 +23,7 @@ type Graph struct {
 // with no inbound links is an entry point rather than an orphan.
 const hubFraction = 0.10
 
-// Build computes the graph. Roots are classified here, not by the caller, because
-// getting it wrong — treating a legitimate root like index.md as an orphan just because
-// it has zero inbound links — is a specific, easy-to-reintroduce failure.
+// Build computes the graph.
 func Build(nodes []Node) *Graph {
 	g := &Graph{
 		Inbound:  make(map[string]int, len(nodes)),
@@ -44,12 +42,6 @@ func Build(nodes []Node) *Graph {
 }
 
 // classifyRoots marks the notes that are entry points into the graph.
-//
-// Root detection deliberately does NOT reduce to an inbound-link count. In the fixture
-// vault index.md and log.md link to each other, so a count-based rule calls them
-// non-orphans by accident; in the real vault index.md has genuinely zero inbound and the
-// same rule would report the vault's front door as an orphan. Structure decides instead:
-// location, conventional name, or hub-scale fan-out.
 func (g *Graph) classifyRoots(nodes []Node) {
 	threshold := int(float64(len(nodes)) * hubFraction)
 	for _, n := range nodes {

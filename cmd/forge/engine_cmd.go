@@ -5,9 +5,7 @@ import (
 	"os"
 )
 
-// cmdEngine dispatches Phase 3b's three subcommands. It is the one command tree in this
-// binary that can make a real model call — main.go's doc-comment names the exception, and
-// pkg/engine/select.go still refuses recall/write/index independently of it.
+// cmdEngine dispatches Phase 3b's three subcommands.
 func cmdEngine(args []string) int {
 	if len(args) == 0 {
 		fmt.Fprint(os.Stderr, engineUsage)

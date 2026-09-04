@@ -1,22 +1,10 @@
-// Package coderef is the citation layer drift stands on. AUDIT NF-4 measured the
-// problem it exists to fix: notes cite code by logical module shorthand
-// ("common-domain/valueobject/Money.java"), not by a path any tool can open, and 14 of
-// 19 path-shaped Java references fail suffix resolution as written. Genuine `file:line`
-// references vault-wide are zero. So before pkg/drift can compare anything, something
-// has to turn what the notes actually say into a repo-relative path and a symbol.
-//
-// Two inputs, one output. The canonical form is a frontmatter `code_refs:` block that
-// new notes write and that needs no guessing. The legacy form is prose: inline code
-// spans in the body of the 91 imported notes. Both land in a Ref; resolution is the
-// same function for both, so the vault improves as notes are rewritten without drift
-// needing to know which shape it was handed.
+// Package coderef is the citation layer drift stands on.
 package coderef
 
 import "strings"
 
 // Kind records how confident the extractor is about what it found, which resolution
-// later needs: a bare CamelCase token is a symbol *candidate* and must not be reported
-// broken merely because no file is named after it.
+// later needs.
 type Kind string
 
 const (

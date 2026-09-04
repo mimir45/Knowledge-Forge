@@ -23,9 +23,8 @@ func (c *Checker) probe(ctx context.Context, raw string) Status {
 	return st
 }
 
-// headRefused reports whether a response means "this server does not do HEAD" rather than
-// "this resource is gone". 405 and 501 say so outright; 403 and 400 are what CDNs in front
-// of docs sites return to a HEAD they did not expect.
+// headRefused reports whether a response means "this server does not do HEAD" rather
+// than "this resource is gone".
 func headRefused(s Status) bool {
 	switch s.Code {
 	case http.StatusMethodNotAllowed, http.StatusNotImplemented,

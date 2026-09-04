@@ -7,9 +7,8 @@ import (
 	"testing"
 )
 
-// TestOpenQuestionsOneBulletPerFailInGateOrder pins the determinism guarantee at
-// its source: OpenQuestions must walk rep.Outcomes in Run's fixed gate order, not re-sort
-// or filter differently, so two runs on unchanged state produce byte-identical bullets.
+// TestOpenQuestionsOneBulletPerFailInGateOrder pins the determinism guarantee at its
+// source: OpenQuestions must walk rep.Outcomes in Run's fixed gate order.
 func TestOpenQuestionsOneBulletPerFailInGateOrder(t *testing.T) {
 	rep := Report{Outcomes: []Outcome{
 		{Gate: "schema", Verdict: Pass},
@@ -67,10 +66,7 @@ func TestQuarantineCreateWritesToInboxLowConfidence(t *testing.T) {
 	}
 }
 
-// TestQuarantineUpdateSetsSupersedesBackPointer pins the plan's CREATE/UPDATE split: an
-// UPDATE draft that fails gate must not touch the published note it was proposing to
-// change, but must not be silently dropped either — it lands in _inbox/ with a
-// supersedes-style back-pointer to the note a human can later apply it to.
+// TestQuarantineUpdateSetsSupersedesBackPointer pins the plan's CREATE/UPDATE split.
 func TestQuarantineUpdateSetsSupersedesBackPointer(t *testing.T) {
 	root := emptyVault(t)
 	draft := noteFrom(t, goodNote, "notes/concept/kafka-consumer-group-rebalancing.md")

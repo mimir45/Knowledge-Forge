@@ -1,8 +1,5 @@
 // Package sentinel edits managed blocks of text inside files that forge does not
-// otherwise own — a code repo's CLAUDE.md fragments and (opt-in) inline
-// "// forge:id:begin" markers. Everything outside a block's own begin/end pair is left
-// untouched, byte for byte, which is what makes Upsert safe to rerun and Remove safe to
-// undo. It never edits code semantics, only comment lines and whole files it created.
+// otherwise own — a code repo's CLAUDE.md fragments and.
 package sentinel
 
 import "fmt"

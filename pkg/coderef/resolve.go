@@ -16,24 +16,13 @@ type Repo struct {
 type hit struct{ repo, path string }
 
 // Registry resolves shorthand citations to repo-relative paths.
-//
-// The matching rule is an ordered *subsequence* over path segments, not a suffix. That
-// is not a refinement, it is the whole point: AUDIT NF-4's failing citations look like
-// "common-domain/valueobject/Money.java", and the file is
-// "common-domain/src/main/java/com/food/domain/valueobject/Money.java". The note drops
-// the build-layout segments in the middle, so no suffix of the citation is a suffix of
-// the path and suffix matching resolves it to nothing. Requiring only that the cited
-// segments appear in order, anchored at the filename, is what turns the shorthand the
-// vault actually contains into something drift can open.
 type Registry struct {
 	repos  []Repo
 	byBase map[string][]hit // "Money.java" -> every file with that basename
 	byName map[string]bool
 }
 
-// NewRegistry indexes files by basename. Basename is the only cheap anchor: it is the
-// one segment every citation shape carries, and it cuts the subsequence check down to
-// the handful of files that could possibly match.
+// NewRegistry indexes files by basename.
 func NewRegistry(repos []Repo) *Registry {
 	rg := &Registry{repos: repos, byBase: map[string][]hit{}, byName: map[string]bool{}}
 	for _, r := range repos {
@@ -50,9 +39,7 @@ func NewRegistry(repos []Repo) *Registry {
 	return rg
 }
 
-// Resolve reports what the repositories say about one citation. A symbol-kind ref is
-// never Unresolved here: it carries no path, so pkg/drift resolves it through the
-// symbol table instead, and calling it broken at this layer would be wrong.
+// Resolve reports what the repositories say about one citation.
 func (rg *Registry) Resolve(r Ref) Resolution {
 	if r.Kind == KindSymbol {
 		return Resolution{Ref: r, Status: Resolved}
@@ -68,9 +55,7 @@ func (rg *Registry) Resolve(r Ref) Resolution {
 	return Resolution{Ref: r, Status: Ambiguous, Ambiguity: qualify(hits)}
 }
 
-// lookup narrows by basename, then by repo, then keeps only subsequence matches, then
-// keeps only the tightest ones. Each step can leave several candidates; only the last
-// step's survivors are reported, and more than one of them is a genuine ambiguity.
+// lookup narrows by basename, then by repo, then keeps only subsequence matches.
 func (rg *Registry) lookup(r Ref) []hit {
 	seg := Segments(rg.stripRoot(&r))
 	if len(seg) == 0 {
@@ -79,20 +64,13 @@ func (rg *Registry) lookup(r Ref) []hit {
 	cands := rg.filterRepo(rg.byBase[seg[len(seg)-1]], r.Repo)
 	m := matching(cands, seg)
 	if len(seg) == 1 {
-		// A bare filename named no directory context, so there is nothing to break the
-		// tie *with*. Preferring the shortest path here would invent a preference the
-		// note never expressed; two modules defining Money.java is a real ambiguity and
-		// the report should say so.
 		return plain(m)
 	}
 	return tightest(m)
 }
 
 // stripRoot turns an absolute citation into a repo-relative one when it points inside a
-// registered repository, and pins the repo while it is at it. Some notes paste the full
-// path their editor showed them; that is a *more* precise citation than the shorthand,
-// and treating it as unresolvable because it starts with a slash throws the precision
-// away.
+// registered repository, and pins the repo while it is at it.
 func (rg *Registry) stripRoot(r *Ref) string {
 	for _, repo := range rg.repos {
 		if repo.Root == "" {
@@ -130,11 +108,7 @@ func matching(cands []hit, seg []string) []scored {
 	return out
 }
 
-// tightest keeps the candidates that named the fewest unstated segments. Between
-// "common-domain/.../domain/valueobject/Money.java" and
-// "order-service/.../order/domain/valueobject/Money.java", a citation beginning
-// "common-domain" only subsequence-matches the first, but where both match the shorter
-// path is the one the note more plausibly meant.
+// tightest keeps the candidates that named the fewest unstated segments.
 func tightest(in []scored) []hit {
 	best := -1
 	for _, s := range in {
@@ -151,9 +125,7 @@ func tightest(in []scored) []hit {
 	return out
 }
 
-// isSubsequence reports whether every segment of want appears in have, in order. The
-// last segment of want is the basename and is already known to match, so the walk only
-// has to place the segments before it.
+// isSubsequence reports whether every segment of want appears in have, in order.
 func isSubsequence(want, have []string) bool {
 	i := 0
 	for _, h := range have {
@@ -164,9 +136,7 @@ func isSubsequence(want, have []string) bool {
 	return i == len(want)
 }
 
-// filterRepo honours an explicitly named repository. A canonical ref that names a repo
-// the registry does not know is not silently searched everywhere — that would turn a
-// typo into a confident wrong answer.
+// filterRepo honours an explicitly named repository.
 func (rg *Registry) filterRepo(hits []hit, repo string) []hit {
 	if repo == "" {
 		return hits

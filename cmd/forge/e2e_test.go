@@ -12,9 +12,7 @@ import (
 
 const fixtureSrc = "../../testdata/vault"
 
-// fixtureCopy stages the fixture vault in a temp dir. Everything that mutates a vault is
-// rehearsed on a copy: testdata/vault carries twelve deliberate defects that are the test
-// surface, and it must never be written to or git-init-ed in place.
+// fixtureCopy stages the fixture vault in a temp dir.
 func fixtureCopy(t *testing.T) string {
 	t.Helper()
 	dst := filepath.Join(t.TempDir(), "vault")
@@ -156,9 +154,8 @@ func TestE2EIndexRespectsTheBudget(t *testing.T) {
 	}
 }
 
-// TestE2ESessionContextRespectsTheBudget: the SessionStart budget applies to
-// the index and the profile independently — each section must fit on its own, matching
-// readTrimmed's per-section contract, not just the combined total.
+// TestE2ESessionContextRespectsTheBudget: the SessionStart budget applies to the index
+// and the profile independently — each section must fit on its own.
 func TestE2ESessionContextRespectsTheBudget(t *testing.T) {
 	root := fixtureCopy(t)
 	writeProfile(t, root, strings.Repeat("primary_language: go\n", 500))
@@ -220,11 +217,8 @@ func TestE2EExcludesNonNotes(t *testing.T) {
 	}
 }
 
-// TestHubsAreGraphNodesButNotContractNotes: index.md and log.md carry no frontmatter and
-// migrate_vault.py leaves them in place, so holding them to the contract would report two
-// permanent failures. Dropping them from the walk instead would lose their outbound links,
-// and graph.isRootLocation relies on those to keep the notes they point at off the orphan
-// list. The two predicates therefore have to disagree on exactly this pair.
+// TestHubsAreGraphNodesButNotContractNotes: index.md and log.md carry no frontmatter
+// and migrate_vault.py leaves them in place.
 func TestHubsAreGraphNodesButNotContractNotes(t *testing.T) {
 	for _, rel := range []string{"index.md", "log.md"} {
 		if !vault.IsContentNote(rel) {
@@ -254,9 +248,8 @@ func TestFixtureIsNeverMutated(t *testing.T) {
 	}
 }
 
-// TestE2EAllRejectsAPositionalPath: `forge validate --all --fix <vault>` silently ignored
-// the path and rewrote the working directory instead. On a --fix run that is a
-// destructive misfire, so the combination is now an error rather than a guess.
+// TestE2EAllRejectsAPositionalPath: `forge validate --all --fix <vault>` silently
+// ignored the path and rewrote the working directory instead.
 func TestE2EAllRejectsAPositionalPath(t *testing.T) {
 	root := fixtureCopy(t)
 	if code := runValidate([]string{root}, true, ".", false, true); code != 2 {

@@ -5,9 +5,8 @@ import (
 	"testing"
 )
 
-// TestLoadRejectsOldExtractor pins the cache-versioning guarantee, re-checked here after
-// a later change bumped Extractor for the first time since it was written: a cache stamped by a prior
-// extractor version is a miss, not a successful (and silently incomplete) unmarshal.
+// TestLoadRejectsOldExtractor pins the cache-versioning guarantee, re-checked here
+// after a later change bumped Extractor for the first time since it was written.
 func TestLoadRejectsOldExtractor(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "code-index-app.json")

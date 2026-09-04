@@ -9,10 +9,7 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
-// A small in-repo fixture, deliberately separate from testdata/vault/ (that fixture's
-// F1-F12 defects are the surface for other packages' tests, not this one's — CLAUDE.md
-// says not to touch it). Plants one of each secret shape D-6 requires: an email, an
-// absolute home path, and an API-key-shaped token — one in frontmatter, one in body.
+// A small in-repo fixture, deliberately separate from testdata/vault/.
 const secretNote = `---
 title: "Debugging samir.alizade@example.com's Kafka setup"
 slug: kafka-consumer-group-rebalancing
@@ -143,8 +140,7 @@ func TestScrubIsDeterministic(t *testing.T) {
 }
 
 // TestScrubFailsClosed checks that a note whose frontmatter cannot be parsed aborts the
-// whole run with nothing written to dst — the D-6 requirement, checked directly rather
-// than only implied by scrubOne's doc comment.
+// whole run with nothing written to dst — the D-6 requirement.
 func TestScrubFailsClosed(t *testing.T) {
 	src, dst := t.TempDir(), filepath.Join(t.TempDir(), "out")
 	writeFixture(t, src)
@@ -162,11 +158,7 @@ func TestScrubFailsClosed(t *testing.T) {
 	}
 }
 
-// slugNote is D-6's missing negative case: reLongToken must not treat an ordinary
-// kebab-case slug or a dated filename as a secret. Found via a real-vault dry run —
-// "2026-04-13-local-ai-continue-rag-spring" (40 chars, all hyphens/lowercase) was
-// getting redacted, corrupting a legitimate sources: citation. One real secret stays
-// planted alongside so this test also proves the fix didn't disable redaction.
+// slugNote is D-6's missing negative case.
 const slugNote = `---
 title: "Debugging a rebalance"
 slug: kafka-consumer-group-rebalancing
@@ -226,11 +218,7 @@ func TestScrubDoesNotRedactSlugsOrFilenames(t *testing.T) {
 	}
 }
 
-// codeNote is the second false-positive class reLongToken had, found spot-checking
-// the slug fix's own output: a camelCase Java method name in a code sample is a long
-// unbroken alphanumeric run with no digits, so it matched even after the dash/underscore
-// exclusion. A digit-bearing JWT-shaped token stays planted alongside so this test also
-// proves the digit requirement didn't disable real detection.
+// codeNote is the second false-positive class reLongToken had.
 const codeNote = `---
 title: "Saga outbox lookup"
 slug: saga-outbox-lookup
@@ -260,9 +248,7 @@ The demo JWT header is eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9, planted for this fi
 `
 
 // TestScrubDoesNotRedactCamelCaseCodeIdentifiers is the negative case for the second
-// reLongToken false-positive class: pure-alphabetic camelCase identifiers in code
-// samples pass through untouched, while a digit-bearing token-shaped string is still
-// caught.
+// reLongToken false-positive class.
 func TestScrubDoesNotRedactCamelCaseCodeIdentifiers(t *testing.T) {
 	src, dst := t.TempDir(), filepath.Join(t.TempDir(), "out")
 	notesDir := filepath.Join(src, "notes", "howto")

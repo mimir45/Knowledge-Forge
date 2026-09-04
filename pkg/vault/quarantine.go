@@ -8,11 +8,7 @@ import (
 )
 
 // WriteToInbox stamps confidence: low, appends an ## Open questions section naming each
-// failed gate, and writes the note under _inbox/. This is the one path a gate failure may
-// take: DESIGN and the PROMPT both forbid a silent drop, and forbid publishing a failing
-// note anywhere confidence: low doesn't already say "don't trust this yet." Callers own
-// any supersedes-style back-pointer (an UPDATE-mode retry) by setting it on n.FM before
-// calling — WriteToInbox itself does not know CREATE from UPDATE.
+// failed gate, and writes the note under _inbox/.
 func WriteToInbox(root string, n *Note, s *Schema, openQuestions []string) error {
 	if n.FM == nil {
 		return ErrNoFM

@@ -19,13 +19,7 @@ type Result struct {
 	SHA    string `json:"sha"`
 }
 
-// Apply is the write half of drift, and the half that makes rollback symmetric. Check
-// produces verdicts from tree state alone; Apply moves confidence to match them, using
-// .forge/ only to remember what a demoted note is owed on the way back up.
-//
-// Only notes that were actually evaluated are touched. A note whose citations all sat
-// outside the cheap gate produced no findings, and "not looked at" must never read as
-// "not broken" — that would restore a note on an unrelated commit.
+// Apply is the write half of drift, and the half that makes rollback symmetric.
 func Apply(notes map[string]*vault.Note, findings []Finding, st *Store, sch *vault.Schema,
 	src Source) []Result {
 
@@ -81,10 +75,7 @@ func demote(n *vault.Note, slug string, d Finding, head string, st *Store,
 	return Result{n.Rel, slug, "demoted", prev, "low", head}, true
 }
 
-// restore is rollback symmetry in six lines: the verdict came back clean, so whatever the
-// note was worth before it broke is what it is worth again. The log line cites both shas —
-// the one that demoted it and the one that cleared it — because that pair is the only
-// audit trail, .forge/ having just forgotten the record.
+// restore is rollback symmetry in six lines: the verdict came back clean.
 func restore(n *vault.Note, slug, head string, st *Store, sch *vault.Schema) (Result, bool) {
 	d, ok := st.Take(slug)
 	if !ok {
@@ -99,9 +90,7 @@ func restore(n *vault.Note, slug, head string, st *Store, sch *vault.Schema) (Re
 	return Result{n.Rel, slug, "restored", "low", d.Confidence, head}, true
 }
 
-// stamp records that this note was looked at, and does nothing when the sha has not
-// moved — a vault that rewrites every evaluated note on every commit is churn, not
-// history.
+// stamp records that this note was looked at.
 func stamp(n *vault.Note, sch *vault.Schema, head string) {
 	if head == "" || n.FM.Str("drift_checked_at") == head {
 		return

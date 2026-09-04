@@ -1,7 +1,5 @@
-// Package telemetry writes the ask-event log — the sole source `pkg/report`'s
-// Gaps and Staleness sections read for how often something was asked. The invariant is
-// narrower than "don't log secrets": it logs a topic label and a hash, never the raw
-// question, code, or file contents (see QHash).
+// Package telemetry writes the ask-event log — the sole source `pkg/report`'s Gaps and
+// Staleness sections read for how often something was asked.
 package telemetry
 
 import "time"
@@ -19,8 +17,7 @@ type Event struct {
 	DurationMS     int64     `json:"duration_ms"`
 	Sources        int       `json:"sources"`
 	Project        string    `json:"project"`
-	// RunID is the D1 outcome-joining correlation key, added after the original spec (since removed) shipped — an
-	// addition to the schema, not a rename, so an older log line simply decodes with it
-	// empty. See NewRunID and cmd/forge/recall.go's runRecall.
+	// RunID is the D1 outcome-joining correlation key, added after the original spec
+	// (since removed) shipped — an addition to the schema, not a rename.
 	RunID string `json:"run_id,omitempty"`
 }

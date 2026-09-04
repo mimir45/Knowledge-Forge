@@ -11,9 +11,7 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/codeindex"
 )
 
-// seedD6Vault writes one repo's code index cache plus one note citing it — a path-shaped
-// citation resolved through the registry, and a bare-symbol citation resolved through
-// findSymbol, in the same note, so both of resolveD6's branches run in one fixture.
+// seedD6Vault writes one repo's code index cache plus one note citing it.
 func seedD6Vault(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
@@ -39,9 +37,7 @@ func seedD6Vault(t *testing.T) string {
 }
 
 // TestD6RendersFromCodeIndexAndCitations is D6's slice of the exhaustiveness check
-// TestEveryTierRendersInEveryDefinedFormat runs for D1-D5: it proves loadTier, idOf,
-// sftOf and roundTrip all have working D6Pair cases, over D6's real fixture shape (a
-// code index cache plus a citing note) rather than a JSONL sample.
+// TestEveryTierRendersInEveryDefinedFormat runs for D1-D5: it proves loadTier, idOf.
 func TestD6RendersFromCodeIndexAndCitations(t *testing.T) {
 	root := seedD6Vault(t)
 	out := filepath.Join(t.TempDir(), "export")
@@ -78,10 +74,7 @@ func TestD6DedupesRepeatedCitations(t *testing.T) {
 }
 
 // TestD6RefusesSince and TestD6RefusesAnonymize pin refuseDerivedOptions: both are exit
-// before a record is read, both leave --out untouched, and TestD6RefusesAnonymize is the
-// D-6-analogue proof for D6 specifically — since the answer to "how does this tier
-// anonymize" is refusal, the regression guard is that refusal actually fires rather than
-// silently exporting raw text under a flag that claims otherwise.
+// before a record is read, both leave --out untouched.
 func TestD6RefusesSince(t *testing.T) {
 	root := seedD6Vault(t)
 	out := filepath.Join(t.TempDir(), "export")
@@ -114,9 +107,8 @@ func assertRefusedDerived(t *testing.T, err error, out, root string) {
 	}
 }
 
-// TestD6FailsClosedOnUnreadableCodeIndex pins loadIndexes' fail-closed rule: a cache Load
-// cannot read (here, a stale Extractor) must abort the whole export rather than silently
-// deriving a smaller corpus from whatever else did load.
+// TestD6FailsClosedOnUnreadableCodeIndex pins loadIndexes' fail-closed rule: a cache
+// Load cannot read.
 func TestD6FailsClosedOnUnreadableCodeIndex(t *testing.T) {
 	root := seedD6Vault(t)
 	stale := codeindex.Index{Repo: "other-svc", Commit: "x", Extractor: codeindex.Extractor - 1,

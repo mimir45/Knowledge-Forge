@@ -10,8 +10,7 @@ import (
 )
 
 // TestLoadAskLogMissingFileIsEmpty pins the tolerant-of-absence contract loadAskLog's
-// doc comment promises: every vault before its first telemetry-enabled run has no
-// .forge/log.jsonl at all, and that must not be an error.
+// doc comment promises.
 func TestLoadAskLogMissingFileIsEmpty(t *testing.T) {
 	bySlug, asks := loadAskLog(filepath.Join(t.TempDir(), "log.jsonl"), map[string]string{})
 	if len(bySlug) != 0 || len(asks) != 0 {

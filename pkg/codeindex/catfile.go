@@ -14,10 +14,7 @@ type blob struct {
 }
 
 // readBlobs streams the contents of many files at one git revision through a single
-// `git cat-file --batch` process. Reading from the object store rather than the working
-// tree is what makes an index a pure function of tree state: an unstaged edit must not
-// move a verdict, and a historical revision has no working tree to read at all. One
-// process rather than one per file is the difference between milliseconds and seconds.
+// `git cat-file --batch` process.
 func readBlobs(root, rev string, files []string) (<-chan blob, <-chan error) {
 	out := make(chan blob)
 	errc := make(chan error, 1)
@@ -44,9 +41,6 @@ func streamBlobs(root, rev string, files []string, out chan<- blob) error {
 	}
 	go feedRequests(in, rev, files)
 	err = drainBlobs(bufio.NewReaderSize(pipe, 1<<16), files, out)
-	// The exit status only adds information when every reply arrived: a truncated stream
-	// already surfaces as drainBlobs' read error, and Wait would bury it under a broken
-	// pipe. What this catches is the narrow case of a full transcript then a non-zero exit.
 	if werr := cmd.Wait(); err == nil {
 		err = werr
 	}

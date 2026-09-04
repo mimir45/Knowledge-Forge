@@ -15,9 +15,7 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/report"
 )
 
-// These make the original spec's "high churn, real size" concrete. A file touched once
-// is not churning and a six-line accessor with no note is not a documentation gap;
-// listing either would bury the handful of symbols that genuinely are one.
+// These make the original spec's "high churn, real size" concrete.
 const (
 	minSymbolCommits = 2
 	minSymbolLOC     = 15
@@ -39,10 +37,7 @@ func (d *checkData) driftAndCode() {
 	d.code, d.codeErr = d.codebases(rg, src, scans)
 }
 
-// codebases builds one section per repository. It is the only collector that needs
-// pkg/codeindex, and therefore cgo: a binary built with CGO_ENABLED=0 renders every other
-// report and reports this one as skipped, rather than writing a map that claims the
-// codebase is fully documented because nothing could parse it.
+// codebases builds one section per repository.
 func (d *checkData) codebases(rg *coderef.Registry, src symbolFinder,
 	scans map[string]coderef.Repo) ([]report.CodebaseInput, error) {
 	if !codeindex.Available() {
@@ -61,8 +56,7 @@ func (d *checkData) codebases(rg *coderef.Registry, src symbolFinder,
 }
 
 // oneCodebase reads the symbol table through src rather than calling codeindex.Build
-// itself: driftAndCode's GitSource already built (or cache-patched) the same index to
-// answer drift's own symbol lookups, and re-parsing the tree here would throw that away.
+// itself: driftAndCode's GitSource already built.
 func (d *checkData) oneCodebase(name, root string, cited map[string][]string,
 	files []string, src symbolFinder) (report.CodebaseInput, error) {
 	commits, err := gitsig.Log(root, d.now.AddDate(0, 0, -d.cfg.days))
@@ -76,18 +70,13 @@ func (d *checkData) oneCodebase(name, root string, cited map[string][]string,
 		Uncovered: uncoveredOf(ix, st, cited)}, nil
 }
 
-// symbolFinder is the single question coverage asks of drift's symbol table. Naming it
-// here rather than taking drift.Source whole says what this collector depends on, and
-// keeps the fake in the test to one method.
+// symbolFinder is the single question coverage asks of drift's symbol table.
 type symbolFinder interface {
 	Find(name, asOf string) (repo, path string, sym codeindex.Symbol, ok bool)
 	Index(repo, rev string) codeindex.Index
 }
 
-// citedPaths resolves every note's code citations to repo-relative paths, keyed by what
-// the repository calls a file rather than by the shorthand the note wrote. Resolution is
-// the whole point: AUDIT NF-4 found 14 of 19 path-shaped refs matching no file, and an
-// unresolved ref would make a documented module look undocumented.
+// citedPaths resolves every note's code citations to repo-relative paths.
 func (d *checkData) citedPaths(rg *coderef.Registry, src symbolFinder) map[string]map[string][]string {
 	out := map[string]map[string][]string{}
 	for _, n := range driftNotes(d.notes) {
@@ -103,16 +92,7 @@ func (d *checkData) citedPaths(rg *coderef.Registry, src symbolFinder) map[strin
 	return out
 }
 
-// locate answers which file a citation is about, and it has to answer for symbol-only
-// citations too — most of the vault's references name a class and no path. coderef leaves
-// those without a RepoPath by design, so pkg/drift looks them up in the symbol table; a
-// coverage pass that skipped them instead reported `SignUpPage` as "0 notes" in the same
-// run where drift.md named two notes citing it.
-//
-// The lookup is drift's own, at HEAD, so both reports attribute a citation to the same
-// file. Where two repositories declare one name that means crediting only the first in
-// (repo, path) order — the arbitration drift already makes, and agreeing with it is worth
-// more here than a second, differently-guessed answer.
+// locate answers which file a citation is about.
 func locate(ref coderef.Ref, rg *coderef.Registry, src symbolFinder) (repo, p string, ok bool) {
 	if ref.Kind == coderef.KindSymbol {
 		repo, p, _, ok := src.Find(ref.Symbol, "")
@@ -122,11 +102,7 @@ func locate(ref coderef.Ref, rg *coderef.Registry, src symbolFinder) (repo, p st
 	return res.Ref.Repo, res.RepoPath, res.RepoPath != ""
 }
 
-// groupsOf takes the directory as the module. It is a poor abstraction for a Java build
-// layout and an honest one: nothing in the index knows about Maven modules or Go packages,
-// and inventing a grouping the code does not declare would put files in modules their
-// authors never wrote. Only the busiest maxGroups survive — a map of 400 directories is
-// not a map.
+// groupsOf takes the directory as the module.
 func groupsOf(files []string, st *gitsig.Stats, cited map[string][]string,
 	deps map[string][]string) []report.CodeGroup {
 
@@ -174,10 +150,6 @@ func sortGroups(gs []report.CodeGroup) {
 }
 
 // uncoveredOf is the last line of section B.5: high churn, real size, zero notes.
-//
-// Coverage is decided per file, not per symbol. A note that cites a class covers the
-// methods inside it in every sense a reader cares about, and demanding a citation per
-// symbol would report a well-documented file as forty gaps.
 func uncoveredOf(ix codeindex.Index, st *gitsig.Stats, cited map[string][]string) []report.Uncovered {
 	var out []report.Uncovered
 	for p, f := range ix.Files {

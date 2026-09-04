@@ -35,9 +35,7 @@ func cmdIndex(args []string) int {
 	return runIndex(root, name, *budget, false)
 }
 
-// indexTarget resolves the two settings both index and reindex need. The index filename
-// is a vault-topology decision, not a per-run one — a vault whose config renames it must
-// not get a second _index.md the next time reindex runs without --out.
+// indexTarget resolves the two settings both index and reindex need.
 func indexTarget(cmd, flagVault, flagOut string) (root, name string, code int) {
 	root, code = vaultOrExit(cmd, flagVault)
 	if code != 0 {
@@ -139,9 +137,7 @@ func buildGraph(root string, notes []*vault.Note) (*graph.Graph, *vault.Index) {
 	return graph.Build(nodesOf(ix, notes)), ix
 }
 
-// nodesOf is split out because forge check needs the node slice itself: graph.Components
-// and Graph.Orphans both take it, and rebuilding it from the Graph is not possible — a
-// Graph keeps counts, not edges.
+// nodesOf is split out because forge check needs the node slice itself.
 func nodesOf(ix *vault.Index, notes []*vault.Note) []graph.Node {
 	nodes := make([]graph.Node, 0, len(notes))
 	for _, n := range notes {

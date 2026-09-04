@@ -9,9 +9,7 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/coderef"
 )
 
-// checkPath walks the original spec's ladder for a citation that named a file, in the
-// order it states: file gone, then symbol gone, then line moved, then body
-// changed. The order matters — a deleted file would otherwise report as a moved line.
+// checkPath walks the original spec's ladder for a citation that named a file.
 func checkPath(f Finding, n Note, ref coderef.Ref, src Source) Finding {
 	head := src.Head(f.Repo)
 	now, ok := src.At(f.Repo, f.Path, head)
@@ -25,9 +23,7 @@ func checkPath(f Finding, n Note, ref coderef.Ref, src Source) Finding {
 	return checkFileBody(f, n, now, src)
 }
 
-// checkSymbol is the case the addendum cares most about: a citation that names a
-// declaration. A rename or a removal is BROKEN and demotes the note; a line number that
-// moved while the symbol stayed put is repaired silently.
+// checkSymbol is the case the addendum cares most about.
 func checkSymbol(f Finding, n Note, symbol string, now codeindex.File, src Source) Finding {
 	s, ok := now.Lookup(symbol)
 	if !ok {
@@ -38,9 +34,7 @@ func checkSymbol(f Finding, n Note, symbol string, now codeindex.File, src Sourc
 	return symbolVerdict(f, n, symbol, s, src)
 }
 
-// symbolVerdict is the tail of the ladder shared by both citation shapes: the symbol is
-// present, so the only questions left are whether its body moved on and whether the line
-// number the note recorded still points at it.
+// symbolVerdict is the tail of the ladder shared by both citation shapes.
 func symbolVerdict(f Finding, n Note, symbol string, s codeindex.Symbol, src Source) Finding {
 	f.NowLine = s.Start
 	if changed, base := bodyChanged(f, n, symbol, s.BodyHash, src); changed {
@@ -57,9 +51,7 @@ func symbolVerdict(f Finding, n Note, symbol string, s codeindex.Symbol, src Sou
 	return f
 }
 
-// checkSymbolOnly handles a citation that named a class with no path — the shape most of
-// the vault's references take. The symbol table answers where it lives, so a note citing
-// `OrderConsumer` gets a real verdict rather than a shrug.
+// checkSymbolOnly handles a citation that named a class with no path.
 func checkSymbolOnly(f Finding, n Note, ref coderef.Ref, src Source, opts Opts) Finding {
 	if repo, path, s, ok := src.Find(ref.Symbol, ""); ok {
 		f.Repo, f.Path = repo, path
@@ -68,10 +60,7 @@ func checkSymbolOnly(f Finding, n Note, ref coderef.Ref, src Source, opts Opts) 
 	return absentSymbol(f, n, ref, src, opts)
 }
 
-// absentSymbol decides what "no repository declares this name" means, and the honest
-// answer depends on the budget. On the hook path a name we cannot find is more often a
-// library type than a deletion, so it is SKIPPED. Only the weekly pass pays to look at
-// the verified-era tree, and only a name that *was* declared there is BROKEN.
+// absentSymbol decides what "no repository declares this name" means.
 func absentSymbol(f Finding, n Note, ref coderef.Ref, src Source, opts Opts) Finding {
 	if !opts.Deep || n.Verified == "" {
 		return skip(f, "no indexed repository declares "+ref.Symbol)
@@ -87,9 +76,7 @@ func absentSymbol(f Finding, n Note, ref coderef.Ref, src Source, opts Opts) Fin
 }
 
 // unresolvedPath decides what "no registered repository contains this path" means on a
-// true full sweep, mirroring absentSymbol's shallow/deep split. checkUnresolvedPath only
-// delegates here when changed == nil — the hook path's same-commit deletion evidence is
-// handled there instead, before this function is ever reached.
+// true full sweep.
 func unresolvedPath(f Finding, n Note, ref coderef.Ref, src Source, opts Opts) Finding {
 	if !opts.Deep || n.Verified == "" {
 		return skip(f, "no registered repository contains this path")
@@ -106,12 +93,7 @@ func unresolvedPath(f Finding, n Note, ref coderef.Ref, src Source, opts Opts) F
 }
 
 // deletedInGate reports whether ref's basename matches a path the cheap gate reported
-// deleted in the commit range this run is checking. Basename-only, not coderef's
-// ambiguity-resolving subsequence matcher: checkUnresolvedPath only reaches here after
-// the registry has already failed to resolve ref, so there is no candidate set to
-// disambiguate among — only one citation's target to confirm gone. Deterministic on a
-// basename collision: lexicographically first path wins, so two runs on the same tree
-// never disagree.
+// deleted in the commit range this run is checking.
 func deletedInGate(ref coderef.Ref, deleted map[string]string) (repo, path string, ok bool) {
 	base := lastSegment(ref.Path)
 	if base == "" {
@@ -156,8 +138,7 @@ func checkFileBody(f Finding, n Note, now codeindex.File, src Source) Finding {
 }
 
 // bodyChanged compares one symbol's body at HEAD against its body in the tree as it
-// stood when the note was last verified. Both sides come from git, so the comparison is
-// a pure function of tree state and a revert flips it back without an undo log.
+// stood when the note was last verified.
 func bodyChanged(f Finding, n Note, symbol, nowHash string, src Source) (bool, string) {
 	base, ok := baseline(f, n, src)
 	if !ok {
@@ -182,8 +163,7 @@ func baseline(f Finding, n Note, src Source) (codeindex.File, bool) {
 }
 
 // fileHash folds a file's declarations into one value so "did anything in here change"
-// is a single comparison. Names and body hashes only: reordering declarations is a
-// change, moving them down the file is not.
+// is a single comparison.
 func fileHash(f codeindex.File) string {
 	h := ""
 	for _, s := range f.Symbols {

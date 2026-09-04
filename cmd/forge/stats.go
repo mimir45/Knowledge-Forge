@@ -14,10 +14,7 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/report"
 )
 
-// estimatedMinutesSavedPerHit is deliberately rough: there is no measurement anywhere in
-// this project of how long a "we already asked and answered this" re-explanation actually
-// costs someone, so this converts hits to time only as an order-of-magnitude signal, never
-// a real metric. Both the doc comment and the printed line call it approximate.
+// estimatedMinutesSavedPerHit is deliberately rough.
 const estimatedMinutesSavedPerHit = 15
 
 // topStatsTopics caps the "most-asked" table — mirrors gaps.md's own head(gaps, 30) cap;
@@ -47,8 +44,8 @@ func cmdStats(args []string) int {
 }
 
 // runStats does the actual work against an io.Writer so it's directly testable without
-// a stdout pipe. loadNotes/loadAskLog/OpenWeeklyStore are the exact functions forge check
-// already uses for the same data — no parallel reimplementation.
+// a stdout pipe. loadNotes/loadAskLog/OpenWeeklyStore are the exact functions forge
+// check already uses for the same data — no parallel reimplementation.
 func runStats(root string, w io.Writer) int {
 	notes, err := loadNotes(root)
 	if err != nil {
@@ -89,10 +86,7 @@ func writeTopTopics(tw *tabwriter.Writer, asks []report.Ask) {
 	}
 }
 
-// writeGaps reuses Step 3's exact-slug "written" resolution (already baked into asks by
-// loadAskLog) and pkg/report/gaps.go's own minAsks=2 threshold, duplicated here as a
-// three-line filter rather than exported — it's not shared infrastructure, just the same
-// rule stated twice.
+// writeGaps reuses Step 3's exact-slug "written" resolution.
 func writeGaps(tw *tabwriter.Writer, asks []report.Ask) {
 	fmt.Fprintf(tw, "\nGaps (asked 2+ times, never written):\n")
 	gaps := unwrittenAsks(asks)
@@ -117,9 +111,7 @@ func writeTimeSaved(tw *tabwriter.Writer, asks []report.Ask) {
 		mins, written, estimatedMinutesSavedPerHit)
 }
 
-// writeTrend prints Step 5's weekly snapshots. VaultStats has no dedicated staleness
-// field (only Notes/HitRate/Orphans/Drift) — Drift is the closest proxy available, noted
-// plainly rather than inventing a metric nothing else in the project tracks.
+// writeTrend prints Step 5's weekly snapshots.
 func writeTrend(tw *tabwriter.Writer, store *report.WeeklyStore) {
 	fmt.Fprintf(tw, "\nVault trend (Drift stands in for staleness; no dedicated metric exists):\n")
 	if len(store.Weeks) == 0 {
@@ -133,9 +125,7 @@ func writeTrend(tw *tabwriter.Writer, store *report.WeeklyStore) {
 	}
 }
 
-// sortedByCount and unwrittenAsks share a deterministic tiebreak (count
-// desc, topic asc) — the same rule pkg/report/gaps.go's own unexported unwritten() uses,
-// so two runs over unchanged state produce byte-identical output.
+// sortedByCount and unwrittenAsks share a deterministic tiebreak.
 func sortedByCount(asks []report.Ask) []report.Ask {
 	out := append([]report.Ask(nil), asks...)
 	sort.Slice(out, func(i, j int) bool {

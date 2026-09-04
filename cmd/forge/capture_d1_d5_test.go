@@ -35,9 +35,8 @@ func TestRecallCapturesD1WhenEnabled(t *testing.T) {
 	}
 }
 
-// TestRecallD1NeverStoresTheQuestion pins the dataset-capture invariant: "never
-// store raw question text — hash + extracted topic only". The slug is derived from the
-// question and is allowed; the sentence itself is not.
+// TestRecallD1NeverStoresTheQuestion pins the dataset-capture invariant: "never store
+// raw question text — hash + extracted topic only".
 func TestRecallD1NeverStoresTheQuestion(t *testing.T) {
 	root := fixtureCopy(t)
 	cfg := datasetCfg(true)
@@ -122,9 +121,8 @@ func TestCaptureD1OutcomeQuarantined(t *testing.T) {
 	}
 }
 
-// TestCaptureD1OutcomeSkipsOnEmptyRunID is the degradation contract gate.go's usage text
-// promises: a write with no --run-id (the normal case for anything that did not originate
-// from a recall call) must cost nothing, not just "cost nothing visible on stdout".
+// TestCaptureD1OutcomeSkipsOnEmptyRunID is the degradation contract gate.go's usage
+// text promises: a write with no --run-id.
 func TestCaptureD1OutcomeSkipsOnEmptyRunID(t *testing.T) {
 	root := t.TempDir()
 	captureD1Outcome(datasetCfg(true), root, "", true)

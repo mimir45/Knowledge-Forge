@@ -13,11 +13,6 @@ type Report struct {
 }
 
 // header opens every report the same way.
-//
-// The date is a date and never a timestamp, for the same reason RenderIndex's is: these
-// nine files land in a git repository the user commits. A clock in the header would make
-// every weekly run a nine-file diff of nothing, and a diff that is always noise is a diff
-// nobody reads. Two runs on one day must produce identical bytes.
 func header(b *strings.Builder, title, subtitle string, now time.Time) {
 	fmt.Fprintf(b, "# %s — %s\n\n", title, now.Format("2006-01-02"))
 	if subtitle != "" {
@@ -34,9 +29,7 @@ func note(slug, rel string) string {
 	return "[[" + slug + "]]"
 }
 
-// empty writes the "nothing to report" state. It is a sentence rather than a blank section
-// because an empty section reads like a bug, and half of these reports are supposed to be
-// empty on a healthy vault.
+// empty writes the "nothing to report" state.
 func empty(b *strings.Builder, what string) {
 	fmt.Fprintf(b, "\n_%s_\n", what)
 }

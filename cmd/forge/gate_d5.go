@@ -12,20 +12,11 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
-// d5ProfileKeys are the profiles/me.md fields D5 carries. Every one has a fixed shape the
-// wizard writes (an enum, a language name, a 1–5 depth, a list of framework names), which
-// is what makes capturing them safe without a scrubber in the path. The four omitted
-// fields — assume_known, never_assume, code_style, avoid — are free text the user writes
-// by hand and can carry an employer's vocabulary; profiles/me.template.md invites exactly
-// that ("as specific as you like"). Not capturing them beats scrubbing them on export.
+// d5ProfileKeys are the profiles/me.md fields D5 carries.
 var d5ProfileKeys = []string{"primary_language", "frameworks", "infra", "seniority",
 	"default_depth", "note_language", "explain_style"}
 
-// captureAccepted records the D5 style pair. The hook is the branch that just decided this
-// draft may be published, which is the only acceptance signal in the tree — see
-// pkg/dataset/d5.go for why that makes D5 a subset of accepted notes rather than a census.
-// A capture error reaches stderr only: the gate verdict is already on stdout and a
-// side-channel write must not turn a passing gate into a failing command.
+// captureAccepted records the D5 style pair.
 func captureAccepted(cfg *config.Config, root string, draft *vault.Note) {
 	if cfg == nil || !dataset.D5.Enabled(cfg.Dataset) {
 		return
@@ -40,11 +31,7 @@ func captureAccepted(cfg *config.Config, root string, draft *vault.Note) {
 	}
 }
 
-// readProfile reads the conditioning fields out of <vault>/profiles/me.md. A missing file
-// is the normal case on a vault where `forge init` has not run and returns nil rather than
-// an error: an absent profile costs D5 a feature column, it does not invalidate the pair.
-// Str and List are tried in that order because the wizard writes both shapes — frameworks
-// and infra are sequences, the rest are scalars.
+// readProfile reads the conditioning fields out of <vault>/profiles/me.md.
 func readProfile(root string) map[string]string {
 	n, err := vault.Load(filepath.Join(root, "profiles", "me.md"), "profiles/me.md")
 	if err != nil || n.FM == nil {

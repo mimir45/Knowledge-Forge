@@ -9,11 +9,7 @@ import (
 )
 
 // TestGateAdversarialDraftIsQuarantinedWithBothDefectsNamed is the plan's mandatory
-// acceptance test: a draft with a genuine Java syntax error (missing brace) co-occurring
-// with an unresolved import — the exact ordering case compile_test.go pins at the
-// CompileCheck layer — plus an unsourced claim, run through the full Run + Quarantine
-// pipeline exactly as cmd/forge/gate.go's runGate does. If the gates were decorative,
-// this draft would publish clean; it must not.
+// acceptance test: a draft with a genuine Java syntax error.
 func TestGateAdversarialDraftIsQuarantinedWithBothDefectsNamed(t *testing.T) {
 	if _, err := exec.LookPath("javac"); err != nil {
 		t.Skip("javac not installed")

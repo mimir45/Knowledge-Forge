@@ -3,10 +3,6 @@ package store
 import "database/sql"
 
 // Rows loads every cached note keyed by rel, in three queries rather than one per note.
-// `forge recall` reads the whole cache on every run, and 91 round trips through the
-// driver costs more than the file reads the cache was meant to avoid.
-//
-// Links are not loaded: recall does not need them, and the join is the expensive one.
 func (s *Store) Rows() (map[string]Row, error) {
 	rows, err := s.notes()
 	if err != nil {

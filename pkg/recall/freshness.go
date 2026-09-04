@@ -2,16 +2,7 @@ package recall
 
 import "time"
 
-// IsStale reports whether a note has aged past its freshness window. It decides the
-// difference between ANSWER_FROM_VAULT and UPDATE(refresh) at the same score, so it is
-// the second-most consequential predicate in the package.
-//
-// The clock reads `verified` first and falls back to `updated`: an edit that fixes a
-// typo bumps `updated` without anyone re-checking the claims against their sources,
-// and treating that as freshness is how a vault quietly starts lying.
-//
-// FreshnessDays == 0 means never stale. Decision notes do not go stale, they get
-// superseded.
+// IsStale reports whether a note has aged past its freshness window.
 func IsStale(d Doc, now time.Time) bool {
 	if d.FreshnessDays <= 0 {
 		return false

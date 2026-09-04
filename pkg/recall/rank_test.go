@@ -58,10 +58,7 @@ func TestDecideAtThresholdBoundaries(t *testing.T) {
 }
 
 // TestNeighbourBandEdges pins the band's inclusivity — closed below, open above — and
-// deliberately does not pin the floor's value. It used to spell 0.30 into the fixture,
-// which meant a later re-derivation of the floor failed here as if the band had broken. The
-// number is argued in doc.go and measured by cmd/forge's sweep; what belongs in a unit
-// test is which side of each edge is included.
+// deliberately does not pin the floor's value.
 func TestNeighbourBandEdges(t *testing.T) {
 	floor := DefaultThresholds.Neighbour
 	cands := []Candidate{
@@ -138,10 +135,7 @@ func TestRankBodyPassRunsOnLoadableDocs(t *testing.T) {
 }
 
 // NeighbourWindow and BodyPassSize are equal today for a real reason (a neighbour can
-// only be as informed as a candidate that was actually body-scored), but they are
-// separate constants on purpose — see rank.go's NeighbourWindow comment. This pin forces
-// a deliberate decision if either ever moves without the other, instead of a silent drift
-// where a future change to BodyPassSize quietly changes neighbour volume too.
+// only be as informed as a candidate that was actually body-scored).
 func TestNeighbourWindowMatchesBodyPassSizeToday(t *testing.T) {
 	if NeighbourWindow != BodyPassSize {
 		t.Errorf("NeighbourWindow=%d BodyPassSize=%d — decoupled: was this intentional? "+
@@ -150,10 +144,7 @@ func TestNeighbourWindowMatchesBodyPassSizeToday(t *testing.T) {
 }
 
 // TestRankPoolWithBodyPassMatchesRankPoolAtShippedSize proves the measurement seam
-// (RankPoolWithBodyPass) changed nothing about production behavior: RankPool is now a
-// one-line delegation to RankPoolWithBodyPass(..., BodyPassSize), and this pins that
-// equivalence — across both a body-scored doc and a corpus wider than the window — so a
-// future edit to either can't silently diverge them.
+// (RankPoolWithBodyPass) changed nothing about production behavior.
 func TestRankPoolWithBodyPassMatchesRankPoolAtShippedSize(t *testing.T) {
 	body := []byte("keyset pagination keyset pagination keyset pagination")
 	wide := make([]Doc, BodyPassSize+5)
@@ -187,9 +178,7 @@ func TestRankPoolWithBodyPassMatchesRankPoolAtShippedSize(t *testing.T) {
 	}
 }
 
-// RankPool must never truncate — Rank's TopN cut is the only truncation point, so a
-// corpus with more than TopN nonzero-scoring candidates should return all of them from
-// RankPool, and Rank should return exactly the leading TopN of that same list.
+// RankPool must never truncate — Rank's TopN cut is the only truncation point.
 func TestRankPoolIsUntruncatedRankIsItsTopNPrefix(t *testing.T) {
 	docs := make([]Doc, TopN+5)
 	for i := range docs {
