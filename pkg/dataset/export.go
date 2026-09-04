@@ -24,7 +24,7 @@ const (
 // generated note was rejected, the human's edit was preferred — and so does D4, where the
 // gate itself rejected the failing draft. D1 and D5 have no rejected side at all.
 //
-// D2 is the interesting exclusion, because ADDENDUM §D.1's own table marks it "DPO / SFT"
+// D2 is the interesting exclusion, because the original spec (since removed) marked it "DPO / SFT"
 // and this phase's plan repeated that. The table's D2 pair is written as
 // "draft → advisor critique → accepted patch", three parts, and the patch is the chosen
 // side. What Phase 3b actually captures is D2Pair{Draft, Critique} — two parts. Nothing
@@ -105,7 +105,7 @@ func Export(vaultRoot string, o ExportOptions) (ExportReport, error) {
 	return rep, commit(vaultRoot, o.Out, rep, body)
 }
 
-// ExportLogPath records every export, which ADDENDUM §D.4 requires in the same breath as
+// ExportLogPath records every export; in the same principle,
 // "nothing leaves the machine without an explicit command" — the log is what makes that
 // claim checkable afterwards. It holds the report, never the exported records.
 const ExportLogPath = ".forge/exports.jsonl"

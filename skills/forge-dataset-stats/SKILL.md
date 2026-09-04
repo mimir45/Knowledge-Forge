@@ -39,7 +39,7 @@ an error.
   always `—` — it has no per-record timestamp, not an empty history — and its count is
   recomputed on this run, not a running total: it can go up *or down* between runs as
   citations and code indexes change, unlike `d1`-`d5`.
-- **What this is enough for** — ADDENDUM §D.2's ladder, read back per tier. Relay these
+- **What this is enough for** — the volume ladder, read back per tier. Relay these
   strings as written. They are deliberately bounded above, and softening "and nothing
   else" into "a good start" undoes the only thing the section is for. `d6`'s line says
   plainly that it is not a training-adapter shape at all — its stated use is

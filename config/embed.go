@@ -13,8 +13,8 @@ import (
 	_ "embed"
 )
 
-// Example is the lowest layer of the chain: the schema is the union of ADDENDUM §E and
-// the DESIGN §10 keys §E never restates.
+// Example is the lowest layer of the chain: the schema is the union of the engine/config
+// blocks and the pipeline keys the config section never restated — see docs/ARCHITECTURE.md §4.
 //
 //go:embed forge.config.example.md
 var Example []byte

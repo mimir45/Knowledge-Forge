@@ -1,6 +1,7 @@
-# Duplicate detection: measured deviations from ADDENDUM §B.4
+# Duplicate detection: measured deviations from the original spec
 
-`duplicates.md` is specified in ADDENDUM §B.4 as "note pairs >0.85 similar". Three things
+`duplicates.md` was specified in the original spec (since removed) as "note pairs >0.85
+similar". Three things
 about that line are wrong for this corpus, and all three were found by measurement against
 the real 91-note vault and the fixture vault's deliberate F7 near-duplicate
 (`testdata/vault/concepts/soft-delete.md` ↔ `soft-deletion.md`). This file records what
@@ -92,7 +93,7 @@ That is why the gate's remedy is `SwitchToUpdate`, never a hard block: `duplicat
 returns `Fail` + `Remedy: SwitchToUpdate`, and `Report.Quarantine` does not set on that
 outcome alone (`pkg/qualitygate/gate.go`'s remedy table). It is a recommendation the
 calling skill can act on — usually by routing to the existing `UPDATE(extend)` branch
-instead of `CREATE` — or override with a stated reason (DESIGN §12 permits publishing two
+instead of `CREATE` — or override with a stated reason (the duplicate gate permits publishing two
 notes on the same topic when they earn separate treatment, e.g. a `pattern` and the
 `pitfall` that motivated it). What the gate must never do is fail a write silently on a
 threshold everyone already knew would trip on routine, well-covered topics.

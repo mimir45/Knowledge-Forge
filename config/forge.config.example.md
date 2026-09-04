@@ -34,7 +34,7 @@ trigger:
   # manual = only on an explicit /forge
 
 # ── recall ───────────────────────────────────────────────────────────────────
-# DESIGN §5.3's decision tree.
+# The recall decision tree (docs/ARCHITECTURE.md §6).
 #   score >= answer_threshold, fresh  -> ANSWER_FROM_VAULT
 #   score >= answer_threshold, stale  -> UPDATE(refresh)
 #   score >= update_threshold         -> UPDATE(extend)
@@ -44,7 +44,7 @@ trigger:
 # neighbour_min_score is the one of the three that has moved, re-derived twice against a
 # labelled query sweep as the scoring blend itself changed (see
 # references/recall-spec.md). Raise it for fewer,
-# surer links; lower it for a denser graph. The other two are DESIGN §5.3's and should not
+# surer links; lower it for a denser graph. The other two are the spec's and should not
 # be touched to paper over a recall scoring gap — re-derive the calibration table instead.
 recall:
   strategy: lexical        # lexical | hybrid (hybrid is a v2.2 upgrade, not built)
@@ -212,8 +212,8 @@ record of why, so a later phase does not "finish the job" by moving them.
   not what a user prefers. A vault where `reports/` counts as notes fails `forge check`
   in a way no setting should be able to cause.
 - **`pkg/report/duplicates.go`'s `specThreshold = 0.85`.** It is printed as documentation
-  of what DESIGN §8 asked for and compared against what actually ships; it is never
-  applied. Wiring it to config would make the report agree with itself by construction
+  of what the original spec (since removed) asked for and compared against what actually
+  ships; it is never applied. Wiring it to config would make the report agree with itself by construction
   and stop being evidence.
 - **`$HOME/.forge/bin` in the Makefile.** That is the install location, not a preference;
   `$FORGE_BIN` already overrides it at run time.

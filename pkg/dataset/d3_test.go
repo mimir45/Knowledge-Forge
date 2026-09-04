@@ -126,7 +126,7 @@ func TestSkipsImportedNotes(t *testing.T) {
 }
 
 // TestSkipsEditsOutsideTheWindow: an edit nine days on is a revisit, not a correction of
-// what the model produced. §D.1 sets the window at seven days.
+// what the model produced. The window is set at seven days.
 func TestSkipsEditsOutsideTheWindow(t *testing.T) {
 	r := seed(t)
 	r.write("notes/concept/goroutines.md", note("ask", "Goroutines", "much later text"))

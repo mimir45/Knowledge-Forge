@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -10,6 +11,21 @@ import (
 
 	"github.com/mimir45/Knowledge-Forge/pkg/recall"
 )
+
+const intentUsage = `usage: forge intent [--vault DIR]
+
+UserPromptSubmit hook. Recall-scores the prompt against the vault with zero model calls
+and, only when the top hit scores at or above 0.50, prints it as additionalContext.
+
+stdin: a UserPromptSubmit JSON payload. This command reads exactly one field:
+
+    user_prompt   string   the prompt text to score
+
+stdout, only above the gate: {"additionalContext": "...", "continue": true}
+Silence is the normal case: below the gate, on an empty prompt, on malformed stdin, or
+on an unresolvable vault, this command prints nothing.
+Fail-silent: the exit code is always 0.
+`
 
 // cmdIntent is Phase 5's UserPromptSubmit hook: a cheap, model-free check for whether
 // the vault already answers the prompt. It must add under 50ms — reusing loadDocs'
@@ -20,7 +36,16 @@ func cmdIntent(args []string) int {
 	fs := flag.NewFlagSet("forge intent", flag.ContinueOnError)
 	vaultDir := fs.String("vault", "", "vault root; defaults to config vault_path, then .")
 	fs.SetOutput(io.Discard)
+	// flag's own error path must stay silent (fail-silent contract), so Usage is stubbed
+	// and an explicit -h/--help is handled below instead — in any flag position.
+	fs.Usage = func() {}
 	if err := fs.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			// stderr, not stdout: stdout is this hook's JSON output channel.
+			fmt.Fprint(os.Stderr, intentUsage)
+			fs.SetOutput(os.Stderr)
+			fs.PrintDefaults()
+		}
 		return 0
 	}
 	prompt, err := readPrompt(os.Stdin)

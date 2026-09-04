@@ -8,9 +8,9 @@ import (
 )
 
 // Remedy is what a failing gate recommends. It is advisory — Run never acts on it,
-// pkg/qualitygate/quarantine.go and the forge gate CLI do — because DESIGN §12 gives
-// each gate a different failure response and collapsing them to one Fail/Pass bit would
-// lose exactly the distinction the skill needs to act correctly.
+// pkg/qualitygate/quarantine.go and the forge gate CLI do — each gate having a different
+// failure response means collapsing them to one Fail/Pass bit would lose exactly the
+// distinction the skill needs to act correctly.
 type Remedy int
 
 const (
@@ -74,8 +74,8 @@ type Report struct {
 	Quarantine bool      `json:"quarantine"`
 }
 
-// Run executes all seven DESIGN §12 gates against one draft note and returns their
-// combined report. draft.Rel must already be set to the note's intended vault-relative
+// Run executes all seven gates against one draft note and returns their combined report.
+// draft.Rel must already be set to the note's intended vault-relative
 // path — including for CREATE, where the file does not exist on disk yet — because the
 // link and duplicate gates both need it to know which directory-group (== note type) to
 // score the draft against.

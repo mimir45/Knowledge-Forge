@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// CostInput is what cost.md renders from — ADDENDUM §222's "tokens/$ per stage per tier".
+// CostInput is what cost.md renders from.
 // pkg/report stays config-free, matching every other report here: cmd/forge/check_collect.go
 // reduces the SQLite budget table and cfg.Pipeline/cfg.Engines down to these primitives.
 type CostInput struct {

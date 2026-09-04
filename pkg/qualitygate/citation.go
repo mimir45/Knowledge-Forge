@@ -7,7 +7,7 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
-// citationGate is deliberately narrower than DESIGN §12's prose ("every claim tagged
+// citationGate is deliberately narrower than the original spec's prose ("every claim tagged
 // version-specific/performance-claim/security-claim has a source"). No doc or
 // references/schema.yaml defines how a body claim gets tagged with one of those three
 // categories — require_citation_for names the categories a strict pipeline cares about,

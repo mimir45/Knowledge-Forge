@@ -110,11 +110,11 @@ the concrete implementation carrying cgo stays outside.
 | `pkg/store` | SQLite (`modernc.org/sqlite`). Derived cache only, except the budget table. |
 | `pkg/config` | The four-layer config chain. |
 | `pkg/engine` | none/host/api/advisor backends, per-stage selection + fallback, engine_trail. |
-| `pkg/qualitygate` | The seven DESIGN §12 gates + `Run`/`Report` orchestration + `_inbox/` quarantine. |
+| `pkg/qualitygate` | The seven gates (§8) + `Run`/`Report` orchestration + `_inbox/` quarantine. |
 | `pkg/sentinel` | Id-based begin/end managed comment blocks; `Upsert`/`UpsertBefore`/`Remove`. |
 | `pkg/scrub` | Redacts secret/PII-shaped content from a vault copy; fails closed. |
 | `pkg/dataset` | D2–D4 training-pair capture (JSONL). |
-| `pkg/telemetry` | DESIGN §14's `ask` event; sha256 topic hash, never raw question text. |
+| `pkg/telemetry` | The `ask` event; sha256 topic hash, never raw question text. |
 
 ---
 
@@ -187,7 +187,7 @@ The rules, in `pkg/config/load.go` and `merge.go`:
 `config/forge.config.md` — that stays a packaged template. Violating this separation
 would mean the next `go build` overwrites the user's own settings.
 
-The schema is the **union** of ADDENDUM §E and the DESIGN §10 keys that §E doesn't
+The schema is the **union** of the engine/config blocks and the pipeline keys those don't
 restate.
 
 `forge config --layers` prints which layers are present; `forge config --json`
@@ -471,14 +471,15 @@ needs to reflect that the note is now in `_inbox/`.
 
 The `code` gate has an interesting subsystem: `pkg/qualitygate/compile*.go` —
 `compile_bash.go`, `compile_java.go`, `compile_ts.go`. These call the system
-toolchain, in a **throwaway directory**. The measured cost is toolchain startup,
-not gate logic: bash ~10 ms warm (~470 ms cold, one-time OS page-cache effect),
-java ~170 ms warm (~370 ms cold). `tsc` isn't installed in this environment so the
-TypeScript lane went untested; `TestCompileTSSkippedWhenToolchainAbsent` covers the
-no-toolchain path instead.
+toolchain, in a **throwaway directory**. The cost is dominated by toolchain startup,
+not gate logic — see §13 for the measured figures. `tsc` isn't installed in this
+environment so the TypeScript lane went untested;
+`TestCompileTSSkippedWhenToolchainAbsent` covers the no-toolchain path instead.
 
-The six in-process gates besides `code` take **~0.13 ms** total — quality checking
-is practically free; the only cost is invoking the compiler.
+The six in-process gates besides `code` are expected to be far cheaper than invoking a
+compiler, but **that has never been measured**: `pkg/qualitygate` contains no benchmark
+and is absent from `make bench`'s package list. An earlier revision of this document
+quoted ~0.13 ms; that number could not be reproduced from anything in the repo.
 
 ---
 
@@ -517,7 +518,7 @@ instead of owning the whole file, you own one named section of it.
 user: "explain X"
    │
    ├─ [hook] UserPromptSubmit → forge intent
-   │     read prompt from stdin → recall → if score > 0.7
+   │     read prompt from stdin → recall → if score >= 0.50
    │     print the best hit as additionalContext
    │     budget < 50 ms · fail-silent · exit 0
    │
@@ -558,7 +559,7 @@ forge drift --repo myapp:<path> --since-commit <sha> --apply
    ├─ coderef.ChangedFilesStatus (--name-status)
    │     → drift.Changed{Touched, Deleted}          ← cheap gate
    │
-   ├─ no reference is affected: exit (common case, ~60 ms)
+   ├─ no reference is affected: exit (the common case)
    │
    ├─ for affected references:
    │     registryOf(HEAD tree) → coderef resolution
@@ -574,8 +575,9 @@ Broken → demote
 git revert → same tree → same verdict → the note is restored symmetrically
 ```
 
-Budget **< 100 ms**, measured **60–70 ms**. This is the binding latency constraint
-for the whole project — it's the only thing running on the git hook path.
+Budget **< 100 ms**. This is the binding latency constraint for the whole project —
+it's the only thing running on the git hook path. **The current build does not meet
+it**: measured at 151 ms median / 208 ms p95 (§13).
 
 ### Flow C — Weekly check
 
@@ -712,27 +714,53 @@ accident.
 
 ## 13. Latency budgets and measured values
 
-Measured on an Apple M4. **Measured, not estimated.**
+Two different things live in this section and they must not be confused.
 
-| Operation | Budget | Measured | Note |
-|---|---|---|---|
-| `forge drift --since-commit` | < 100 ms | **60–70 ms** | **The binding constraint** — on the git hook path |
-| `forge index` | < 200 ms | **20 ms** | |
-| `forge check` | < 10 s | **390 ms** warm / 930 ms cold | |
-| `qualitygate.Run` (6 gates, excl. `code`) | ~ | **~0.13 ms** | |
-| `forge verify-code` bash | ~ | ~10 ms warm / ~470 ms cold | Dominated by toolchain startup |
-| `forge verify-code` java | ~ | ~170 ms warm / ~370 ms cold | |
-| `forge verify-code` ts | ~ | **not measured** | `tsc` not installed in this environment |
-| `forge session-context` | < 200 ms | **well under** budget warm | 20 iterations, synthetic stdin |
-| `forge intent` | < 50 ms | **well under** budget warm | Reuses the already-warm SQLite cache |
+**Budgets** are targets the design commits to. **Measurements** are what a specific
+build did on a specific machine, and they are only worth printing next to the harness
+that reproduces them.
 
-The **only** reason `forge intent` can meet its 50 ms budget is that it reuses
-`forge recall`'s already-warm SQLite cache. On a cold start that budget wouldn't be
-achievable — an architectural decision (the derived cache) is what directly makes a
-latency budget possible.
+The figures below come from the external CLI campaign in
+`docs/testing/campaign-2026-09-03/` — a serial pass on an idle Apple M4 against a
+94-note vault, 10 runs per command, with the raw records under `runs/*.jsonl`. Every
+number is re-derivable with `bash docs/testing/campaign-2026-09-03/aggregate.sh`.
 
-**Caveat:** `hooks/hooks.json` declares the bindings, but these measurements were
-taken via direct invocation, not from a live session.
+| Operation | Budget | Cold | Warm median | Warm p95 | Verdict |
+|---|---|---|---|---|---|
+| `forge drift` | **< 100 ms** | 164 ms | **151 ms** | **208 ms** | **OVER BUDGET** — and it is the binding constraint |
+| `forge index` | < 200 ms | 116 ms | 127 ms | 140 ms | under budget |
+| `forge check --offline` | < 10 s | 206 ms | 147 ms | 160 ms | comfortably under |
+| `forge recall` | — | 188 ms | 57 ms | 114 ms | — |
+| `forge session-context` | < 200 ms | 40 ms | 36 ms | 38 ms | under budget |
+| `forge intent` | **< 50 ms** | 128 ms | 49 ms | 58 ms | median just inside; **p95 and cold are over** |
+| `forge verify-code` bash | — | 48 ms | 46 ms | 90 ms | dominated by toolchain startup |
+| `forge verify-code` java | — | 1238 ms | 1030 ms | 1373 ms | same |
+| `forge verify-code` ts | — | — | — | — | not measured; `tsc` absent here |
+| `qualitygate.Run` (6 gates, excl. `code`) | — | — | — | — | **no benchmark exists** |
+
+Two things this table says that the previous revision did not:
+
+- **`forge drift` misses its own budget** — tracked as **B5** in
+  [`docs/testing/campaign-2026-09-03/report.md`](testing/campaign-2026-09-03/report.md).
+  `MANIFESTO.md` §7 says missing this budget is a bug, and that reading stands: this is
+  an open defect, not an accepted cost. It runs on the git-hook path, so this is the one
+  number that matters most. `--since-commit` is documented as the cheap gate, but it
+  measured 147–148 ms against the full run's 151 ms — so whatever dominates the cost is
+  not the citation scan.
+- **`forge intent` meets 50 ms only warm.** A first invocation in a session costs 128 ms.
+  Both hook commands stay far inside the 2 s timeout in `hooks/hooks.json`, so nothing
+  user-visible breaks — but the budget as written is not met on the path that matters,
+  the first prompt of a session.
+
+`forge intent` is able to approach its budget at all only because it reuses `forge
+recall`'s already-warm SQLite cache: an architectural decision (the derived cache) is
+what makes the latency budget reachable.
+
+**Caveats.** These were taken by direct invocation, not from a live Claude Code session.
+There is no committed latency harness — the nine `Benchmark` functions are library
+micro-benchmarks, and `make bench` runs none of the commands above. Per `MANIFESTO.md`,
+performance claims that can't be reproduced aren't claims; if you change a number here,
+land the harness that produces it in the same commit.
 
 ---
 

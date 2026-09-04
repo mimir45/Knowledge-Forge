@@ -14,6 +14,9 @@ func cmdEngine(args []string) int {
 		return 2
 	}
 	switch args[0] {
+	case "-h", "--help", "help":
+		fmt.Print(engineUsage)
+		return 0
 	case "select":
 		return cmdEngineSelect(args[1:])
 	case "run":

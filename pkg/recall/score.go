@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// Channel weights, DESIGN §8's blend verbatim. Their ratio is what the design fixes;
+// Channel weights, the original blend verbatim. Their ratio is what the design fixes;
 // the denominator they are divided by is what §2.5 of the spec decides.
 const (
 	wTitle = 0.4

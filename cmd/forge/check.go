@@ -74,9 +74,9 @@ func orDefaultInt(v, def int) int {
 const checkUsage = `usage: forge check [--vault DIR] [--repo NAME=PATH] [--months N] [--days N]
                    [--offline]
 
-The weekly pass. Collects the vault once and renders the nine ADDENDUM section B.4
-reports plus cost.md (Phase 3b) into <vault>/reports/, section B.5's map into
-<vault>/moc/codebase.md, and section C's rollup into <vault>/moc/weekly/<ISO-week>.md.
+The weekly pass. Collects the vault once and renders the nine vault-health reports
+plus cost.md (Phase 3b) into <vault>/reports/, the codebase map into
+<vault>/moc/codebase.md, and the weekly rollup into <vault>/moc/weekly/<ISO-week>.md.
 Zero model calls, like everything else in this binary.
 
 Every report is rendered independently: a renderer that fails costs its own file and
@@ -171,10 +171,9 @@ func unchangedNote(changed bool) string {
 	return " (unchanged)"
 }
 
-// jobs lists the nine reports of ADDENDUM section B.4, cost.md (Phase 3b, AUDIT section
-// 8.4 D-1), section B.5's codebase map, and section C's weekly rollup. cost.md and weekly
-// run unconditionally like the other eight always-on reports — Check.Reports is not
-// filtered against any of them today.
+// jobs lists the nine vault-health reports, cost.md, the codebase map, and the weekly
+// rollup. cost.md and weekly run unconditionally like the other eight always-on reports
+// — Check.Reports is not filtered against any of them today.
 func jobs(cfg checkCfg, d *checkData) []job {
 	js := []job{
 		{"reports/coverage.md", d.coverage},

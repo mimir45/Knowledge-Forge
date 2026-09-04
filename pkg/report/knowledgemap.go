@@ -5,11 +5,11 @@ import (
 	"strings"
 )
 
-// RenderKnowledgeMap produces docs/knowledge-map.md — Phase 5b's ADDENDUM §B.7 output —
-// written into the *code* repo rather than the vault, so a reader who starts from the
-// code (not Obsidian) can still find what's written about it. It is the same
-// module→notes join as moc/codebase.md, minus the churn and owner columns that belong to
-// the weekly pass, not to a file a code reviewer will read next to the source tree.
+// RenderKnowledgeMap produces docs/knowledge-map.md — per docs/ARCHITECTURE.md §10 — for
+// the *code* repo rather than the vault, so a reader who starts from the code (not Obsidian)
+// can still find what's written about it. It is the same module→notes join as moc/codebase.md,
+// minus the churn and owner columns that belong to the weekly pass, not to a file a code
+// reviewer will read next to the source tree.
 //
 // Groups with no notes are omitted rather than listed as empty: a knowledge map is an
 // index of what exists, and CodebaseInput.Uncovered / reports/coverage.md already carry

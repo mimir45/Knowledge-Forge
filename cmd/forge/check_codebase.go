@@ -15,7 +15,7 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/report"
 )
 
-// These make ADDENDUM section B.5's "high churn, real size" concrete. A file touched once
+// These make the original spec's "high churn, real size" concrete. A file touched once
 // is not churning and a six-line accessor with no note is not a documentation gap;
 // listing either would bury the handful of symbols that genuinely are one.
 const (

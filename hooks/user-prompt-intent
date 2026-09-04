@@ -1,8 +1,8 @@
 #!/bin/sh
-# Knowledge Forge — UserPromptSubmit hook (DESIGN §13, ADDENDUM §C).
+# Knowledge Forge — UserPromptSubmit hook.
 #
 # Runs `forge intent`, which reads the hook's stdin JSON (the user_prompt field), does a
-# cheap model-free recall check, and — only when the top hit scores above 0.7 — prints the
+# cheap model-free recall check, and — only when the top hit scores at or above 0.50 — prints the
 # UserPromptSubmit output schema (`{"additionalContext": "...", "continue": true}`) to
 # stdout. That JSON is what must pass straight through unredirected; below threshold the
 # Go command prints nothing at all, which is also correct output (no nudge offered).

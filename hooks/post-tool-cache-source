@@ -1,5 +1,5 @@
 #!/bin/sh
-# Knowledge Forge — PostToolUse (WebFetch) hook (DESIGN §13, ADDENDUM §C).
+# Knowledge Forge — PostToolUse (WebFetch) hook.
 #
 # Runs `forge cache-source`, which reads the hook's stdin JSON (tool_name, tool_input,
 # tool_response), and — only when tool_name is "WebFetch" — writes

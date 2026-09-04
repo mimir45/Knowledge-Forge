@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -13,6 +14,22 @@ import (
 // defaultCacheTTLDays is applied when Static.CacheTTLDays is unset (zero) — matches the
 // config field's own doc comment: zero means unset, not "expire immediately".
 const defaultCacheTTLDays = 30
+
+const cacheSourceUsage = `usage: forge cache-source [--vault DIR]
+
+PostToolUse hook, for WebFetch only. Caches the fetched source under
+<vault>/.forge/cache/<url-hash>.md with a TTL (static.cache_ttl_days, default 30).
+
+stdin: a PostToolUse JSON payload. This command reads three fields:
+
+    tool_name       string   must be "WebFetch"; anything else is ignored
+    tool_input      object   the tool call; its "url" field is the cache key
+    tool_response   object   the fetched content
+
+Note this writes into the *configured* vault regardless of which project the session is
+working in — pass --vault to scope it.
+Fail-silent: the exit code is always 0.
+`
 
 // cmdCacheSource is Phase 5's PostToolUse hook for WebFetch: caches the fetched result
 // under .forge/cache/<hash-of-url>.md so a repeated fetch of the same URL within the TTL
@@ -28,7 +45,16 @@ func cmdCacheSource(args []string) int {
 	fs := flag.NewFlagSet("forge cache-source", flag.ContinueOnError)
 	vaultDir := fs.String("vault", "", "vault root; defaults to config vault_path, then .")
 	fs.SetOutput(io.Discard)
+	// flag's own error path must stay silent (fail-silent contract), so Usage is stubbed
+	// and an explicit -h/--help is handled below instead — in any flag position.
+	fs.Usage = func() {}
 	if err := fs.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			// stderr, not stdout: stdout is this hook's JSON output channel.
+			fmt.Fprint(os.Stderr, cacheSourceUsage)
+			fs.SetOutput(os.Stderr)
+			fs.PrintDefaults()
+		}
 		return 0
 	}
 	payload, err := readPostToolUse(os.Stdin)

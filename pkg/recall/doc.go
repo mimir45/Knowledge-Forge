@@ -1,7 +1,7 @@
 package recall
 
 // Doc is one note as recall sees it: frontmatter, plus a lazy handle on the body. The
-// body is a func because DESIGN §8 step 3 reads only the top 20 candidates — the other
+// body is a func because the spec reads only the top 20 candidates — the other
 // channels rank first, and most notes are never opened.
 type Doc struct {
 	Rel, Slug, Title  string
@@ -17,7 +17,7 @@ type Query struct {
 	Stack    []string
 }
 
-// Thresholds is DESIGN §5.3's decision tree. The defaults below live here and are also
+// Thresholds is the decision tree. The defaults below live here and are also
 // wired into the config chain, so no literal is
 // scattered — a threshold in two places is a threshold that drifts.
 type Thresholds struct {
@@ -26,9 +26,9 @@ type Thresholds struct {
 	Neighbour float64 // ≥ this on a CREATE → link as a neighbour
 }
 
-// DefaultThresholds are DESIGN §10's recall.answer_threshold / update_threshold.
+// DefaultThresholds are the config chain's recall.answer_threshold / update_threshold.
 //
-// Answer and Update are DESIGN §5.3's and do not move — an IDF re-weighting of the
+// Answer and Update are the removed spec's and do not move — an IDF re-weighting of the
 // scoring blend is the wrong place to paper over a recall gap; a re-derivation of the
 // calibration table is the right one, and neither of those numbers moved by it.
 // Neighbour was re-derived from 0.30 to 0.125 after that same weighting change: 0.30 was
@@ -61,7 +61,7 @@ const (
 	Create          Decision = "CREATE"
 )
 
-// Decide applies §5.3's tree to the top candidate. An empty result is CREATE: no note
+// Decide applies the decision tree to the top candidate. An empty result is CREATE: no note
 // scored, so there is nothing to answer from or extend.
 func (t Thresholds) Decide(top *Candidate) Decision {
 	switch {

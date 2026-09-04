@@ -8,9 +8,9 @@ import (
 
 // linkGate checks a draft's own [[wikilinks]] resolve against the rest of the vault. It
 // never checks inbound links — a brand-new CREATE note has none yet, and that is
-// expected, not a defect. A dangling outbound link does not block the write: DESIGN §12
-// gives this gate DelegateToLibrarian, because the librarian agent (Phase 4's fourth
-// subagent) is the one that goes on to create or link the missing target after write —
+// expected, not a defect. A dangling outbound link does not block the write, giving this
+// gate DelegateToLibrarian, because the librarian agent is the one that goes on to create
+// or link the missing target after write —
 // see references/duplicate-spec.md's write-time-gate section for the same pattern
 // applied to duplicates. So this Fail is reported honestly but does not set
 // Report.Quarantine (gate.go's blocksWrite excludes DelegateToLibrarian) — the note

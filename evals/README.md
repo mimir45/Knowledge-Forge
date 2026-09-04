@@ -29,7 +29,7 @@ Exits non-zero if either check finds a difference.
 
 `evals/fixtures/vault/` is a small, deliberately clean fixture — two schema-valid,
 cross-linked notes (`notes/concept/kafka-consumer-group-rebalancing.md`,
-`notes/howto/configure-kafka-consumer-timeouts.md`) plus the empty DESIGN §7
+`notes/howto/configure-kafka-consumer-timeouts.md`) plus the empty vault
 topology directories (`moc/`, `_inbox/`, `_archive/`, `profiles/`) as `.gitkeep`
 shells.
 

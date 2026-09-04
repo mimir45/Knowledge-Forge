@@ -2,7 +2,7 @@ package recall
 
 // Result is the recall output envelope (recall-spec.md §4). The verdict travels with
 // the candidates rather than being left for the caller to derive: the thresholds live in
-// the config chain, and a skill that restated DESIGN §5.3's
+// the config chain, and a skill that restated the original spec's (since removed)
 // tree in prose would silently diverge from a config change. One
 // implementation, in Go, is the only copy.
 type Result struct {
@@ -20,7 +20,7 @@ type Result struct {
 // that TopN truncation would otherwise discard can still be admitted as a neighbour.
 //
 // Neighbours are populated on CREATE only. The 0.150–0.55 band exists to answer "what
-// should this new note link to" (DESIGN §5.3); on an ANSWER or UPDATE verdict the same
+// should this new note link to"; on an ANSWER or UPDATE verdict the same
 // band is a list of notes the caller was told to ignore, and emitting it invites a
 // consumer to link them anyway.
 func (t Thresholds) ResultFrom(q Query, pool []Candidate) Result {

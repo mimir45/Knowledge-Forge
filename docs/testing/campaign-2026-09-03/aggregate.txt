@@ -1,0 +1,70 @@
+=== per-agent case counts ===
+agent     cases   pass   fail     na  notes
+01           14     14      0      0      1
+02           17     17      0      0      1
+03            8      8      0      0      9
+04           13     13      0      0      8
+05           10     10      0      0     11
+06           20     15      3      2     12
+07           12     12      0      0     17
+08           15     15      0      0     18
+09           38     28      2      8      4
+10           33     23      0     10     12
+
+=== TOTALS ===
+{
+  "cases": 180,
+  "pass": 155,
+  "fail": 5,
+  "na": 20,
+  "notes": 93
+}
+
+=== CONTRACT FAILURES (verdict=fail: declared exit code not met) ===
+[06/vc-ts-bad] exit=0 expected=1  verify-code: ts snippet invalid
+    cmd: ./forge verify-code --lang ts --file ./scratch/06/vc-ts-bad.ts
+    err: null
+[06/vc-nofile] exit=1 expected=2  verify-code: nonexistent file
+    cmd: ./forge verify-code --lang bash --file /nonexistent/path.sh
+    err: forge verify-code: open /nonexistent/path.sh: no such file or directory
+[06/vc-badlang] exit=0 expected=2  verify-code: bad language
+    cmd: ./forge verify-code --lang cobol --file ./scratch/06/vc-bash-ok.sh
+    err: null
+[09/v-missing] exit=1 expected=2  nonexistent vault path
+    cmd: /Users/mimir45/.claude/jobs/c679826c/tmp/kf-campaign/forge recall --question test --vault /nonexistent/definitely/not/here
+    err: forge recall: mkdir /nonexistent: read-only file system
+[09/v-file] exit=1 expected=2  file instead of directory
+    cmd: /Users/mimir45/.claude/jobs/c679826c/tmp/kf-campaign/forge recall --question test --vault /etc/hosts
+    err: forge recall: mkdir /etc/hosts: not a directory
+
+=== NOTES: severity=bug ===
+[05/check1] forge check --offline without --repo should skip drift.md and moc/codebase.md but both were written with content: drift.md=2.2K, moc/codebase.md=8.1K
+[06/vc-ts-bad] vc-ts-bad: expected exit 1, got exit 0 with verdict=skipped (tsc missing, but should fail on TYPE mismatch before toolchain check)
+[06/vc-nofile] vc-nofile: expected exit 2, got exit 1. File not found should return usage error (exit 2), not success with 'reported diagnostics' (exit 1)
+[06/vc-badlang] vc-badlang: expected exit 2, got exit 0 with verdict=skipped. Unsupported language should be usage error, not silently skipped
+[06/vc-import] vc-import CRITICAL: exit=0 verdict=skipped but diagnostics show javac errors for unresolvable Spring import. Contract violation: if unresolvable imports cause compilation errors, exit should be 1 with verdict=fail, not 0 with skipped. Every realistic framework snippet would silently pass the gate.
+[08/e1-vs-q1] q1 scores 0.8 vs e1 scores 0: Turkish hits bolum-i-teori-temelleri, English misses entirely. Note title is Turkish (BÖLÜM I: TEORİ TEMELLERİ) — expected English to match better.
+[08/q2-vs-e2] q2=0.45 vs e2=0.75: Turkish question about Spring Boot dependency injection underscore (0.45), English version much higher (0.75)
+[08/q3-vs-e3] q3=0.303 vs e3=0.623: Turkish question about Hibernate soft delete scores 0.303, English equivalent 0.623 — 2x gap
+[08/q7-vs-e7] q7=0.17 vs e7=0.427: Turkish testcontainers question scores 0.17, English 0.427 — large gap for same concept
+[08/telemetry-q1] q1 topic field is 'bolum-i-teori-temelleri-nedir' — this is the complete question as a slug, not a topic hash. Question text is recoverable: transliterated but intact.
+[08/telemetry-dia2] dia-2 topic field is 'bolum-i-teori-temelleri' — again, the question converted to slug form. Violates invariant: 'Telemetry logs topic and hash, never raw question text'
+[10/h1-nonce] topic field leaked secret: topic="how-does-nonce7q2x-my-sk-live-secret-9931-token-expire" (slug form of raw question with NONCE7Q2X and sk-live-SECRET-9931)
+[10/h3-fallback] config command accepts fallback:api on locked write stage (exit 0), but engine select rejects it (exit 2) with: 'pipeline.write: "api" is not allowed' — guard disagreement
+[10/c-engine-badstage] engine select accepts nonsense stage name 'nosuchstage' (exit 0) — stage names should be validated against known stages
+
+=== NOTES: severity=suspect ===
+[01/g-ceiling] Highest top_score across all 8 questions is 0.75 (q1); ANSWER_FROM_VAULT (>= 0.85) unreachable in practice
+[02/stack-filter-inconsistency] --stack java,hibernate,jpa filter inconsistently affects scoring: Q1 0.7→0.614 (hurts), Q4 0.719→0.636 (hurts), Q6 0.5→0.55 (helps). Irrelevant stacks consistently have no effect. The vocabulary filter should help or stay neutral for relevant hints, not hurt sometimes.
+[03/q-ceiling] maximum top_score observed=0.796 (q3) - near-verbatim title matches cannot reach 0.85 threshold (q1=0.759, q2=0.771, q3=0.796, q4=0.495, q5=0.838, q7=0.416)
+[07/noise-q3] q3 (terraform state locking) matched mui-disabled-state (score 0.2) - noise match on word 'state'; should not rank above unrelated topics
+[07/noise-q9] q9 (grpc streaming modes) matched bolum-i-teori-temelleri/Turkish theory text (score 0.033) - completely nonsensical
+[07/noise-q10] q10 (ceph object storage cluster) matched docker.sock decision (score 0.158) - unrelated; should not be top candidate
+[08/dia-2] dia-2 all caps (BÖLÜM I TEORİ TEMELLERİ) scores 0.95 vs q1 mixed case 0.8: All caps scores HIGHER, unexpected
+[09/v-missing] nonexistent vault returns exit 1 with 'read-only file system' error instead of exit 2 (usage error)
+[09/v-file] file path returns exit 1 with 'not a directory' error instead of exit 2; forge appears to try mkdir on vault path
+[10/h4] duration_ms, sources, project always 0/0/'' across all three recalls — dead fields
+[10/h5-scope] telemetry.scope does not appear in log.jsonl entries (no scope key present) — the config key exists but produces no observable effect
+
+=== crashes / panics in captured stderr ===
+(empty above = no panic observed)

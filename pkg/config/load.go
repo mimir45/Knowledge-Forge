@@ -134,7 +134,7 @@ func readFile(path string) (layer, bool, error) {
 	return layer{path, data}, true, nil
 }
 
-// parse reads one layer. The file is frontmatter-only markdown (DESIGN §10: "so it's
+// parse reads one layer. The file is frontmatter-only markdown (readable in Obsidian too), but a bare YAML document is accepted as well — nothing is
 // readable in Obsidian too"), but a bare YAML document is accepted as well — nothing is
 // gained by rejecting a file whose content is unambiguous.
 func parse(src []byte) (map[string]any, error) {
@@ -182,7 +182,7 @@ func decode(merged map[string]any) (*Config, error) {
 	return &c, nil
 }
 
-// expandHome resolves a leading ~/ because DESIGN §10's own example uses one.
+// expandHome resolves a leading ~/ because the config example uses one.
 func expandHome(p string) string {
 	if !strings.HasPrefix(p, "~/") {
 		return p

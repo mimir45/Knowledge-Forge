@@ -1,6 +1,6 @@
-// Package recall is DESIGN §8's retrieval-before-research engine: it decides whether the
+// Package recall is the retrieval-before-research engine: it decides whether the
 // vault already answers a question before any research runs. It is T0 — pure Go, zero
-// model calls, deterministic — and the whole product rests on it (DESIGN §5.2: "stage 1
+// model calls, deterministic — and the whole product rests on it (the spec: "stage 1
 // is the whole ballgame"). references/recall-spec.md is the contract.
 package recall
 

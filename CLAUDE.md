@@ -12,27 +12,29 @@ layer (none / host / API / advisor-critique) sits on top, configurable per pipel
 stage.
 
 The project was built end to end with Claude Code itself, one development phase per
-session, from an initial design spec through to a packaged, installable plugin. The
-roadmap (`docs/ROADMAP.md`) is complete.
+session, from an initial design spec through to a packaged, installable plugin. It is
+feature-complete.
 
 ## Read the docs in this order
 
-1. **`docs/ROADMAP.md`** — condensed index over everything else. Always start here.
-2. **`docs/KNOWLEDGE-FORGE-STACK.md`** (ADR-001) — **wins on every stack question.** It
-   supersedes ADDENDUM §B (which specified Python — the doc itself says "that was
-   wrong") and B2B §8 (which assumed Spring Boot — now an open decision, ADR-002).
-3. **`docs/KNOWLEDGE-FORGE-DESIGN.md`** — the master spec (schema, pipeline, gates,
-   vault topology, subagents). Its rev-2 note means every `scripts/*.py` reference reads
-   as a `forge` subcommand.
-4. **`docs/KNOWLEDGE-FORGE-ADDENDUM.md`** — engine tiers (§A), no-AI capability boundary
-   and the reports (§B), drift detection (§B.6), weekly checker (§C), datasets (§D),
-   full config YAML + presets (§E).
-5. **`docs/CLAUDE-CODE-PROMPT.md`** — the phase-by-phase prompts this project was
-   actually built from.
-6. `docs/KNOWLEDGE-FORGE-B2B.md` — describes a **separate project**, not a phase of this
-   one. Kept in this repo only for reference/history.
-7. `docs/adr/` — two standalone ADRs: why lexical recall over embeddings, why Go for
-   the static core.
+1. **`docs/ARCHITECTURE.md`** — the canonical reference. Package map and import DAG,
+   the two build lanes, the four-layer config chain, the engine tiers, the recall
+   engine's scoring, drift, the quality gates, the three data flows, the Claude Code
+   integration layer, the invariant table, and the latency budgets.
+2. **`docs/USAGE.md`** — installation, `forge init`, and a per-command reference
+   including the four hook commands and hook installation.
+3. **`docs/datasets.md`** — the D1–D6 capture tiers, what each records, and what a
+   given volume is honestly enough for.
+4. `references/` — the specs the code is actually checked against:
+   `schema.yaml` (the note contract `forge validate` enforces), `recall-spec.md`
+   (scoring, **read before touching `pkg/recall`**), `duplicate-spec.md`,
+   `taxonomy.md`, `writing-rules.md` (parsed by the anti-slop gate).
+
+The original design documents (`KNOWLEDGE-FORGE-DESIGN.md`, `-ADDENDUM.md`, `-STACK.md`,
+`ROADMAP.md`, `CLAUDE-CODE-PROMPT.md`, `-B2B.md`, `docs/adr/`, `docs/tr/`) were removed
+in `df5ccea`. They are **not coming back** — `docs/ARCHITECTURE.md` supersedes them.
+Where a comment still says "the original spec (since removed)", that is deliberate: it
+records a place where this code knowingly deviates from what was first specified.
 
 Only surviving Python: the one-time `migrate_vault.py` and the offline dataset /
 fine-tuning tooling. Neither ships in the binary.
@@ -40,7 +42,7 @@ fine-tuning tooling. Neither ships in the binary.
 ## Things that live outside this repo
 
 - **Vault:** wherever `--vault` / the config chain points (see `forge config
-  --layers`), a separate git repo laid out per DESIGN §7's `notes/<type>/ moc/ _inbox/
+  --layers`), a separate git repo laid out with the `notes/<type>/ moc/ _inbox/
   _archive/ profiles/` topology.
 - **The D3 capture hook**, once installed in a vault: `.git/hooks/post-commit` runs
   `forge capture` from a pinned binary copy (path recorded in `<vault>/.forge/forge-bin`;
@@ -67,32 +69,14 @@ as body prose. Catalogue: `testdata/README.md`.
 - It is **not** `examples/vault/` — 93 files generated from a real vault via `forge
   scrub`, scoped to `notes/`+`moc/` only, meant as a clean, exemplary reference vault.
 
-## Agent crew (`.claude/agents/`)
+## Product agents (`agents/`)
 
-The top-level session manages; three project-scoped Sonnet subagents do the work. Route
-by verb: **find → `finder`** (read-only search, reports `file:line` hits, also searches
-the configured vault), **do → `executor`** (Read/Write/Edit/Bash; stays in scope,
-verifies with real command output), **explain → `explainer`** (read-only; writes
-nothing, so TIL notes stay with a dedicated note-writing skill).
-
-Two more for audit work: **`vault-analyst`** (read-only vault metrics — counts,
-frontmatter key frequency, inbound links, orphans, near-dupes) and **`doc-auditor`**
-(finds contradictions between the design docs that they don't self-flag).
-
-And one competing run: **`cross-checker`** — independently re-derives another agent's
-numbers or findings and returns strict JSON, one verdict per claim, each `links`-ed to
-the primary's finding ID. Spawn it **in parallel with** the primary, not after: a
-checker that has already seen the answer anchors to it. `vault-analyst` and
-`doc-auditor` therefore end their reports with a JSON block whose IDs match their prose,
-so the two runs join mechanically. Use it whenever a number is going into a document
-later work will re-measure against.
+Four product subagents ship with the plugin and Claude Code **does** discover them —
+they appear as `forge:forge-researcher`, `forge:forge-codebase-scout`,
+`forge:forge-verifier` and `forge:forge-librarian`. Their spec files live under
+`agents/*.md`; `docs/ARCHITECTURE.md` §11.5 describes what each is for.
 
 Prefer delegating over doing it inline. Independent tasks go out in parallel.
-
-These are **workflow** agents for building the project. They are not the four
-**product** agents (`forge-researcher`, `forge-codebase-scout`, `forge-verifier`,
-`forge-librarian`) that DESIGN §11 specifies and that live as spec files under
-`agents/*.md` — see the packaging note below.
 
 ## Invariants
 
@@ -107,6 +91,8 @@ Each is stated in a different doc and each is easy to violate by accident:
   function of (note refs, tree state) so a revert restores demoted notes symmetrically.
   Demotion history lives in `.forge/`, never in note bodies.
 - `CGO_ENABLED=0` for every package except `pkg/codeindex` (go-tree-sitter needs cgo).
+  The gate is `//go:build cgo` / `//go:build !cgo` on `pkg/codeindex/parse_*.go` — there
+  is no `codeindex` build tag; `make full` selects the lane with `CGO_ENABLED=1` alone.
 - Markdown is the only source of truth. SQLite (`modernc.org/sqlite`, pure Go) is a
   derived cache; `forge reindex` must rebuild it entirely from markdown.
 - `pkg/similarity` is hand-rolled MinHash + LSH. **No embeddings.**
@@ -135,7 +121,7 @@ pkg/graph/        note link graph: components, hubs, orphans, centrality
 pkg/codeindex/    go-tree-sitter (Java + TypeScript) — the only cgo package, tag-gated
 pkg/coderef/      extracts code citations from note bodies and frontmatter
 pkg/gitsig/       churn, ownership, co-change coupling — via the git CLI, not go-git
-pkg/drift/        the key package — ADDENDUM §B.6, AST comparison not line diffs
+pkg/drift/        the key package — AST comparison, not line diffs
 pkg/linkcheck/    HTTP HEAD on sources, cached, rate-limited
 pkg/report/       renders analyses to markdown; must not import pkg/codeindex
 pkg/store/        SQLite via modernc.org/sqlite, derived cache only except the budget table
@@ -144,27 +130,30 @@ pkg/config/       the four-layer config chain
 pkg/sentinel/     id-based begin/end managed comment blocks; Upsert/UpsertBefore/Remove
 pkg/scrub/        redacts secret/PII-shaped content from a vault copy; fails closed
 pkg/dataset/      D1-D6 training-data capture and export; D6 is derived, not captured
-pkg/qualitygate/  the seven DESIGN §12 gates + orchestration + `_inbox/` quarantine
+pkg/qualitygate/  the seven gates + orchestration + `_inbox/` quarantine
 pkg/telemetry/    the `ask` event, sha256 topic hashing, never raw question text
 ```
 
-Latency budgets and measured actuals on an Apple M4: `forge drift` <100ms → **60–70ms**
-(the binding constraint — it runs on the git-hook path), `forge index` <200ms → **20ms**,
-`forge check` <10s warm → **390ms** (930ms cold). `pkg/qualitygate.Run`'s six in-process
-gates minus `code` (schema, citation, freshness, antislop, link, duplicate) →
-**~0.13ms** per run; `forge verify-code` per invocation, dominated by toolchain startup,
-not gate logic → bash **~10ms warm** (~470ms cold), java **~170ms warm** (~370ms cold).
-The two Claude Code hook commands measured the same warm/cold way: `forge
-session-context` <200ms budget and `forge intent` <50ms budget both land **well under
-budget warm** — the intent budget's plausibility comes from reusing `forge recall`'s
-already-warm SQLite cache.
+Latency **budgets** — these are targets, not measurements: `forge drift` <100ms (the
+binding constraint — it runs on the git-hook path), `forge index` <200ms, `forge check`
+<10s warm, `forge session-context` <200ms, `forge intent` <50ms. The intent budget's
+plausibility comes from reusing `forge recall`'s already-warm SQLite cache.
+
+There is no committed harness that measures any of these end to end — the nine
+`Benchmark` functions are library micro-benchmarks and `pkg/qualitygate` has none at
+all. Earlier revisions of this file quoted specific actuals (drift 60–70ms, index 20ms,
+`qualitygate.Run` ~0.13ms, `verify-code` bash ~10ms / java ~170ms warm); they could not
+be reproduced from anything in the repo and an external campaign measured drift at
+**151ms median / 208ms p95**, over its own budget. Per `MANIFESTO.md`: performance
+claims that can't be reproduced aren't claims. Restore a number here only alongside the
+harness that produces it.
 
 ## Config chain
 
 Four layers, highest precedence first: `FORGE_CONFIG` env var > `.forge.config.md` (repo
 root) > `~/.forge/forge.config.md` (user) > the packaged `config/forge.config.example.md`
-template. The schema is the *union* of ADDENDUM §E and the DESIGN §10 keys §E never
-restates. `forge init` is the **only** writer of `~/.forge/forge.config.md` and
+template. The schema is the *union* of the engine/config blocks and the pipeline keys
+that block never restated — see `docs/ARCHITECTURE.md` §4. `forge init` is the **only** writer of `~/.forge/forge.config.md` and
 `<vault>/profiles/me.md` (rendered from `profiles/me.template.md`) — never
 `config/forge.config.md`, which stays a packaged template. `on_exhausted` defaults to
 `queue`; accepted values are `queue | degrade | stop` — `queue` stamps
@@ -176,9 +165,9 @@ the tier. Budget counters live in SQLite and must survive `forge reindex`.
 
 `CGO_ENABLED=0 go build ./...` and `go test ./...` both work; `make build test bench
 dist install-hook` covers the rest. Two build lanes, because `pkg/codeindex` is the one
-cgo package and is build-tag gated — the default lane is pure Go and cross-compiles; the
-codeindex lane needs cgo and a host toolchain (`make full`, `CGO_ENABLED=1 -tags
-codeindex`).
+cgo package — the default lane is pure Go and cross-compiles; the codeindex lane needs
+cgo and a host toolchain (`make full`, i.e. `CGO_ENABLED=1`). The selection is
+`//go:build cgo` / `!cgo` on `pkg/codeindex/parse_*.go`; there is no build tag to pass.
 
 | Command | Purpose |
 |---|---|
@@ -206,9 +195,17 @@ scoring change that doesn't update `cmd/forge/testdata/calibration.golden` is un
 
 ## Packaging
 
+Version comes from two places and they are allowed to differ: `.claude-plugin/plugin.json`
+declares the plugin version being developed toward, while the binary is stamped at link
+time from `git describe` (`-X main.version` / `-X main.buildSHA`, see `Makefile`). Ask a
+binary which it is with `forge version` — those vars have to exist in package `main` for
+the stamp to land, because the Go linker silently ignores an `-X` naming a symbol that
+is absent, which is what happened before `cmd/forge/version.go` existed.
+
+
 `agents/*.md` (`forge-researcher`, `forge-codebase-scout`, `forge-verifier`,
-`forge-librarian`) are correct spec for the four product subagents DESIGN §11
-describes, but nothing in this repo auto-discovers agents from a root-level `agents/`
-directory — Claude Code loads `.claude/agents/`. `skills/forge/SKILL.md`'s dispatch to
-them goes through the generic Agent tool with an explicit tool allowlist, not live
-agent auto-discovery, until a plugin-level mechanism exists for it.
+`forge-librarian`) are the spec for the four product subagents, and they **are**
+discovered when the plugin is loaded — as `forge:<name>`. An earlier note here claimed
+the opposite and prescribed a manual Agent-tool dispatch as a workaround; that was
+wrong, and it steered callers away from a mechanism that works. `skills/forge/SKILL.md`
+dispatches to them by name.

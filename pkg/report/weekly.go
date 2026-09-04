@@ -14,8 +14,8 @@ import (
 
 // VaultStats is one week's headline numbers, snapshotted so the next run can show a delta.
 // HitRate is asks resolved by ANSWER_FROM_VAULT as a share of all asks recorded — cumulative
-// to date, not filtered to the week, because DESIGN §14 events carry a timestamp but nothing
-// downstream of loadAskLog windows by it yet. That is a known simplification, not a bug.
+// to date, not filtered to the week, because events carry a timestamp but nothing downstream
+// of loadAskLog windows by it yet. That is a known simplification, not a bug.
 type VaultStats struct {
 	Notes   int
 	HitRate float64
@@ -55,9 +55,9 @@ type WeeklyInput struct {
 	Now   time.Time
 }
 
-// RenderWeekly produces moc/weekly/YYYY-WW.md — ADDENDUM §C's ranked rollup. Its four
-// sections and their literal emoji headers are the spec; the sentences under them are this
-// renderer's own, not copied from the example, because the example's numbers are fiction.
+// RenderWeekly produces moc/weekly/YYYY-WW.md — a ranked rollup per docs/ARCHITECTURE.md
+// §10 (Flow C — Weekly check). Its four sections and their literal emoji headers are the
+// spec; the sentences under them are this renderer's own, not copied from the example.
 func RenderWeekly(in WeeklyInput) []byte {
 	var b strings.Builder
 	fmt.Fprintf(&b, "# Week %d, %d\n", in.Week, in.Year)

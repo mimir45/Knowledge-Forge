@@ -1,4 +1,4 @@
-// Package dataset builds the offline training datasets described in ADDENDUM §D from
+// Package dataset builds offline training datasets from
 // what is already in the vault's git history. Nothing here calls a model; D3 is a pure
 // function of (commit, tree state), the same anchoring rule drift follows.
 package dataset

@@ -199,7 +199,7 @@ Merge their reports into the draft:
 - Researcher's findings + numbered sources → the note's `sources:` frontmatter and
   `## Sources` section.
 - Scout's `file:line` examples → the `## In {{primary_stack}}` section (concept,
-  pattern, api templates) — this section is the differentiator DESIGN §11
+  pattern, api templates) — this section is the differentiator the codebase-scout
   calls out; do not fill it with generic material the researcher could have found.
 - If the scout found no local usage, say so in that section rather than omitting it —
   "not used in this repo yet" is a fact worth stating, not a gap to paper over.
@@ -219,20 +219,24 @@ compile snippets by hand in this stage, and do not duplicate the verifier's work
   repeat.
 
 **Advisor tier, when configured** (`verify.engine: advisor` or a fallback chain that
-reaches it): treat this as a **two-pass verification** per DESIGN §15 — the deterministic
+reaches it): treat this as a **two-pass verification** — the deterministic
 `forge-verifier` + `forge gate` pass runs first and is the pass that decides pass/fail;
 the advisor tier only runs *after*, as critique-mode second pass over what already
 passed. It returns disputed claims and a patch, never a rewrite (T3's invariant) — apply
 its patch only to claims it disputed, not as a general polish pass.
 
-### Packaging gap
+### Dispatching the four agents
 
-Nothing in this repo currently loads agents from a root-level `agents/` directory —
-Claude Code loads `.claude/agents/`, and there is no plugin manifest yet. Until that
-packaging exists, "dispatch `forge-researcher`" means invoking the generic Agent tool
-with the tool allowlist and prompt from `agents/forge-researcher.md` (and likewise for
-the other three) — not live agent auto-discovery. Treat the four files as the spec to
-follow, not as a `Task(subagent_type: "forge-researcher")` call that resolves today.
+The four product agents specified under `agents/*.md` **are** discovered when this
+plugin is loaded, namespaced by it: `forge:forge-researcher`,
+`forge:forge-codebase-scout`, `forge:forge-verifier`, `forge:forge-librarian`. So
+"dispatch `forge-researcher`" means exactly that — spawn `forge:forge-researcher`.
+
+An earlier revision of this section claimed the opposite, said no plugin manifest
+existed, and prescribed hand-copying each agent's prompt and tool allowlist into a
+generic Agent call. That was wrong on both counts (`.claude-plugin/plugin.json` ships
+with the repo) and it steered callers away from a mechanism that works. Independent
+agents go out in parallel.
 
 ---
 
@@ -253,7 +257,7 @@ decision to whether the note actually got published. Omit it for any
 write that did not start from a recall call; the gate behaves identically either way.
 
 Read the JSON `Report` it prints. Branch on `Report.Quarantine` and the individual gate
-outcomes — do not re-derive gate logic from this prose; the seven DESIGN §12 gates
+outcomes — do not re-derive gate logic from this prose; the seven gates
 (`pkg/qualitygate`) are the source of truth and this file does not restate their
 thresholds:
 
@@ -264,7 +268,7 @@ thresholds:
   recommendation, not a hard block (`references/duplicate-spec.md` §6: 0.40 trips
   routinely on well-covered topics, not just on real duplicates). Reroute to
   `UPDATE(extend)` against the note the gate flagged, unless you have a stated reason to
-  publish separately (DESIGN §12 permits it — e.g. a `pattern` and the `pitfall` that
+  publish separately (the duplicate gate permits it — e.g. a `pattern` and the `pitfall` that
   motivated it) — say that reason to the user rather than silently overriding.
 - **`Quarantine: true`** — `forge gate` itself writes the draft to `_inbox/` with
   `confidence: low` and a `## Open questions` section naming every failed gate, then
@@ -323,7 +327,7 @@ record`'s own doc-comment).
 
 ## Quality gate
 
-Superseded by Stage 4 above (`forge gate`, `pkg/qualitygate`'s seven DESIGN §12 gates) —
+Superseded by Stage 4 above (`forge gate`, `pkg/qualitygate`'s seven gates) —
 this section is deliberately short so there is nowhere left for the checklist to drift
 out of sync with the CLI it now delegates to. `forge validate <path>` still runs as part
 of the gate's schema check; you do not need to run it separately.

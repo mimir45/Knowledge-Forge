@@ -8,7 +8,7 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/config"
 )
 
-// Tier is one of ADDENDUM §D.1's six datasets, described in one place so a seventh
+// Tier is one of the six datasets, described in one place so a seventh
 // cannot be added by copying a file. It replaces the pair of hand-written gate functions
 // this package shipped through Phase 6 — Enabled() hardcoded D2Tag despite its general
 // name, and D4Enabled() existed only because of that (d4.go's own comment said so).

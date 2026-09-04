@@ -18,7 +18,7 @@ type DuplicatesInput struct {
 	Now       time.Time
 }
 
-// specThreshold is ADDENDUM §B.4's ">0.85 similar". It is printed, not applied — see
+// specThreshold is the original spec's ">0.85 similar". It is printed, not applied — see
 // references/duplicate-spec.md, which is what the code follows where the two disagree.
 const specThreshold = 0.85
 
@@ -60,7 +60,7 @@ func RenderDuplicates(in DuplicatesInput) []byte {
 func duplicatesSummary(in DuplicatesInput) string {
 	return fmt.Sprintf(
 		"**%d %s** at or above %.2f, from %d candidate pairs.\n\n"+
-			"No pair in this vault reaches ADDENDUM §B.4's 0.85 — at that threshold this "+
+			"No pair in this vault reaches the original spec's 0.85 — at that threshold this "+
 			"report is empty and stays empty. See `references/duplicate-spec.md` §1.\n",
 		len(in.Pairs), plural(len(in.Pairs), "pair", "pairs"), in.Threshold, in.Compared)
 }

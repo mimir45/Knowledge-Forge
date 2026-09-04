@@ -9,8 +9,8 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/vault"
 )
 
-// D3 is ADDENDUM §D.1's human-correction dataset: (model note, your edited note) pairs,
-// harvested from the vault's git history. §D calls it the most valuable of the five, and
+// D3 is the human-correction dataset: (model note, your edited note) pairs,
+// harvested from the vault's git history, valued as training data for note refinement, and
 // the reason it is built in Phase 1 rather than 6b is that the data only accumulates
 // forward — a hook installed later cannot recover the edits made before it.
 const (
@@ -37,8 +37,8 @@ const (
 var generatedOrigins = map[string]bool{"ask": true, "session-capture": true, "garden": true}
 
 // Pair is one JSONL record. It carries the two note texts because that is the training
-// signal, and metadata about the notes — never the prompt that produced them. ADDENDUM §D:
-// "Never store raw question text — hash + extracted topic only."
+// signal, and metadata about the notes — never the prompt that produced them, following the
+// principle: "Never store raw question text — hash + extracted topic only."
 type Pair struct {
 	Kind        string    `json:"kind"`
 	Note        string    `json:"note"`

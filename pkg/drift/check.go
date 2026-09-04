@@ -9,8 +9,8 @@ import (
 	"github.com/mimir45/Knowledge-Forge/pkg/coderef"
 )
 
-// checkPath walks ADDENDUM §B.6's ladder for a citation that named a file, in the order
-// the addendum states it: file gone, then symbol gone, then line moved, then body
+// checkPath walks the original spec's ladder for a citation that named a file, in the
+// order it states: file gone, then symbol gone, then line moved, then body
 // changed. The order matters — a deleted file would otherwise report as a moved line.
 func checkPath(f Finding, n Note, ref coderef.Ref, src Source) Finding {
 	head := src.Head(f.Repo)
